@@ -353,7 +353,7 @@ podTemplate(name: podName,
                                 pipelineUtils.executeInContainer(currentStage, "singlehost-test", "/tmp/package-test.sh")
 
                                 // Set our message topic, properties, and content
-                                messageFields = pipelineUtils.setMessageFields("package.test.functional.complete")
+                                messageFields = packagepipelineUtils.setMessageFields("package.test.functional.complete")
 
                                 // Send message org.centos.prod.ci.pipeline.allpackages.package.test.functional.complete on fedmsg
                                 pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
@@ -391,4 +391,3 @@ podTemplate(name: podName,
         }
     }
 }
-
