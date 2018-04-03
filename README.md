@@ -13,19 +13,19 @@
     - [fedmsg - Message Legend](#fedmsg---message-legend)
   - [Trigger - org.fedoraproject.prod.git.receive](#trigger---orgfedoraprojectprodgitreceive)
   - [Dist-git message example](#dist-git-message-example)
-  - [org.centos.prod.allpackages.pipeline.package.queued](#orgcentosprodallpackagespipelinepackagequeued)
-  - [org.centos.prod.allpackages.pipeline.package.running](#orgcentosprodallpackagespipelinepackagerunning)
-  - [org.centos.prod.allpackages.pipeline.package.complete](#orgcentosprodallpackagespipelinepackagecomplete)
-  - [org.centos.prod.allpackages.pipeline.image.queued](#orgcentosprodallpackagespipelineimagequeued)
-  - [org.centos.prod.allpackages.pipeline.image.running](#orgcentosprodallpackagespipelineimagerunning)
-  - [org.centos.prod.allpackages.pipeline.image.complete](#orgcentosprodallpackagespipelineimagecomplete)
-  - [org.centos.prod.allpackages.pipeline.image.test.smoke.queued](#orgcentosprodallpackagespipelineimagetestsmokequeued)
-  - [org.centos.prod.allpackages.pipeline.image.test.smoke.running](#orgcentosprodallpackagespipelineimagetestsmokerunning)
-  - [org.centos.prod.allpackages.pipeline.image.test.smoke.complete](#orgcentosprodallpackagespipelineimagetestsmokecomplete)
-  - [org.centos.prod.allpackages.pipeline.package.test.functional.queued](#orgcentosprodallpackagespipelinepackagetestfunctionalqueued)
-  - [org.centos.prod.allpackages.pipeline.package.test.functional.running](#orgcentosprodallpackagespipelinepackagetestfunctionalrunning)
-  - [org.centos.prod.allpackages.pipeline.package.test.functional.complete](#orgcentosprodallpackagespipelinepackagetestfunctionalcomplete)
-  - [org.centos.prod.allpackages.pipeline.complete](#orgcentosprodallpackgespipelinecomplete)
+  - [org.centos.prod.ci.pipeline.allpackages.package.queued](#orgcentosprodcipipelineallpackagespackagequeued)
+  - [org.centos.prod.ci.pipeline.allpackages.package.running](#orgcentosprodcipipelineallpackagespackagerunning)
+  - [org.centos.prod.ci.pipeline.allpackages.package.complete](#orgcentosprodcipipelineallpackagespackagecomplete)
+  - [org.centos.prod.ci.pipeline.allpackages.image.queued](#orgcentosprodcipipelineallpackagesimagequeued)
+  - [org.centos.prod.ci.pipeline.allpackages.image.running](#orgcentosprodcipipelineallpackagesimagerunning)
+  - [org.centos.prod.ci.pipeline.allpackages.image.complete](#orgcentosprodcipipelineallpackagesimagecomplete)
+  - [org.centos.prod.ci.pipeline.allpackages.image.test.smoke.queued](#orgcentosprodcipipelineallpackagesimagetestsmokequeued)
+  - [org.centos.prod.ci.pipeline.allpackages.image.test.smoke.running](#orgcentosprodcipipelineallpackagesimagetestsmokerunning)
+  - [org.centos.prod.ci.pipeline.allpackages.image.test.smoke.complete](#orgcentosprodcipipelineallpackagesimagetestsmokecomplete)
+  - [org.centos.prod.ci.pipeline.allpackages.package.test.functional.queued](#orgcentosprodcipipelineallpackagespackagetestfunctionalqueued)
+  - [org.centos.prod.ci.pipeline.allpackages.package.test.functional.running](#orgcentosprodcipipelineallpackagespackagetestfunctionalrunning)
+  - [org.centos.prod.ci.pipeline.allpackages.package.test.functional.complete](#orgcentosprodcipipelineallpackagespackagetestfunctionalcomplete)
+  - [org.centos.prod.ci.pipeline.allpackages.complete](#orgcentosprodcipipelineallpackagescomplete)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -40,38 +40,38 @@ The All Packages Fedora Pipeline serves to test all commits to dist-git for Fedo
 Once packages are pushed to Fedora dist-git this will trigger a message.  The pipeline will be triggered via the [Jenkins JMS plugin](https://wiki.jenkins-ci.org/display/JENKINS/JMS+Messaging+Plugin) for dist-git messages on fedmsg.  
 Only changes pushed to a fXX or master branch in dist-git are monitored.
 
-Pipeline messages sent via fedmsg for this stage are captured by the topics org.centos.prod.allpackages.pipeline.package.[queued,ignored].
+Pipeline messages sent via fedmsg for this stage are captured by the topics org.centos.prod.ci.pipeline.allpackages.package.[queued,ignored].
 
 ## Build Package
 
 The pipeline job begins by submitting a new scratch build to koji for the rpm. Once the koji build is complete, the artifacts, including logs, are downloaded to the Jenkins workspace to be used by the pipeline build and stored as artifacts in Jenkins.
 
-Pipeline messages sent via fedmsg for this stage are captured by the topics org.centos.prod.allpackages.pipeline.package.[running,complete].
+Pipeline messages sent via fedmsg for this stage are captured by the topics org.centos.prod.ci.pipeline.allpackages.package.[running,complete].
 
 ## Compose cloud qcow2 image
 
 The pipeline next uses imagefactory to build a cloud qcow2 image. The image will have its kickstart modified to include the newly built rpm at build time.
 
-Pipeline messages sent via fedmsg for this stage are captured by the topics org.centos.prod.allpackages.pipeline.image.[queued,running,complete].
+Pipeline messages sent via fedmsg for this stage are captured by the topics org.centos.prod.ci.pipeline.allpackages.image.[queued,running,complete].
 
 ## Image Smoke Test Validation
 
 This validation ensures that the newly created qcow2 image can boot. It also checks that the rpm created in the previous stage is successfully installed on the host.
 
-Pipeline messages sent via fedmsg for this stage are captured by the topics org.centos.prod.allpackages.pipeline.image.test.smoke.[queued,running,complete].
+Pipeline messages sent via fedmsg for this stage are captured by the topics org.centos.prod.ci.pipeline.allpackages.image.test.smoke.[queued,running,complete].
 
 ## Functional Tests on Packages
 
 Functional tests will be executed on the produced package from the previous stage of the pipeline if they exist.  This will help identify issues isolated to the package themselves.  Success or failure will result with a fedmsg back to the Fedora package maintainer. The tests are pulled from the dist-git repos and are executed with the standard-test-roles. If no tests exist, this stage is skipped.
 
-Pipeline messages sent via fedmsg for this stage are captured by the topics org.centos.prod.allpackages.pipeline.package.test.functional.[queued,running,complete].
+Pipeline messages sent via fedmsg for this stage are captured by the topics org.centos.prod.ci.pipeline.allpackages.package.test.functional.[queued,running,complete].
 
 # fedmsg Bus
 
 Communication between Fedora, CentOS, and Red Hat infrastructures will be done via fedmsg.  Messages will be received of updates to Fedora dist-git repos.  Triggering will happen from Fedora dist-git. The pipeline in CentOS infrastructure will build packages, compose a cloud qcow2 image, and run the standard test roles standard tests from the package's dist-git.  We are dependant on CentOS Infrastructure for allowing us a hub for publishing messages to fedmsg.
 
 ## fedmsg - Message Types
-Below are the different message types that we listen and publish.  There will be different subtopics so we can keep things organized under the org.centos.prod.allpackages.pipeline.* umbrella. The fact that ‘org.centos’ is contained in the messages is a side effect of the way fedmsg enforces message naming.
+Below are the different message types that we listen and publish.  There will be different subtopics so we can keep things organized under the org.centos.prod.ci.pipeline.allpackages.* umbrella. The fact that ‘org.centos’ is contained in the messages is a side effect of the way fedmsg enforces message naming.
 
 ### fedmsg - Message Legend
 
@@ -90,7 +90,7 @@ Below are the different message types that we listen and publish.  There will be
 * repo - Package name
   - ex. vim
 * topic - Topic that is being published on the fedmsg bus
-  - ex. org.centos.prod.allpackages.pipeline.image.complete
+  - ex. org.centos.prod.ci.pipeline.allpackages.image.complete
 * status - Status of the stage and overall pipeline at the time when the message is published.
            UNSTABLE status indicates that some tests did not pass and should be analyzed.
   - ex. SUCCESS
@@ -182,79 +182,79 @@ email=jchaloup@redhat.com
 }
 ````
 
-## org.centos.prod.allpackages.pipeline.package.queued
+## org.centos.prod.ci.pipeline.allpackages.package.queued
 
 ````
 TODO once we have some already sent
 ````
 
-## org.centos.prod.allpackages.pipeline.package.running
+## org.centos.prod.ci.pipeline.allpackages.package.running
 
 ````
 TODO once we have some already sent
 ````
 
-## org.centos.prod.allpackages.pipeline.package.complete
+## org.centos.prod.ci.pipeline.allpackages.package.complete
 
 ````
 TODO once we have some already sent
 ````
 
-## org.centos.prod.allpackages.pipeline.image.queued
+## org.centos.prod.ci.pipeline.allpackages.image.queued
 
 ````
 TODO once we have some already sent
 ````
 
-## org.centos.prod.allpackages.pipeline.image.running
+## org.centos.prod.ci.pipeline.allpackages.image.running
 
 ````
 TODO once we have some already sent
 ````
 
-## org.centos.prod.allpackages.pipeline.image.complete
+## org.centos.prod.ci.pipeline.allpackages.image.complete
 
 ````
 TODO once we have some already sent
 ````
 
-## org.centos.prod.allpackages.pipeline.image.test.smoke.queued
+## org.centos.prod.ci.pipeline.allpackages.image.test.smoke.queued
 
 ````
 TODO once we have some already sent
 ````
 
-## org.centos.prod.allpackages.pipeline.image.test.smoke.running
+## org.centos.prod.ci.pipeline.allpackages.image.test.smoke.running
 
 ````
 TODO once we have some already sent
 ````
 
-## org.centos.prod.allpackages.pipeline.image.test.smoke.complete
+## org.centos.prod.ci.pipeline.allpackages.image.test.smoke.complete
 
 ````
 TODO once we have some already sent
 ````
 
-## org.centos.prod.allpackages.pipeline.package.test.functional.queued
+## org.centos.prod.ci.pipeline.allpackages.package.test.functional.queued
 
 ````
 TODO once we have some already sent
 ````
 
-## org.centos.prod.allpackages.pipeline.package.test.functional.running
+## org.centos.prod.ci.pipeline.allpackages.package.test.functional.running
 
 ````
 TODO once we have some already sent
 ````
 
-## org.centos.prod.allpackages.pipeline.package.test.functional.complete
+## org.centos.prod.ci.pipeline.allpackages.package.test.functional.complete
 
 ````
 TODO once we have some already sent
 ````
 
-## org.centos.prod.allpackages.pipeline.complete
+## org.centos.prod.ci.pipeline.allpackages.complete
 
 ````
 TODO once we have some already sent
