@@ -60,7 +60,7 @@ library identifier: "fedora-upstream-pipeline@${env.ghprbActualCommit}",
 //noinspection GroovyAssignabilityCheck
 properties(
         [
-                buildDiscarder(logRotator(artifactDaysToKeepStr: '30', artifactNumToKeepStr: '15', daysToKeepStr: '90', numToKeepStr: '30')),
+                buildDiscarder(logRotator(artifactDaysToKeepStr: '30', artifactNumToKeepStr: '100', daysToKeepStr: '90', numToKeepStr: '100')),
                 [$class: 'JobPropertyImpl', throttle: [count: 15, durationName: 'hour', userBoost: false]],
                 parameters(
                         [

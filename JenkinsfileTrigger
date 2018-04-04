@@ -24,10 +24,10 @@ fedmsgRetryCount = 120
 //noinspection GroovyAssignabilityCheck
 properties(
         [
-                buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '5', daysToKeepStr: '', numToKeepStr: '5')),
+                buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '100', daysToKeepStr: '', numToKeepStr: '100')),
                 disableConcurrentBuilds(),
                 pipelineTriggers(
-                        [[$class: 'CIBuildTrigger', checks: [], providerName: 'fedora-fedmsg', selector: 'topic = "org.fedoraproject.prod.git.receive"'
+                        [[$class: 'CIBuildTrigger', checks: [], providerName: 'fedora-fedmsg', selector: 'topic = "org.fedoraproject.prod.git.receive" AND namespace = "rpms"'
                           ]]
                 ),
 
