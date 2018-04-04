@@ -295,3 +295,26 @@ def checkBranch() {
 
     return result
 }
+
+def packageMetrics() {
+    def tags = [:]
+    def fields = [:]
+    def measurement = 'package'
+    tags['build_result'] = currentBuild.result
+    tags['project_name'] = env.JOB_NAME
+    tags['build_number'] = env.BUILD_NUMBER
+    tags['name'] = env.fed_repo
+    fields['build_time'] = currentBuild.getDuration()
+
+    return [measurement, tags, fields]
+}
+
+def pipelineMetrics() {
+    def tags = [:]
+    def fields = [:]
+    def measurement = 'pipeline'
+    tags['build_result'] = currentBuild.result
+    fields['build_time'] = currentBuild.getDuration()
+
+    return [measurement, tags, fields]
+}

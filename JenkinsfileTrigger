@@ -54,8 +54,9 @@ node() {
     packagepipelineUtils.cimetrics = ciMetrics
 
     timeout(time: 30, unit: 'MINUTES') {
-        try {
-            packagepipelineUtils.ciPipeline {
+
+        packagepipelineUtils.ciPipeline {
+            try {
                 stepName = 'upstream-fedora-pipeline-trigger'
                 stage(stepName) {
 
@@ -73,7 +74,7 @@ node() {
                 }
 
                 if (validMessage && testsExist) {
-                    
+
                     messageFields = packagepipelineUtils.setMessageFields('package.queued')
                     pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
@@ -90,7 +91,7 @@ node() {
                                 }
 
                             }
-                        } catch(Throwable err) {
+                        } catch (Throwable err) {
                             currentBuild.description = "*TRIGGER FAILURE*"
                             error "Error: Build could not be added to queue after " + TRIGGER_RETRY_COUNT + " tries"
                             throw err
@@ -106,11 +107,15 @@ node() {
 
                 currentBuild.result = 'SUCCESS'
 
-            }
-        } catch(Throwable err) {
-            currentBuild.result = 'FAILURE'
-            throw err
+            } catch (Throwable err) {
+                currentBuild.result = 'FAILURE'
+                throw err
 
+            } finally {
+                // set the metrics we want
+                packagepipelineUtils.packageMetrics()
+                packagepipelineUtils.pipelineMetrics()
+            }
         }
     }
 }

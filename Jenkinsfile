@@ -386,6 +386,9 @@ podTemplate(name: podName,
                     // Send message org.centos.prod.ci.pipeline.allpackages.complete on fedmsg
                     pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
+                    packagepipelineUtils.packageMetrics()
+                    packagepipelineUtils.pipelineMetrics()
+
                 }
             }
         }
