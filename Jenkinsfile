@@ -192,8 +192,6 @@ podTemplate(name: podName,
 
                             // create audit message file
                             pipelineUtils.initializeAuditFile(msgAuditFile)
-
-                            packageTags['name'] = env.fed_repo
                         }
 
                     }
