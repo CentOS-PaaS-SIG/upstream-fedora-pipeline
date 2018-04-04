@@ -314,7 +314,7 @@ def pipelineMetrics() {
     def fields = [:]
     def measurement = 'pipeline'
     tags['build_result'] = currentBuild.result
-    fields['build_time'] = currentBuild.getDuration().toString()
+    fields['build_time'] = currentBuild.getDuration()
 
     return [measurement, tags, fields]
 }
