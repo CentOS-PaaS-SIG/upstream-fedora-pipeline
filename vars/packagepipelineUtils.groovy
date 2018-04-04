@@ -80,6 +80,25 @@ class packagepipelineUtils implements Serializable {
         }
     }
 
+    def packageMetrics() {
+        def metrics = packagePipelineUtils.packageMetrics()
+        setMetrics(metrics)
+
+    }
+
+    def pipelineMetrics() {
+        def metrics = packagePipelineUtils.pipelineMetrics()
+        setMetrics(metrics)
+
+    }
+
+    def setMetrics(def metrics) {
+        String measurement = metrics[0]
+        cimetrics.customDataMap[measurement] = metrics[1]
+        cimetrics.customDataMapTags[measurement] = metrics[2]
+
+    }
+
     def checkBranch() {
         return packagePipelineUtils.checkBranch()
     }

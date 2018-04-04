@@ -51,8 +51,6 @@ node() {
 
     // pull in ciMetrics from ci-pipeline
     ciMetrics.prefix = 'Fedora_All_Packages_Pipeline'
-    packageDataMap = [:]
-    packageTags = [:]
     packagepipelineUtils.cimetrics = ciMetrics
 
     timeout(time: 30, unit: 'MINUTES') {
@@ -114,12 +112,9 @@ node() {
                 throw err
 
             } finally {
-                packageTags['build_result'] = currentBuild.result
-                packageTags['project_name'] = env.JOB_NAME
-                packageTags['build_number'] = env.BUILD_NUMBER
-                packageDataMap['build_time'] = currentBuild.getDuration()
-                packagepipelineUtils.cimetrics.customDataMapTags['packages'] = packageTags
-                packagepipelineUtils.cimetrics.customDataMap['packages'] = packageDataMap
+                // set the metrics we want
+                packagepipelineUtils.packageMetrics()
+                packagepipelineUtils.pipelineMetrics()
             }
         }
     }
