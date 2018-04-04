@@ -147,6 +147,8 @@ podTemplate(name: podName,
 
         // pull in ciMetrics from ci-pipeline
         ciMetrics.prefix = 'Fedora_All_Packages_Pipeline'
+        packageDataMap = [:]
+        packageTags = [:]
         packagepipelineUtils.cimetrics = ciMetrics
 
         // Would do ~1.5 hours but kernel builds take a long time
@@ -192,6 +194,8 @@ podTemplate(name: podName,
 
                             // create audit message file
                             pipelineUtils.initializeAuditFile(msgAuditFile)
+
+                            packageTags['name'] = env.fed_repo
                         }
 
                     }
@@ -385,6 +389,13 @@ podTemplate(name: podName,
 
                     // Send message org.centos.prod.ci.pipeline.allpackages.complete on fedmsg
                     pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+
+                    packageTags['build_result'] = currentBuild.result
+                    packageTags['project_name'] = env.JOB_NAME
+                    packageTags['build_number'] = env.BUILD_NUMBER
+                    packageDataMap['build_time'] = currentBuild.getDuration()
+                    packagepipelineUtils.cimetrics.customDataMapTags['packages'] = packageTags
+                    packagepipelineUtils.cimetrics.customDataMap['packages'] = packageDataMap
 
                 }
             }
