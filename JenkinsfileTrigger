@@ -51,11 +51,14 @@ node() {
 
     // pull in ciMetrics from ci-pipeline
     ciMetrics.prefix = 'Fedora_All_Packages_Pipeline'
+    packageDataMap = [:]
+    packageTags = [:]
     packagepipelineUtils.cimetrics = ciMetrics
 
     timeout(time: 30, unit: 'MINUTES') {
-        try {
-            packagepipelineUtils.ciPipeline {
+
+        packagepipelineUtils.ciPipeline {
+            try {
                 stepName = 'upstream-fedora-pipeline-trigger'
                 stage(stepName) {
 
@@ -73,7 +76,7 @@ node() {
                 }
 
                 if (validMessage && testsExist) {
-                    
+
                     messageFields = packagepipelineUtils.setMessageFields('package.queued')
                     pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
@@ -90,7 +93,7 @@ node() {
                                 }
 
                             }
-                        } catch(Throwable err) {
+                        } catch (Throwable err) {
                             currentBuild.description = "*TRIGGER FAILURE*"
                             error "Error: Build could not be added to queue after " + TRIGGER_RETRY_COUNT + " tries"
                             throw err
@@ -106,11 +109,18 @@ node() {
 
                 currentBuild.result = 'SUCCESS'
 
-            }
-        } catch(Throwable err) {
-            currentBuild.result = 'FAILURE'
-            throw err
+            } catch (Throwable err) {
+                currentBuild.result = 'FAILURE'
+                throw err
 
+            } finally {
+                packageTags['build_result'] = currentBuild.result
+                packageTags['project_name'] = env.JOB_NAME
+                packageTags['build_number'] = env.BUILD_NUMBER
+                packageDataMap['build_time'] = currentBuild.getDuration()
+                packagepipelineUtils.cimetrics.customDataMapTags['packages'] = packageTags
+                packagepipelineUtils.cimetrics.customDataMap['packages'] = packageDataMap
+            }
         }
     }
 }
