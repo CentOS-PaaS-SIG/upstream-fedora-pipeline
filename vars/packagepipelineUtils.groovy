@@ -86,6 +86,22 @@ class packagepipelineUtils implements Serializable {
 
     }
 
+    def setMetricTag(String measurement, String key, String value) {
+        if (!cimetrics.customDataMapTags[measurement]) {
+            cimetrics.customDataMapTags[measurement] = [:]
+        }
+
+        cimetrics.customDataMapTags[measurement][key] = value
+    }
+
+    def setMetricField(String measurement, String key, String value) {
+        if (!cimetrics.customDataMap[measurement]) {
+            cimetrics.customDataMap[measurement] = [:]
+        }
+
+        cimetrics.customDataMap[measurement][key] = value
+    }
+
     def pipelineMetrics() {
         def metrics = packagePipelineUtils.pipelineMetrics()
         setMetrics(metrics)
