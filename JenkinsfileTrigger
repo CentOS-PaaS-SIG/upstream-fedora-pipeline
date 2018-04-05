@@ -113,7 +113,7 @@ node() {
 
             } finally {
                 // set the metrics we want
-                packagepipelineUtils.packageMetrics()
+                //packagepipelineUtils.packageMetrics()
             }
         }
     }
