@@ -388,6 +388,7 @@ podTemplate(name: podName,
                     pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
                     // set the package_name tag
+                    packagepipelineUtils.setMetricField('ci_pipeline', 'build_time', currentBuild.getDuration())
                     packagepipelineUtils.setMetricTag('ci_pipeline', 'package_name', env.fed_repo)
 
                 }
