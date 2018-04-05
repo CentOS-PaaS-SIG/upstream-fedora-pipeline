@@ -94,8 +94,8 @@ class packagepipelineUtils implements Serializable {
 
     def setMetrics(def metrics) {
         String measurement = metrics[0]
-        cimetrics.customDataMap[measurement] = metrics[1]
-        cimetrics.customDataMapTags[measurement] = metrics[2]
+        cimetrics.customDataMapTags[measurement] = metrics[1]
+        cimetrics.customDataMap[measurement] = metrics[2]
 
     }
 
