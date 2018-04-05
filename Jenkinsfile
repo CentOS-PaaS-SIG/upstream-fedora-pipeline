@@ -387,7 +387,6 @@ podTemplate(name: podName,
                     pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
                     packagepipelineUtils.packageMetrics()
-                    packagepipelineUtils.pipelineMetrics()
 
                 }
             }
