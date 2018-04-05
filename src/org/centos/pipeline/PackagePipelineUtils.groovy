@@ -302,7 +302,6 @@ def packageMetrics() {
     def measurement = 'package'
     tags['build_result'] = currentBuild.result
     tags['project_name'] = env.JOB_NAME
-    tags['build_number'] = env.BUILD_NUMBER.toString()
     tags['name'] = env.fed_repo
     fields['build_time'] = currentBuild.getDuration().toString()
 
