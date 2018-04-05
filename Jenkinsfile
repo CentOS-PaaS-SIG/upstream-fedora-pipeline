@@ -389,6 +389,7 @@ podTemplate(name: podName,
 
                     // set the package_name tag
                     packagepipelineUtils.setMetricTag('ci_pipeline', 'package_name', env.fed_repo)
+                    packagepipelineUtils.setMetricField('ci_pipeline', 'build_time', currentBuild.getDuration())
 
                 }
             }
