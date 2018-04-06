@@ -211,6 +211,9 @@ podTemplate(name: podName,
                             // Send message org.centos.prod.ci.pipeline.allpackages.package.running on fedmsg
                             pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
+                            // Prepare to send stage.complete message on failure
+                            env.messageStage = 'package.complete'
+
                             // If a task id was provided, use those artifacts and
                             // bypass submitting a new rpm build
                             if (env.PROVIDED_KOJI_TASKID?.trim()) {
@@ -268,7 +271,8 @@ podTemplate(name: podName,
                             // Set stage specific vars
                             packagepipelineUtils.setStageEnvVars(currentStage)
 
-                            // No messages defined for this stage
+                            // Prepare to send stage.complete message on failure
+                            env.messageStage = 'image.complete'
 
                             // Compose image
                             pipelineUtils.executeInContainer(currentStage, "cloud-image-compose", "/tmp/cloud-image-compose.sh")
@@ -350,6 +354,9 @@ podTemplate(name: podName,
                                 // This can't be in setStageEnvVars because it depends on env.WORKSPACE
                                 env.TEST_SUBJECTS = "${env.WORKSPACE}/images/untested-cloud.qcow2"
 
+                                // Prepare to send stage.complete message on failure
+                                env.messageStage = 'image.complete'
+
                                 // Run functional tests
                                 pipelineUtils.executeInContainer(currentStage, "singlehost-test", "/tmp/package-test.sh")
 
@@ -367,6 +374,10 @@ podTemplate(name: podName,
                 } catch (e) {
                     // Set build result
                     currentBuild.result = 'FAILURE'
+
+                    // Send message org.centos.prod.ci.pipeline.allpackages.<stage>.complete on fedmsg if stage failed
+                    messageFields = packagepipelineUtils.setMessageFields(messageStage)
+                    pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
                     // Report the exception
                     echo "Error: Exception from " + currentStage + ":"
