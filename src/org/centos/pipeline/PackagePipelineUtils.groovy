@@ -49,7 +49,7 @@ def setMessageFields(String messageType) {
     // add it below per the existing examples.
 
     def messageProperties = [
-            branch           : env.branch,
+            branch           : env.fed_branch,
             build_id         : env.BUILD_ID,
             build_url        : env.JENKINS_URL + 'blue/organizations/jenkins/' + env.JOB_NAME + '/detail/' + env.JOB_NAME + '/' + env.BUILD_NUMBER + '/pipeline/',
             namespace        : env.fed_namespace,
