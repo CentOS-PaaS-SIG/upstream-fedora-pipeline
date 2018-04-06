@@ -376,6 +376,7 @@ podTemplate(name: podName,
                     currentBuild.result = 'FAILURE'
 
                     // Send message org.centos.prod.ci.pipeline.allpackages.<stage>.complete on fedmsg if stage failed
+                    messageFields = packagepipelineUtils.setMessageFields(messageStage)
                     pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
                     // Report the exception
