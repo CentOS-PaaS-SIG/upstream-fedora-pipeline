@@ -146,9 +146,8 @@ podTemplate(name: podName,
     node(podName) {
 
         // pull in ciMetrics from ci-pipeline
-        def jobMeasurement = "jenkins_job_" + env.JOB_NAME
+        def jobMeasurement = packagepipelineUtils.timedMeasurement()
         ciMetrics.prefix = 'Fedora_All_Packages_Pipeline'
-        ciMetrics.measurement = jobMeasurement
         packagepipelineUtils.cimetrics = ciMetrics
 
         // Would do ~1.5 hours but kernel builds take a long time

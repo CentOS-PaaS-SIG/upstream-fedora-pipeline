@@ -50,10 +50,8 @@ def stepName = null
 node() {
 
     // pull in ciMetrics from ci-pipeline
-    def jobMeasurement = "jenkins_job_" + env.JOB_NAME
+    def jobMeasurement = packagepipelineUtils.timedMeasurement()
     ciMetrics.prefix = 'Fedora_All_Packages_Pipeline'
-    ciMetrics.measurement = jobMeasurement
-    ciMetrics.customDataMap
     packagepipelineUtils.cimetrics = ciMetrics
 
     timeout(time: 30, unit: 'MINUTES') {
