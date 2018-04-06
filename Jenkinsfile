@@ -178,14 +178,15 @@ podTemplate(name: podName,
                             if (!env.PROVIDED_KOJI_TASKID?.trim()) {
                                 // Parse the CI_MESSAGE and inject it as env vars
                                 pipelineUtils.injectFedmsgVars(env.CI_MESSAGE)
+
+                                // Decorate our build
+                                String buildName = "${env.fed_rev.substring(0,6)}:${env.fed_repo}:${env.fed_branch}"
+                                pipelineUtils.setCustomBuildNameAndDescription(buildName, buildName)
                             }
                             packagepipelineUtils.setDefaultEnvVars()
 
                             // Prepare Credentials (keys, passwords, etc)
                             packagepipelineUtils.prepareCredentials('fedora-keytab')
-
-                            // Decorate our build
-                            pipelineUtils.updateBuildDisplayAndDescription()
 
                             // Gather some info about the node we are running on for diagnostics
                             pipelineUtils.verifyPod(OPENSHIFT_NAMESPACE, env.NODE_NAME)
@@ -241,7 +242,8 @@ podTemplate(name: podName,
 
                         if (env.PROVIDED_KOJI_TASKID?.trim()) {
                             // Decorate our build to not be null now
-                            pipelineUtils.updateBuildDisplayAndDescription()
+                            String buildName = "${env.koji_task_id}:${env.nvr}"
+                            pipelineUtils.setCustomBuildNameAndDescription(buildName, buildName)
                         }
 
                         // Set our message topic, properties, and content
