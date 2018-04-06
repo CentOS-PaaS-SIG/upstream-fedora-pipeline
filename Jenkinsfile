@@ -146,7 +146,9 @@ podTemplate(name: podName,
     node(podName) {
 
         // pull in ciMetrics from ci-pipeline
+        def jobMeasurement = "jenkins_job_" + env.JOB_NAME
         ciMetrics.prefix = 'Fedora_All_Packages_Pipeline'
+        ciMetrics.measurement = jobMeasurement
         packagepipelineUtils.cimetrics = ciMetrics
 
         // Would do ~1.5 hours but kernel builds take a long time
@@ -400,9 +402,10 @@ podTemplate(name: podName,
                     // Send message org.centos.prod.ci.pipeline.allpackages.complete on fedmsg
                     pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
-                    // set the package_name tag
-                    packagepipelineUtils.setMetricTag('ci_pipeline', 'package_name', env.fed_repo)
-                    packagepipelineUtils.setMetricField('ci_pipeline', 'build_time', currentBuild.getDuration())
+                    // set the metrics we want
+                    packagepipelineUtils.setMetricTag(jobMeasurement, 'package_name', env.fed_repo)
+                    packagepipelineUtils.setMetricTag(jobMeasurement, 'build_result', currentBuild.result)
+                    packagepipelineUtils.setMetricField(jobMeasurement, 'build_time', currentBuild.getDuration())
 
                 }
             }
