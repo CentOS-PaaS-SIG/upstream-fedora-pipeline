@@ -369,7 +369,7 @@ podTemplate(name: podName,
                                 // Send message org.centos.prod.ci.pipeline.allpackages.package.test.functional.complete on fedmsg
                                 pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
-                                def testResults = pipelineUtils.parseTestLog('test.log')
+                                def testResults = pipelineUtils.parseTestLog("${WORKSPACE}/test.log")
                                 testResults.each { test, result ->
                                     packagepipelineUtils.setMetricField(env.fed_repo, test, result)
                                 }
