@@ -150,6 +150,8 @@ podTemplate(name: podName,
         ciMetrics.prefix = 'Fedora_All_Packages_Pipeline'
         packagepipelineUtils.cimetrics = ciMetrics
 
+        def buildResult = null
+
         // Would do ~1.5 hours but kernel builds take a long time
         timeout(time: 5, unit: 'HOURS') {
 
@@ -369,19 +371,27 @@ podTemplate(name: podName,
                                 // Send message org.centos.prod.ci.pipeline.allpackages.package.test.functional.complete on fedmsg
                                 pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
-                                def testResults = pipelineUtils.parseTestLog("${WORKSPACE}/test.log")
-                                testResults.each { test, result ->
-                                    packagepipelineUtils.setMetricField(env.fed_repo, test, result)
+                                try {
+                                    def testResults = pipelineUtils.parseTestLog("${WORKSPACE}/${currentStage}/logs/test.log")
+                                    testResults.each { test, result ->
+                                        if (result == 'FAILED') {
+                                            buildResult = 'UNSTABLE'
+                                        }
+                                        packagepipelineUtils.setMetricField(env.fed_repo, test, result)
+                                    }
+                                } catch(err) {
+                                    buildResult = 'UNSTABLE'
                                 }
+
                             }
                         }
                     }
 
-                    currentBuild.result = 'SUCCESS'
+                    buildResult = buildResult ?: 'SUCCESS'
 
                 } catch (e) {
                     // Set build result
-                    currentBuild.result = 'FAILURE'
+                    buildResult = buildResult ?: 'FAILURE'
 
                     // Send message org.centos.prod.ci.pipeline.allpackages.<stage>.complete on fedmsg if stage failed
                     messageFields = packagepipelineUtils.setMessageFields(messageStage)
@@ -395,6 +405,7 @@ podTemplate(name: podName,
                     throw e
 
                 } finally {
+                    currentBuild.result = buildResult
                     pipelineUtils.getContainerLogsFromPod(OPENSHIFT_NAMESPACE, env.NODE_NAME)
 
                     // Archive our artifacts
