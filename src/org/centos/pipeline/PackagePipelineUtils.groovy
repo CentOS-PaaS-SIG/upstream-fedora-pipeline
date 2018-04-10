@@ -138,6 +138,8 @@ def setDefaultEnvVars(Map envMap=null){
     env.nvr = env.nvr ?: ''
     env.original_spec_nvr = env.original_spec_nvr ?: ''
     env.ANSIBLE_HOST_KEY_CHECKING = env.ANSIBLE_HOST_KEY_CHECKING ?: 'False'
+    env.jobMeasurement = env.JOB_NAME
+    env.packageMeasurement = env.fed_repo
 
     // If we've been provided an envMap, we set env.key = value
     // Note: This may overwrite above specified values.
@@ -282,6 +284,10 @@ def handlePipelineStep(Map config, Closure body) {
             echo "end of ${config.stepName}"
         }
     }
+}
+
+def timedMeasurement() {
+    return env.JOB_NAME
 }
 
 def checkBranch() {

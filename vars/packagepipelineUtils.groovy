@@ -75,9 +75,14 @@ class packagepipelineUtils implements Serializable {
     }
 
     def timedPipelineStep(Map config, Closure body) {
-        cimetrics.timed config.stepName, {
+        def measurement = timedMeasurement()
+        cimetrics.timed measurement, config.stepName, {
             packagePipelineUtils.handlePipelineStep(config, body)
         }
+    }
+
+    def timedMeasurement() {
+        return packagePipelineUtils.timedMeasurement()
     }
 
     def packageMetrics() {

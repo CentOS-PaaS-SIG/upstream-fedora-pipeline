@@ -50,6 +50,7 @@ def stepName = null
 node() {
 
     // pull in ciMetrics from ci-pipeline
+    def jobMeasurement = packagepipelineUtils.timedMeasurement()
     ciMetrics.prefix = 'Fedora_All_Packages_Pipeline'
     packagepipelineUtils.cimetrics = ciMetrics
 
@@ -113,8 +114,9 @@ node() {
 
             } finally {
                 // set the metrics we want
-                packagepipelineUtils.setMetricTag('ci_pipeline', 'package_name', env.fed_repo)
-                packagepipelineUtils.setMetricField('ci_pipeline', 'build_time', currentBuild.getDuration())
+                packagepipelineUtils.setMetricTag(jobMeasurement, 'package_name', env.fed_repo)
+                packagepipelineUtils.setMetricTag(jobMeasurement, 'build_result', currentBuild.result)
+                packagepipelineUtils.setMetricField(jobMeasurement, 'build_time', currentBuild.getDuration())
             }
         }
     }
