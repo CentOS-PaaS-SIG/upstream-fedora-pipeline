@@ -377,7 +377,7 @@ podTemplate(name: podName,
                                         if (result == 'FAILED') {
                                             buildResult = 'UNSTABLE'
                                         }
-                                        packagepipelineUtils.setMetricField(env.fed_repo, test, result)
+                                        packagepipelineUtils.setMetricTag(env.fed_repo, test, result)
                                     }
                                 } catch(err) {
                                     buildResult = 'FAILED'
@@ -421,6 +421,7 @@ podTemplate(name: podName,
                     packagepipelineUtils.setMetricTag(jobMeasurement, 'package_name', env.fed_repo)
                     packagepipelineUtils.setMetricTag(jobMeasurement, 'build_result', currentBuild.result)
                     packagepipelineUtils.setMetricField(jobMeasurement, 'build_time', currentBuild.getDuration())
+                    packagepipelineUtils.setMetricField(env.fed_repo, 'build_time', currentBuild.getDuration())
 
                 }
             }
