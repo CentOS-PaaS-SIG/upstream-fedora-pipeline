@@ -357,7 +357,7 @@ podTemplate(name: podName,
                                 env.TEST_SUBJECTS = "${env.WORKSPACE}/images/untested-cloud.qcow2"
 
                                 // Prepare to send stage.complete message on failure
-                                env.messageStage = 'image.complete'
+                                env.messageStage = 'package.test.functional.complete'
 
                                 // Run functional tests
                                 pipelineUtils.executeInContainer(currentStage, "singlehost-test", "/tmp/package-test.sh")
