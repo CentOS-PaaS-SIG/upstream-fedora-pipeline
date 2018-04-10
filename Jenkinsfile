@@ -380,7 +380,7 @@ podTemplate(name: podName,
                                         packagepipelineUtils.setMetricField(env.fed_repo, test, result)
                                     }
                                 } catch(err) {
-                                    buildResult = 'UNSTABLE'
+                                    buildResult = 'FAILED'
                                 }
 
                             }
