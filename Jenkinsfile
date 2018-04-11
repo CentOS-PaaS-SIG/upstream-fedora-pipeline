@@ -389,6 +389,7 @@ podTemplate(name: podName,
                 } catch (e) {
                     // Set build result
                     buildResult = 'FAILURE'
+                    currentBuild.result = buildResult
 
                     // Send message org.centos.prod.ci.pipeline.allpackages.<stage>.complete on fedmsg if stage failed
                     messageFields = packagepipelineUtils.setMessageFields(messageStage)
