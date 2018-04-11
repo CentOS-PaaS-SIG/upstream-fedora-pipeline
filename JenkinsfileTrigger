@@ -114,9 +114,9 @@ node() {
 
             } finally {
                 // set the metrics we want
-                packagepipelineUtils.setMetricTag(jobMeasurement, 'package_name', env.fed_repo)
-                packagepipelineUtils.setMetricTag(jobMeasurement, 'build_result', currentBuild.result)
-                packagepipelineUtils.setMetricField(jobMeasurement, 'build_time', currentBuild.getDuration())
+                ciMetrics.setMetricTag(jobMeasurement, 'package_name', env.fed_repo)
+                ciMetrics.setMetricTag(jobMeasurement, 'build_result', currentBuild.result)
+                ciMetrics.setMetricField(jobMeasurement, 'build_time', currentBuild.getDuration())
             }
         }
     }

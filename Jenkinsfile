@@ -363,25 +363,29 @@ podTemplate(name: podName,
                                 env.messageStage = 'package.test.functional.complete'
 
                                 // Run functional tests
-                                pipelineUtils.executeInContainer(currentStage, "singlehost-test", "/tmp/package-test.sh")
+                                try {
+                                    pipelineUtils.executeInContainer(currentStage, "singlehost-test", "/tmp/package-test.sh")
+                                } catch(e) {
+                                    // Report the exception
+                                    echo "Error: Exception from " + currentStage + ":"
+                                    echo e.getMessage()
+                                } finally {
+                                    // parse the package tests log
+                                    def logFile = "${WORKSPACE}/${currentStage}/logs/test.log"
+                                    def testResults = pipelineUtils.parseTestLog(logFile)
+                                    buildResult = buildResult ?: pipelineUtils.checkTestResults(testResults)
+
+                                    // send in the test results
+                                    ciMetrics.setMetricTags(env.fed_repo, testResults)
+                                }
+
+                                currentBuild.result = buildResult
 
                                 // Set our message topic, properties, and content
                                 messageFields = packagepipelineUtils.setMessageFields("package.test.functional.complete")
 
                                 // Send message org.centos.prod.ci.pipeline.allpackages.package.test.functional.complete on fedmsg
                                 pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
-
-                                try {
-                                    def testResults = pipelineUtils.parseTestLog("${WORKSPACE}/${currentStage}/logs/test.log")
-                                    testResults.each { test, result ->
-                                        if (result == 'FAILED') {
-                                            buildResult = 'UNSTABLE'
-                                        }
-                                        packagepipelineUtils.setMetricTag(env.fed_repo, test, result)
-                                    }
-                                } catch(err) {
-                                    buildResult = 'FAILED'
-                                }
 
                             }
                         }
@@ -391,7 +395,8 @@ podTemplate(name: podName,
 
                 } catch (e) {
                     // Set build result
-                    buildResult = buildResult ?: 'FAILURE'
+                    buildResult = 'FAILURE'
+                    currentBuild.result = buildResult
 
                     // Send message org.centos.prod.ci.pipeline.allpackages.<stage>.complete on fedmsg if stage failed
                     messageFields = packagepipelineUtils.setMessageFields(messageStage)
@@ -418,10 +423,10 @@ podTemplate(name: podName,
                     pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
                     // set the metrics we want
-                    packagepipelineUtils.setMetricTag(jobMeasurement, 'package_name', env.fed_repo)
-                    packagepipelineUtils.setMetricTag(jobMeasurement, 'build_result', currentBuild.result)
-                    packagepipelineUtils.setMetricField(jobMeasurement, 'build_time', currentBuild.getDuration())
-                    packagepipelineUtils.setMetricField(env.fed_repo, 'build_time', currentBuild.getDuration())
+                    ciMetrics.setMetricTag(jobMeasurement, 'package_name', env.fed_repo)
+                    ciMetrics.setMetricTag(jobMeasurement, 'build_result', currentBuild.result)
+                    ciMetrics.setMetricField(jobMeasurement, 'build_time', currentBuild.getDuration())
+                    ciMetrics.setMetricField(env.fed_repo, 'build_time', currentBuild.getDuration())
 
                 }
             }

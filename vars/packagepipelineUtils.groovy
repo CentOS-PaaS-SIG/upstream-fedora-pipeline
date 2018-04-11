@@ -85,41 +85,6 @@ class packagepipelineUtils implements Serializable {
         return packagePipelineUtils.timedMeasurement()
     }
 
-    def packageMetrics() {
-        def metrics = packagePipelineUtils.packageMetrics()
-        setMetrics(metrics)
-
-    }
-
-    def setMetricTag(String measurement, String key, String value) {
-        if (!cimetrics.customDataMapTags[measurement]) {
-            cimetrics.customDataMapTags[measurement] = [:]
-        }
-
-        cimetrics.customDataMapTags[measurement][key] = value
-    }
-
-    def setMetricField(String measurement, String key, def value) {
-        if (!cimetrics.customDataMap[measurement]) {
-            cimetrics.customDataMap[measurement] = [:]
-        }
-
-        cimetrics.customDataMap[measurement][key] = value
-    }
-
-    def pipelineMetrics() {
-        def metrics = packagePipelineUtils.pipelineMetrics()
-        setMetrics(metrics)
-
-    }
-
-    def setMetrics(def metrics) {
-        String measurement = metrics[0]
-        cimetrics.customDataMapTags[measurement] = metrics[1]
-        cimetrics.customDataMap[measurement] = metrics[2]
-
-    }
-
     def checkBranch() {
         return packagePipelineUtils.checkBranch()
     }
