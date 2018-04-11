@@ -363,22 +363,27 @@ podTemplate(name: podName,
                                 env.messageStage = 'package.test.functional.complete'
 
                                 // Run functional tests
-                                pipelineUtils.executeInContainer(currentStage, "singlehost-test", "/tmp/package-test.sh")
+                                try {
+                                    pipelineUtils.executeInContainer(currentStage, "singlehost-test", "/tmp/package-test.sh")
+                                } catch(e) {
+                                    // Report the exception
+                                    echo "Error: Exception from " + currentStage + ":"
+                                    echo e.getMessage()
+                                } finally {
+                                    // parse the package tests log
+                                    def logFile = "${WORKSPACE}/${currentStage}/logs/test.log"
+                                    def testResults = pipelineUtils.parseTestLog(logFile)
+                                    buildResult = buildResult ?: pipelineUtils.checkTestResults(testResults)
+
+                                    // send in the test results
+                                    ciMetrics.setMetricTags(env.fed_repo, testResults)
+                                }
 
                                 // Set our message topic, properties, and content
                                 messageFields = packagepipelineUtils.setMessageFields("package.test.functional.complete")
 
                                 // Send message org.centos.prod.ci.pipeline.allpackages.package.test.functional.complete on fedmsg
                                 pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
-
-                                // parse the package tests log
-                                def logFile = "${WORKSPACE}/${currentStage}/logs/test.log"
-                                def testResults = pipelineUtils.parseTestLog(logFile)
-                                buildResult = buildResult ?: pipelineUtils.checkTestResults(testResults)
-
-                                // send in the test results
-                                ciMetrics.setMetricTags(env.fed_repo, testResults)
-
 
                             }
                         }
