@@ -379,6 +379,8 @@ podTemplate(name: podName,
                                     ciMetrics.setMetricTags(env.fed_repo, testResults)
                                 }
 
+                                currentBuild.result = buildResult
+
                                 // Set our message topic, properties, and content
                                 messageFields = packagepipelineUtils.setMessageFields("package.test.functional.complete")
 
