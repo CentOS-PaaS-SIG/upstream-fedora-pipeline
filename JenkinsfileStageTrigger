@@ -45,6 +45,7 @@ libraries.each { name, repo ->
     library identifier: "${name}@${repo[0]}",
             retriever: modernSCM([$class: 'GitSCMSource',
                                   remote: repo[1]])
+}
 
 library identifier: "ci-pipeline@${env.ghprbActualCommit}",
         retriever: modernSCM([$class: 'GitSCMSource',
