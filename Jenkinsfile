@@ -366,20 +366,15 @@ podTemplate(name: podName,
                                 try {
                                     pipelineUtils.executeInContainer(currentStage, "singlehost-test", "/tmp/package-test.sh")
                                 } catch(e) {
-                                    // Report the exception
-                                    echo "Error: Exception from " + currentStage + ":"
-                                    echo e.getMessage()
-                                } finally {
-                                    // parse the package tests log
-                                    def logFile = "${WORKSPACE}/${currentStage}/logs/test.log"
-                                    def testResults = pipelineUtils.parseTestLog(logFile)
-                                    buildResult = buildResult ?: pipelineUtils.checkTestResults(testResults)
+                                    if (pipelineUtils.fileExists("${WORKSPACE}/${currentStage}/logs/test.log")) {
+                                        buildResult = 'UNSTABLE'
+                                        // set currentBuild.result to update the message status
+                                        currentBuild.result = buildResult
 
-                                    // send in the test results
-                                    ciMetrics.setMetricTags(env.fed_repo, testResults)
+                                    } else {
+                                        throw e
+                                    }
                                 }
-
-                                currentBuild.result = buildResult
 
                                 // Set our message topic, properties, and content
                                 messageFields = packagepipelineUtils.setMessageFields("package.test.functional.complete")
