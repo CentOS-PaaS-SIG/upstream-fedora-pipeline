@@ -19,19 +19,17 @@ node() {
 
     timeout(time: 30, unit: 'MINUTES') {
 
-        packagepipelineUtils.ciPipeline {
-            try {
-                stepName = 'Garbage Collection'
-                stage(stepName) {
-                    // Garbage collect all qcow2 images over a day old
-                    sh 'find /var/lib/jenkins/jobs/upstream-fedora-*-pipeline/ -mtime +1 -name "*.qcow2" -exec echo rm -f {} \\;'
-                    currentBuild.result = 'SUCCESS'
-                }
-            } catch (Throwable err) {
-                            currentBuild.description = "Find Failure"
-                            error "Find and deletion of old qcow2 images failed!"
-                            currentBuild.result = 'FAILURE'
+        try {
+            stepName = 'Garbage Collection'
+            stage(stepName) {
+                // Garbage collect all qcow2 images over a day old
+                sh 'find /var/lib/jenkins/jobs/upstream-fedora-*-pipeline/ -mtime +1 -name "*.qcow2" -exec echo rm -f {} \\;'
+                currentBuild.result = 'SUCCESS'
             }
+        } catch (Throwable err) {
+                        currentBuild.description = "Find Failure"
+                        error "Find and deletion of old qcow2 images failed!"
+                        currentBuild.result = 'FAILURE'
         }
     }
 }
