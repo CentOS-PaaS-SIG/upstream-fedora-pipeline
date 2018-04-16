@@ -67,6 +67,8 @@ node() {
                         pipelineUtils.updateBuildDisplayAndDescription()
                         validMessage = packagepipelineUtils.checkBranch()
                         testsExist = pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')
+                        // Check if CI_MESSAGE is for a commit to a user's fork
+                        isForFork = pipelineUtils.checkIfFork(env.CI_MESSAGE)
                         // create audit message file
                         pipelineUtils.initializeAuditFile(msgAuditFile)
 
@@ -74,7 +76,7 @@ node() {
 
                 }
 
-                if (validMessage && testsExist) {
+                if (validMessage && testsExist && !isForFork) {
 
                     messageFields = packagepipelineUtils.setMessageFields('package.queued')
                     pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
