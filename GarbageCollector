@@ -1,5 +1,9 @@
 #!groovy
 
+library identifier: "upstream-fedora-pipeline@master",
+        retriever: modernSCM([$class: 'GitSCMSource',
+                              remote: "https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline"])
+
 //noinspection GroovyAssignabilityCheck
 properties(
         [
