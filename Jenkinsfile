@@ -61,7 +61,7 @@ library identifier: "fedora-upstream-pipeline@${env.ghprbActualCommit}",
 properties(
         [
                 buildDiscarder(logRotator(artifactDaysToKeepStr: '30', artifactNumToKeepStr: '100', daysToKeepStr: '90', numToKeepStr: '100')),
-                [$class: 'JobPropertyImpl', throttle: [count: 15, durationName: 'hour', userBoost: false]],
+                [$class: 'JobPropertyImpl', throttle: [count: 150, durationName: 'hour', userBoost: false]],
                 parameters(
                         [
                                 string(defaultValue: '', description: 'Give an integer only task id to use those artifacts and bypass the rpm build stage (example 123456)', name: 'PROVIDED_KOJI_TASKID'),
