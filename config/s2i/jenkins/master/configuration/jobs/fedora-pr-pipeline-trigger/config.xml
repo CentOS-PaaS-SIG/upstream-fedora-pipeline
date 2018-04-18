@@ -41,11 +41,11 @@
          <triggers>
             <com.redhat.jenkins.plugins.ci.CIBuildTrigger plugin="jms-messaging@1.0.36">
                <spec />
-               <selector>topic = "org.fedoraproject.prod.git.receive"</selector>
+               <selector>topic = "org.fedoraproject.prod.pagure.pull-request.new"</selector>
                <providerName>fedora-fedmsg</providerName>
                <checks>
                   <com.redhat.jenkins.plugins.ci.messaging.checks.MsgCheck>
-                     <field>$.commit.namespace</field>
+                     <field>$.pullrequest.project.namespace</field>
                      <expectedValue>rpms</expectedValue>
                   </com.redhat.jenkins.plugins.ci.messaging.checks.MsgCheck>
                </checks>
@@ -80,7 +80,7 @@
          <submoduleCfg class="list" />
          <extensions />
       </scm>
-      <scriptPath>JenkinsfileTrigger</scriptPath>
+      <scriptPath>JenkinsfilePRTrigger</scriptPath>
       <lightweight>false</lightweight>
    </definition>
    <triggers />
