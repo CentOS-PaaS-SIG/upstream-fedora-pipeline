@@ -75,7 +75,13 @@ pipeline {
                                 string(name: 'ghprbPullAuthorLogin', value: "${env.ghprbPullAuthorLogin}"),
                                 string(name: 'sha1', value: "${env.sha1}"),
                                 string(name: 'ghprbPullId', value: "${env.ghprbPullId}"),
-                                string(name: 'GENERATE_IMAGE', value: "true")
+                                string(name: 'GENERATE_IMAGE', value: "true"),
+                                string(name: 'SLAVE_TAG', value: 'stable'),
+                                string(name: 'RPMBUILD_TAG', value: 'stable'),
+                                string(name: 'INQUIRER_TAG', value: 'stable'),
+                                string(name: 'CLOUD_IMAGE_COMPOSE_TAG', value: 'stable'),
+                                string(name: 'OSTREE_BOOT_IMAGE_TAG', value: 'stable'),
+                                string(name: 'SINGLEHOST_TEST_TAG', value: 'stable')
                         ],
                         wait: true
             }
