@@ -10,6 +10,9 @@
 openshiftProject = "continuous-infra"
 DOCKER_REPO_URL = '172.30.254.79:5000'
 
+// git commit default
+env.ghprbActualCommit = env.ghprbActualCommit ?: 'master'
+
 // Fedora Fedmsg Message Provider for stage
 MSG_PROVIDER = "fedora-fedmsg-stage"
 
