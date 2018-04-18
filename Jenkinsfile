@@ -180,10 +180,10 @@ podTemplate(name: podName,
 
                             if (!env.PROVIDED_KOJI_TASKID?.trim()) {
                                 // Parse the CI_MESSAGE and inject it as env vars
-                                pipelineUtils.injectFedmsgVars(env.CI_MESSAGE)
+                                pipelineUtils.injectPRVars(env.CI_MESSAGE)
 
                                 // Decorate our build
-                                String buildName = "${env.fed_rev.substring(0,6)}:${env.fed_repo}:${env.fed_branch}"
+                                String buildName = "PR-${env.fed_id}:${env.fed_repo}:${env.fed_branch}"
                                 pipelineUtils.setCustomBuildNameAndDescription(buildName, buildName)
                             }
                             packagepipelineUtils.setDefaultEnvVars()
@@ -230,7 +230,7 @@ podTemplate(name: podName,
                                 packagepipelineUtils.setDistBranch()
 
                                 // Build rpms
-                                pipelineUtils.executeInContainer(currentStage, "rpmbuild", "/tmp/rpmbuild-local.sh")
+                                pipelineUtils.executeInContainer(currentStage, "rpmbuild", "/tmp/koji_build_pr.sh")
                             }
                           
                              // Inject variables
