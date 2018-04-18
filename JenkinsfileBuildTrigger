@@ -5,8 +5,6 @@ def libraries = ['ci-pipeline':              ['master', 'https://github.com/Cent
                  'upstream-fedora-pipeline': ['kojiBuilds', 'https://github.com/joejstuart/upstream-fedora-pipeline.git']]
 
 libraries.each { name, repo ->
-    print "name: ${name}"
-    print "repo: ${repo[0]}"
     library identifier: "${name}@${repo[0]}",
             retriever: modernSCM([$class: 'GitSCMSource',
                                   remote: repo[1]])
@@ -27,14 +25,6 @@ properties(
                 )
         ]
 )
-
-library identifier: "${env.gitlabSourceRepoName}@${env.gitlabMergeRequestLastCommit}",
-        retriever: modernSCM([$class: 'GitSCMSource',
-                              remote: "${env.gitlabSourceRepoHttpUrl}",
-                              traits: [[$class: 'jenkins.plugins.git.traits.BranchDiscoveryTrait'],
-                                       [$class: 'RefSpecsSCMSourceTrait',
-                                        templates: [[value: '+refs/heads/*:refs/remotes/@{remote}/*'],
-                                                    [value: '+refs/pull/*:refs/remotes/origin/pr/*']]]]])
 
 def TRIGGER_RETRY_COUNT = 3
 def validMessage = false
