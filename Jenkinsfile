@@ -124,20 +124,20 @@ podTemplate(name: podName,
                         command: 'cat',
                         privileged: true,
                         workingDir: '/workDir'),
+                // This adds the ostree boot image container to the pod.
+                //containerTemplate(name: 'ostree-boot-image',
+                //        alwaysPullImage: true,
+                //        image: DOCKER_REPO_URL + '/' + OPENSHIFT_NAMESPACE + '/ostree-boot-image:' + OSTREE_BOOT_IMAGE_TAG,
+                //        ttyEnabled: true,
+                //        command: '/usr/sbin/init',
+                //        privileged: true,
+                //        workingDir: '/workDir'),
                 // This adds the singlehost test container to the pod.
                 containerTemplate(name: 'singlehost-test',
                         alwaysPullImage: true,
                         image: DOCKER_REPO_URL + '/' + OPENSHIFT_NAMESPACE + '/singlehost-test:' + SINGLEHOST_TEST_TAG,
                         ttyEnabled: true,
                         command: 'cat',
-                        privileged: true,
-                        workingDir: '/workDir'),
-                // This adds the ostree boot image container to the pod.
-                containerTemplate(name: 'ostree-boot-image',
-                        alwaysPullImage: true,
-                        image: DOCKER_REPO_URL + '/' + OPENSHIFT_NAMESPACE + '/ostree-boot-image:' + OSTREE_BOOT_IMAGE_TAG,
-                        ttyEnabled: true,
-                        command: '/usr/sbin/init',
                         privileged: true,
                         workingDir: '/workDir')
         ],
@@ -180,10 +180,10 @@ podTemplate(name: podName,
 
                             if (!env.PROVIDED_KOJI_TASKID?.trim()) {
                                 // Parse the CI_MESSAGE and inject it as env vars
-                                pipelineUtils.injectFedmsgVars(env.CI_MESSAGE)
+                                pipelineUtils.injectPRVars(env.CI_MESSAGE)
 
                                 // Decorate our build
-                                String buildName = "${env.fed_rev.substring(0,6)}:${env.fed_repo}:${env.fed_branch}"
+                                String buildName = "PR-${env.fed_id}:${env.fed_repo}:${env.fed_branch}"
                                 pipelineUtils.setCustomBuildNameAndDescription(buildName, buildName)
                             }
                             packagepipelineUtils.setDefaultEnvVars()

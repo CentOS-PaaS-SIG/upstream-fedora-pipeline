@@ -290,6 +290,10 @@ def timedMeasurement() {
     return env.JOB_NAME
 }
 
+/**
+ * Function to check if fed_branch is master or fXX, XX > 19
+ * @return bool
+ */
 def checkBranch() {
     def result = false
 
