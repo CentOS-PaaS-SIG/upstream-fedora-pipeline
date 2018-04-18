@@ -3,6 +3,8 @@ openshiftProject = "continuous-infra"
 DOCKER_REPO_URL = '172.30.254.79:5000'
 STABLE_LABEL = "stable"
 
+// git commit default
+env.ghprbActualCommit = env.ghprbActualCommit ?: 'master'
 
 library identifier: "ci-pipeline@master",
         retriever: modernSCM([$class: 'GitSCMSource',
@@ -27,10 +29,10 @@ pipeline {
         }
     }
     stages {
-        stage("Merge PR and Rebuild Images") {
+        stage("Merge PR") {
             steps {
                 // lock to make sure only one is allowed at anytime
-                lock('merge-and-image-rebuild-lock') {
+                lock('merge-lock') {
                     script {
                         // need this for ghprb plugin since it is really
                         // a post build step and it assumes the build is complete.
@@ -39,16 +41,6 @@ pipeline {
 
                     step([$class: 'GhprbPullRequestMerge', allowMergeWithoutTriggerPhrase: false, deleteOnMerge: false, disallowOwnCode: false, failOnNonMerge: false, mergeComment: ' ', onlyAdminsMerge: false])
 
-                    script {
-                        openshift.withCluster() {
-                            openshift.withProject(openshiftProject) {
-                                imageOperations.each {
-                                    pipelineUtils.buildStableImage(openshiftProject, it)
-                                }
-                            }
-                        }
-                        pipelineUtils.sendPRCommentforTags(imageOperations)
-                    }
                 }
             }
         }
