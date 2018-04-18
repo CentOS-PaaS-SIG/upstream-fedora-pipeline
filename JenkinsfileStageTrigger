@@ -30,16 +30,12 @@ def libraries = ['cico-pipeline'           : ['master', 'https://github.com/Cent
 libraries.each { name, repo ->
     library identifier: "${name}@${repo[0]}",
             retriever: modernSCM([$class: 'GitSCMSource',
-                                  remote: repo[1]])
+                                  remote: repo[1],
+                                  traits: [[$class: 'jenkins.plugins.git.traits.BranchDiscoveryTrait'],
+                                           [$class: 'RefSpecsSCMSourceTrait',
+                                            templates: [[value: '+refs/heads/*:refs/remotes/@{remote}/*'],
+                                                        [value: '+refs/pull/*:refs/remotes/origin/pr/*']]]]])
 }
-
-library identifier: "ci-pipeline@${env.ghprbActualCommit}",
-        retriever: modernSCM([$class: 'GitSCMSource',
-                              remote: "https://github.com/${env.ghprbGhRepository}",
-                              traits: [[$class: 'jenkins.plugins.git.traits.BranchDiscoveryTrait'],
-                                       [$class: 'RefSpecsSCMSourceTrait',
-                                        templates: [[value: '+refs/heads/*:refs/remotes/@{remote}/*'],
-                                                    [value: '+refs/pull/*:refs/remotes/origin/pr/*']]]]])
 
 pipeline {
     agent {
@@ -78,7 +74,6 @@ pipeline {
                                 string(name: 'ghprbActualCommit', value: "${env.ghprbActualCommit}"),
                                 string(name: 'ghprbGhRepository', value: "${env.ghprbGhRepository}"),
                                 string(name: 'ghprbPullAuthorLogin', value: "${env.ghprbPullAuthorLogin}"),
-                                string(name: 'TARGET_BRANCH', value: "f27"),
                                 string(name: 'sha1', value: "${env.sha1}"),
                                 string(name: 'ghprbPullId', value: "${env.ghprbPullId}"),
                                 string(name: 'GENERATE_IMAGE', value: "true")
