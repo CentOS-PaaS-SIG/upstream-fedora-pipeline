@@ -1,5 +1,5 @@
 /**
- * CI Stage Pipeline Trigger
+ * Upstream Fedora Stage Pipeline Trigger
  *
  * This is a declarative pipeline for the CI stage pipeline
  * that includes the building of images based on PRs
@@ -13,20 +13,6 @@ DOCKER_REPO_URL = '172.30.254.79:5000'
 // Defaults for SCM operations
 env.ghprbGhRepository = env.ghprbGhRepository ?: 'CentOS-PaaS-SIG/upstream-fedora-pipeline'
 env.ghprbActualCommit = env.ghprbActualCommit ?: 'master'
-
-// If this PR does not include an image change, then use this tag
-STABLE_LABEL = "stable"
-tagMap = [:]
-
-// Initialize
-tagMap['jenkins-continuous-infra-slave'] = STABLE_LABEL
-tagMap['rpmbuild'] = STABLE_LABEL
-tagMap['rsync'] = STABLE_LABEL
-tagMap['ostree-compose'] = STABLE_LABEL
-tagMap['ostree-image-compose'] = STABLE_LABEL
-tagMap['singlehost-test'] = STABLE_LABEL
-tagMap['ostree-boot-image'] = STABLE_LABEL
-tagMap['linchpin-libvirt'] = STABLE_LABEL
 
 // Fedora Fedmsg Message Provider for stage
 MSG_PROVIDER = "fedora-fedmsg-stage"
@@ -83,110 +69,6 @@ pipeline {
                 }
             }
         }
-        stage("Setup Container Templates") {
-            steps {
-                script {
-                    pipelineUtils.setupContainerTemplates(openshiftProject)
-                }
-            }
-        }
-        stage("jenkins-continuous-infra-slave image build") {
-            when {
-                // Only build if we have related files in changeset
-                changeset "config/s2i/jenkins/slave/**"
-            }
-            steps {
-                script {
-                    tagMap['jenkins-continuous-infra-slave'] = pipelineUtils.buildImage(openshiftProject, "jenkins-continuous-infra-slave")
-                }
-            }
-        }
-        stage("rpmbuild image build") {
-            when {
-                // Only build if we have related files in changeset
-                changeset "config/Dockerfiles/rpmbuild/**"
-            }
-            steps {
-                script {
-                    tagMap['rpmbuild'] = pipelineUtils.buildImage(openshiftProject, "rpmbuild")
-                }
-            }
-        }
-        stage("rsync image build") {
-            when {
-                // Only build if we have related files in changeset
-                changeset "config/Dockerfiles/rsync/**"
-            }
-            steps {
-                script {
-                    tagMap['rsync'] = pipelineUtils.buildImage(openshiftProject, "rsync")
-                }
-            }
-        }
-        stage("ostree-compose image build") {
-            when {
-                // Only build if we have related files in changeset
-                changeset "config/Dockerfiles/ostree_compose/**"
-            }
-            steps {
-                script {
-                    tagMap['ostree-compose'] = pipelineUtils.buildImage(openshiftProject, "ostree-compose")
-                }
-            }
-        }
-        stage("ostree-image-compose image build") {
-            when {
-                // Only build if we have related files in changeset
-                changeset "config/Dockerfiles/ostree-image-compose/**"
-            }
-            steps {
-                script {
-                    tagMap['ostree-image-compose'] = pipelineUtils.buildImage(openshiftProject, "ostree-image-compose")
-                }
-            }
-        }
-        stage("singlehost-test image build") {
-            when {
-                // Only build if we have related files in changeset
-                changeset "config/Dockerfiles/singlehost-test/**"
-            }
-            steps {
-                script {
-                    tagMap['singlehost-test'] = pipelineUtils.buildImage(openshiftProject, "singlehost-test")
-                }
-            }
-        }
-        stage("ostree-boot-image image build") {
-            when {
-                // Only build if we have related files in changeset
-                changeset "config/Dockerfiles/ostree-boot-image/**"
-            }
-            steps {
-                script {
-                    tagMap['ostree-boot-image'] = pipelineUtils.buildImage(openshiftProject, "ostree-boot-image")
-                }
-            }
-        }
-        stage("linchpin-libvirt image build") {
-            when {
-                // Only build if we have related files in changeset
-                changeset "config/Dockerfiles/linchpin-libvirt/**"
-            }
-            steps {
-                script {
-                    tagMap['linchpin-libvirt'] = pipelineUtils.buildImage(openshiftProject, "linchpin-libvirt")
-                }
-            }
-        }
-        stage("Image Tag Report") {
-            steps {
-                script {
-                    // Use tags derived from above image builds
-                    //
-                    pipelineUtils.printLabelMap(tagMap)
-                }
-            }
-        }
         stage("run stage job") {
             steps {
                 sleep 30
@@ -199,15 +81,7 @@ pipeline {
                                 string(name: 'TARGET_BRANCH', value: "f27"),
                                 string(name: 'sha1', value: "${env.sha1}"),
                                 string(name: 'ghprbPullId', value: "${env.ghprbPullId}"),
-                                string(name: 'GENERATE_IMAGE', value: "true"),
-                                string(name: 'SLAVE_TAG', value: tagMap['jenkins-continuous-infra-slave']),
-                                string(name: 'RPMBUILD_TAG', value: tagMap['rpmbuild']),
-                                string(name: 'RSYNC_TAG', value: tagMap['rsync']),
-                                string(name: 'OSTREE_COMPOSE_TAG', value: tagMap['ostree-compose']),
-                                string(name: 'OSTREE_IMAGE_COMPOSE_TAG', value: tagMap['ostree-image-compose']),
-                                string(name: 'SINGLEHOST_TEST_TAG', value: tagMap['singlehost-test']),
-                                string(name: 'OSTREE_BOOT_IMAGE_TAG', value: tagMap['ostree-boot-image']),
-                                string(name: 'LINCHPIN_LIBVIRT_TAG', value: tagMap['linchpin-libvirt'])
+                                string(name: 'GENERATE_IMAGE', value: "true")
                         ],
                         wait: true
             }
