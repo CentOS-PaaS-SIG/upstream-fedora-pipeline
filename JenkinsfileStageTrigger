@@ -63,7 +63,7 @@ pipeline {
         stage("f27 run stage job") {
             steps {
                 sleep 30
-                build job: 'upstream-fedora-stage-pipeline-f27',
+                build job: 'fedora-f27-stage-pr-pipeline',
                         parameters: [
                                 string(name: 'CI_MESSAGE', value: CANNED_CI_MESSAGES['f27']),
                                 string(name: 'ghprbActualCommit', value: "${env.ghprbActualCommit}"),
