@@ -35,7 +35,7 @@ def artifactType = 'rhel-build-pipeline'
 node() {
 
     ciMetrics.prefix = 'upstream-fedora-pipeline'
-    downstreamUtils.cimetrics = ciMetrics
+    packagepipelineUtils.cimetrics = ciMetrics
 
     try {
         downstreamUtils.ciPipeline {
@@ -47,7 +47,6 @@ node() {
                     print "CI_MESSAGE"
                     print CI_MESSAGE
                     pipelineUtils.flattenJSON(env.CI_MESSAGE)
-                    //downstreamUtils.buildRepoName(env.CI_MESSAGE)
                     pipelineUtils.updateBuildDisplayAndDescription()
 
                 }
