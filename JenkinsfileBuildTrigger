@@ -1,0 +1,93 @@
+#!groovy
+
+
+def libraries = ['ci-pipeline':              ['master', 'https://github.com/CentOS-PaaS-SIG/ci-pipeline.git'],
+                 'upstream-fedora-pipeline': ['master', 'https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline.git']]
+
+libraries.each { name, repo ->
+    library identifier: "${name}@${repo[0]}",
+            retriever: modernSCM([$class: 'GitSCMSource',
+                                  remote: repo[1]])
+
+}
+
+properties(
+        [
+                buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '500', daysToKeepStr: '', numToKeepStr: '500')),
+                parameters(
+                        [
+                                string(description: 'Red Hat UMB Msg', defaultValue: '{}', name: 'CI_MESSAGE')
+                        ]
+                ),
+                pipelineTriggers(
+                        [
+                                [$class: 'CIBuildTrigger', checks: [[new: 1]], providerName: 'fedora-fedmsg', selector: 'topic = "org.fedoraproject.prod.buildsys.build.state.change"']]
+                )
+        ]
+)
+
+library identifier: "${env.gitlabSourceRepoName}@${env.gitlabMergeRequestLastCommit}",
+        retriever: modernSCM([$class: 'GitSCMSource',
+                              remote: "${env.gitlabSourceRepoHttpUrl}",
+                              traits: [[$class: 'jenkins.plugins.git.traits.BranchDiscoveryTrait'],
+                                       [$class: 'RefSpecsSCMSourceTrait',
+                                        templates: [[value: '+refs/heads/*:refs/remotes/@{remote}/*'],
+                                                    [value: '+refs/pull/*:refs/remotes/origin/pr/*']]]]])
+
+def TRIGGER_RETRY_COUNT = 3
+def validMessage = false
+def stepName = null
+def release = "rhel-8.0-candidate"
+def artifactType = 'rhel-build-pipeline'
+
+node() {
+
+    ciMetrics.prefix = 'upstream-fedora-pipeline'
+    downstreamUtils.cimetrics = ciMetrics
+
+    try {
+        downstreamUtils.ciPipeline {
+            stepName = 'upstream-fedora-pipeline-build-trigger'
+            stage(stepName) {
+
+                packagepipelineUtils.timedPipelineStep(stepName: stepName, debug: true) {
+
+                    print "CI_MESSAGE"
+                    print CI_MESSAGE
+                    pipelineUtils.flattenJSON(env.CI_MESSAGE)
+                    //downstreamUtils.buildRepoName(env.CI_MESSAGE)
+                    pipelineUtils.updateBuildDisplayAndDescription()
+
+                }
+
+            }
+
+            if (validMessage && testsExist) {
+                stepName = 'schedule build'
+                stage(stepName) {
+
+                    retry(TRIGGER_RETRY_COUNT) {
+                        packagepipelineUtils.timedPipelineStep(stepName: stepName, debug: true) {
+
+                            build job: "downstream-rhel8-build-pipeline",
+                                    parameters: [string(name: 'PROVIDED_KOJI_TASKID', value: env.contra+_info_id),
+                                                 string(name: 'ARTIFACT_TYPE', value: artifactType),
+                                                 string(name: 'MSG_PROVIDER', value: 'Red Hat UMB')],
+                                    wait: false
+                        }
+                    }
+                }
+
+            } else {
+                echo "CI_MESSAGE was invalid. Skipping..."
+            }
+
+            currentBuild.result = 'SUCCESS'
+
+        }
+    } catch(Throwable err) {
+        currentBuild.result = 'FAILURE'
+        throw err
+
+    }
+}
