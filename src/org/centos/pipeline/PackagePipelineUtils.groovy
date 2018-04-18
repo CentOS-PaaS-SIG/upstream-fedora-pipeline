@@ -254,6 +254,11 @@ def watchForMessages(String msg_provider, String message) {
 
 }
 
+/**
+ * Function to wrap a pipeline
+ * @param body
+ * @return
+ */
 def ciPipeline(Closure body) {
     ansiColor('xterm') {
         timestamps {
@@ -264,6 +269,12 @@ def ciPipeline(Closure body) {
     }
 }
 
+/**
+ * Wrap a pipeline step with try/catch and debugging information
+ * @param config
+ * @param body
+ * @return
+ */
 def handlePipelineStep(Map config, Closure body) {
     try {
 
@@ -286,6 +297,10 @@ def handlePipelineStep(Map config, Closure body) {
     }
 }
 
+/**
+ * Influxdb measurement for a step
+ * @return
+ */
 def timedMeasurement() {
     return env.JOB_NAME
 }
@@ -323,4 +338,8 @@ def pipelineMetrics() {
     tags['build_result'] = currentBuild.result
 
     return [measurement, tags, fields]
+}
+
+def checkMessageStatus() {
+    return env.fed_msg_new == 1
 }
