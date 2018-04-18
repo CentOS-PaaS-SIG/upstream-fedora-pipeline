@@ -321,25 +321,3 @@ def checkBranch() {
     return result
 }
 
-def packageMetrics() {
-    def tags = [:]
-    def fields = [:]
-    def measurement = env.fed_repo
-    tags['build_result'] = currentBuild.result
-    fields['build_time'] = currentBuild.getDuration().toString()
-
-    return [measurement, tags, fields]
-}
-
-def pipelineMetrics() {
-    def tags = [:]
-    def fields = [:]
-    def measurement = 'pipeline'
-    tags['build_result'] = currentBuild.result
-
-    return [measurement, tags, fields]
-}
-
-def checkMessageStatus() {
-    return env.fed_msg_new == 1
-}
