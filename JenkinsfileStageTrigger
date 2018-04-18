@@ -2,7 +2,6 @@
  * Upstream Fedora Stage Pipeline Trigger
  *
  * This is a declarative pipeline for the upstream fedora stage pipeline trigger
- * that includes the building of images based on PRs
  *
  */
 
@@ -72,8 +71,6 @@ pipeline {
                                 string(name: 'ghprbPullAuthorLogin', value: "${env.ghprbPullAuthorLogin}"),
                                 string(name: 'sha1', value: "${env.sha1}"),
                                 string(name: 'ghprbPullId', value: "${env.ghprbPullId}"),
-                                string(name: 'TARGET_BRANCH', value: 'f27'),
-                                string(name: 'GENERATE_IMAGE', value: "true"),
                                 string(name: 'SLAVE_TAG', value: 'stable'),
                                 string(name: 'RPMBUILD_TAG', value: 'stable'),
                                 string(name: 'INQUIRER_TAG', value: 'stable'),
