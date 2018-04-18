@@ -1,7 +1,7 @@
 /**
  * Upstream Fedora Stage Pipeline Trigger
  *
- * This is a declarative pipeline for the CI stage pipeline
+ * This is a declarative pipeline for the upstream fedora stage pipeline trigger
  * that includes the building of images based on PRs
  *
  */
@@ -29,11 +29,7 @@ def libraries = ['cico-pipeline'           : ['master', 'https://github.com/Cent
 libraries.each { name, repo ->
     library identifier: "${name}@${repo[0]}",
             retriever: modernSCM([$class: 'GitSCMSource',
-                                  remote: repo[1],
-                                  traits: [[$class: 'jenkins.plugins.git.traits.BranchDiscoveryTrait'],
-                                           [$class: 'RefSpecsSCMSourceTrait',
-                                            templates: [[value: '+refs/heads/*:refs/remotes/@{remote}/*'],
-                                                        [value: '+refs/pull/*:refs/remotes/origin/pr/*']]]]])
+                                  remote: repo[1]])
 }
 
 pipeline {

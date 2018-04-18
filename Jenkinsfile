@@ -109,6 +109,7 @@ podTemplate(name: podName,
                         privileged: true,
                         workingDir: '/workDir'),
                 // This adds the inquirer container to the pod.
+                /*
                 containerTemplate(name: 'inquirer',
                         alwaysPullImage: true,
                         image: DOCKER_REPO_URL + '/' + OPENSHIFT_NAMESPACE + '/inquirer:' + RPMBUILD_TAG,
@@ -116,6 +117,7 @@ podTemplate(name: podName,
                         command: 'cat',
                         privileged: true,
                         workingDir: '/workDir'),
+                 */
                 // This adds the cloud-image-compose test container to the pod.
                 containerTemplate(name: 'cloud-image-compose',
                         alwaysPullImage: true,
@@ -131,8 +133,9 @@ podTemplate(name: podName,
                         ttyEnabled: true,
                         command: 'cat',
                         privileged: true,
-                        workingDir: '/workDir'),
+                        workingDir: '/workDir')
                 // This adds the ostree boot image container to the pod.
+                /*
                 containerTemplate(name: 'ostree-boot-image',
                         alwaysPullImage: true,
                         image: DOCKER_REPO_URL + '/' + OPENSHIFT_NAMESPACE + '/ostree-boot-image:' + OSTREE_BOOT_IMAGE_TAG,
@@ -140,6 +143,7 @@ podTemplate(name: podName,
                         command: '/usr/sbin/init',
                         privileged: true,
                         workingDir: '/workDir')
+                */
         ],
         volumes: [emptyDirVolume(memory: false, mountPath: '/sys/class/net')])
 {
