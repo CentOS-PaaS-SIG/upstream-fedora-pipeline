@@ -98,7 +98,7 @@ class packagepipelineUtils implements Serializable {
      * @return None
      */
     def repoFromRequest() {
-        packagepipelineUtils.repoFromRequest()
+        packagePipelineUtils.repoFromRequest()
     }
 
     /**
@@ -106,7 +106,7 @@ class packagepipelineUtils implements Serializable {
      * @return null or fedora release
      */
     def checkRelease() {
-        return packagepipelineUtils.checkRelease()
+        return packagePipelineUtils.checkRelease()
     }
 
 
