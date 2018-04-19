@@ -16,7 +16,7 @@ properties(
                 buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '500', daysToKeepStr: '', numToKeepStr: '500')),
                 parameters(
                         [
-                                string(description: 'Red Hat UMB Msg', defaultValue: '{}', name: 'CI_MESSAGE')
+                                string(description: 'fedora-fedmsg', defaultValue: '{}', name: 'CI_MESSAGE')
                         ]
                 ),
                 pipelineTriggers(
@@ -55,15 +55,13 @@ node() {
 
             if (targetRelease) {
                 stepName = 'schedule build'
-                buildJob = "fedora-${targetRelease}-build-pipeline"
                 stage(stepName) {
 
                     retry(TRIGGER_RETRY_COUNT) {
                         packagepipelineUtils.timedPipelineStep(stepName: stepName, debug: true) {
 
-                            build job: buildJob,
-                                    parameters: [string(name: 'PROVIDED_KOJI_TASKID', value: env.fed_msg_task_id),
-                                                 string(name: 'ARTIFACT_TYPE', value: buildJob)],
+                            build job: "fedora-${targetRelease}-build-pipeline",
+                                    parameters: [string(name: 'PROVIDED_KOJI_TASKID', value: env.fed_msg_task_id)],
                                     wait: false
                         }
                     }
