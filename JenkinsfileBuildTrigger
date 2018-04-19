@@ -27,10 +27,9 @@ properties(
 )
 
 def TRIGGER_RETRY_COUNT = 3
-def validMessage = false
+def validMessage = null
 def stepName = null
-def release = "rhel-8.0-candidate"
-def artifactType = 'rhel-build-pipeline'
+def targetRelease = null
 
 node() {
 
@@ -57,14 +56,15 @@ node() {
 
             if (validMessage && targetRelease) {
                 stepName = 'schedule build'
+                buildJob = "fedora-${targetRelease}-build-pipeline"
                 stage(stepName) {
 
                     retry(TRIGGER_RETRY_COUNT) {
                         packagepipelineUtils.timedPipelineStep(stepName: stepName, debug: true) {
 
-                            build job: "fedora-${targetRelease}-build-pipeline",
+                            build job: buildJob,
                                     parameters: [string(name: 'PROVIDED_KOJI_TASKID', value: env.fed_msg_task_id),
-                                                 string(name: 'ARTIFACT_TYPE', value: artifactType),
+                                                 string(name: 'ARTIFACT_TYPE', value: buildJob),
                                                  string(name: 'MSG_PROVIDER', value: 'Red Hat UMB')],
                                     wait: false
                         }
