@@ -4,6 +4,8 @@ import jenkins.model.*;
 import hudson.markup.RawHtmlMarkupFormatter
 import hudson.model.*
 import hudson.security.*
+import com.redhat.jenkins.plugins.ci.*
+import com.redhat.jenkins.plugins.ci.messaging.*
 
 def logger = Logger.getLogger("")
 logger.info("Disabling CLI over remoting")
