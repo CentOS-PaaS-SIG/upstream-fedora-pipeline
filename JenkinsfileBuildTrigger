@@ -64,8 +64,7 @@ node() {
 
                             build job: buildJob,
                                     parameters: [string(name: 'PROVIDED_KOJI_TASKID', value: env.fed_msg_task_id),
-                                                 string(name: 'ARTIFACT_TYPE', value: buildJob),
-                                                 string(name: 'MSG_PROVIDER', value: 'Red Hat UMB')],
+                                                 string(name: 'ARTIFACT_TYPE', value: buildJob)],
                                     wait: false
                         }
                     }
