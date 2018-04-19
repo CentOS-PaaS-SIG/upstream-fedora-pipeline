@@ -233,7 +233,7 @@ parameters:
 - description: Git source URI for Jenkins S2I
   name: REPO_URL
   required: true
-  value: https://github.com/CentOS-PaaS-SIG/fedora-upstream-pipeline.git
+  value: https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline.git
 - description: Git branch/tag reference
   name: REPO_REF
   value: master
