@@ -321,3 +321,13 @@ def checkBranch() {
     return result
 }
 
+def repoFromRequest(def request) {
+    if (!env.fed_repo) {
+        try {
+            def pkgUrlTok = request[0].tokenize('/')
+            env.fed_repo = pkgUrlTok.tokenize('.')[0]
+        } catch(e) {
+            env.fed_repo = "pkg name unavailable"
+        }
+    }
+}

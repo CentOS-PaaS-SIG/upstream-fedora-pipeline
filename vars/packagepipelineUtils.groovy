@@ -93,5 +93,9 @@ class packagepipelineUtils implements Serializable {
         return packagePipelineUtils.checkBranch()
     }
 
+    def repoFromRequest(def request) {
+        packagepipelineUtils.repoFromRequest(request)
+    }
+
 
 }
