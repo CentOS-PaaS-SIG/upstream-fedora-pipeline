@@ -23,7 +23,7 @@ node() {
             stepName = 'Garbage Collection'
             stage(stepName) {
                 // Garbage collect all qcow2 images over a day old
-                sh 'find /var/lib/jenkins/jobs/upstream-fedora-*-pipeline/ -mtime +1 -name "*.qcow2" -exec echo rm -f {} \\;'
+                sh 'find /var/lib/jenkins/jobs/fedora-*-*-pipeline/ -mtime +1 -name "*.qcow2" -exec echo rm -f {} \\;'
                 currentBuild.result = 'SUCCESS'
             }
         } catch (Throwable err) {
