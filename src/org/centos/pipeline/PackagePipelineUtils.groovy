@@ -350,7 +350,7 @@ def checkRelease(String msgRelease) {
     if (release ==~ /fc[2-9][0-9]/) {
         targetRelease = release[2, 3]
     } else {
-        println "Invalid release"
+        println "Not validating release: ${release} at this time."
     }
 
    return targetRelease
