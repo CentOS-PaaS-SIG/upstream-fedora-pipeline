@@ -27,7 +27,6 @@ properties(
 )
 
 def TRIGGER_RETRY_COUNT = 3
-def validMessage = null
 def stepName = null
 def targetRelease = null
 
@@ -54,7 +53,7 @@ node() {
 
             }
 
-            if (validMessage && targetRelease) {
+            if (targetRelease) {
                 stepName = 'schedule build'
                 buildJob = "fedora-${targetRelease}-build-pipeline"
                 stage(stepName) {
