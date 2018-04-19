@@ -2,7 +2,7 @@
 
 
 def libraries = ['ci-pipeline':              ['master', 'https://github.com/CentOS-PaaS-SIG/ci-pipeline.git'],
-                 'upstream-fedora-pipeline': ['master', 'https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline.git']]
+                 'upstream-fedora-pipeline': ['kojiBuilds', 'https://github.com/joejstuart/upstream-fedora-pipeline.git']]
 
 libraries.each { name, repo ->
     library identifier: "${name}@${repo[0]}",
