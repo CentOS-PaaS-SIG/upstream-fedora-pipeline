@@ -324,13 +324,12 @@ def checkBranch() {
 /**
  * Parse the repo name from the request list.
  * Sets env.fed_repo
- * @param request
  * @return
  */
-def repoFromRequest(def request) {
+def repoFromRequest() {
     if (!env.fed_repo) {
         try {
-            def pkgUrlTok = request[0].tokenize('/')
+            def pkgUrlTok = env.fed_msg_request[0].tokenize('/')
             env.fed_repo = pkgUrlTok.last().tokenize('.')[0]
         } catch(e) {
             env.fed_repo = "pkg name unavailable"
@@ -340,18 +339,22 @@ def repoFromRequest(def request) {
 
 /**
  * Check the fedora version number. Must be fc[2-9][0-9]
- * @param msgRelease
  * @return null or fedora release
  */
-def checkRelease(String msgRelease) {
+def checkRelease() {
     def targetRelease = null
 
-    def release = msgRelease.tokenize('.').last()
-    if (release ==~ /fc[2-9][0-9]/) {
-        targetRelease = release[2, 3]
+    if (env.fed_msg_release) {
+        def release = env.fed_msg_release.tokenize('.').last()
+        if (release ==~ /fc[2-9][0-9]/) {
+            targetRelease = release[2, 3]
+        } else {
+            println "Not validating release: ${release} at this time."
+
+        }
     } else {
-        println "Not validating release: ${release} at this time."
+        println "This message does not contain a release variable"
     }
 
-   return targetRelease
+    return targetRelease
 }

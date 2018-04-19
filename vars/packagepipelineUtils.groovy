@@ -93,17 +93,20 @@ class packagepipelineUtils implements Serializable {
         return packagePipelineUtils.checkBranch()
     }
 
-    def repoFromRequest(def request) {
-        packagepipelineUtils.repoFromRequest(request)
+    /**
+     * Parse the repo out of the request
+     * @return None
+     */
+    def repoFromRequest() {
+        packagepipelineUtils.repoFromRequest()
     }
 
     /**
      * Check the fedora version number. Must be fc[2-9][0-9]
-     * @param msgRelease
      * @return null or fedora release
      */
-    def checkRelease(String msgRelease) {
-        return packagepipelineUtils.checkRelease(msgRelease)
+    def checkRelease() {
+        return packagepipelineUtils.checkRelease()
     }
 
 
