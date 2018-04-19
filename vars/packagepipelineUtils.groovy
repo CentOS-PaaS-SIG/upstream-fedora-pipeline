@@ -97,5 +97,14 @@ class packagepipelineUtils implements Serializable {
         packagepipelineUtils.repoFromRequest(request)
     }
 
+    /**
+     * Check the fedora version number. Must be fc[2-9][0-9]
+     * @param msgRelease
+     * @return null or fedora release
+     */
+    def checkRelease(String msgRelease) {
+        return packagepipelineUtils.checkRelease(msgRelease)
+    }
+
 
 }

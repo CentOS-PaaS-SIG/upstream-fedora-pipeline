@@ -2,7 +2,7 @@
 
 
 def libraries = ['ci-pipeline':              ['master', 'https://github.com/CentOS-PaaS-SIG/ci-pipeline.git'],
-                 'upstream-fedora-pipeline': ['kojiBuilds', 'https://github.com/joejstuart/upstream-fedora-pipeline.git']]
+                 'upstream-fedora-pipeline': ['master', 'https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline.git']]
 
 libraries.each { name, repo ->
     library identifier: "${name}@${repo[0]}",
@@ -49,19 +49,20 @@ node() {
                     pipelineUtils.flattenJSON(env.CI_MESSAGE)
                     pipelineUtils.repoFromRequest(env.msg_request)
                     pipelineUtils.updateBuildDisplayAndDescription()
+                    targetRelease = packagepipelineUtils.checkRelease(env.msg_release)
 
                 }
 
             }
 
-            if (validMessage && testsExist) {
+            if (validMessage && targetRelease) {
                 stepName = 'schedule build'
                 stage(stepName) {
 
                     retry(TRIGGER_RETRY_COUNT) {
                         packagepipelineUtils.timedPipelineStep(stepName: stepName, debug: true) {
 
-                            build job: "fedora-build-pipeline",
+                            build job: "fedora-${targetRelease}-build-pipeline",
                                     parameters: [string(name: 'PROVIDED_KOJI_TASKID', value: env.fed_msg_task_id),
                                                  string(name: 'ARTIFACT_TYPE', value: artifactType),
                                                  string(name: 'MSG_PROVIDER', value: 'Red Hat UMB')],

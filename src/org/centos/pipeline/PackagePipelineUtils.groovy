@@ -321,6 +321,12 @@ def checkBranch() {
     return result
 }
 
+/**
+ * Parse the repo name from the request list.
+ * Sets env.fed_repo
+ * @param request
+ * @return
+ */
 def repoFromRequest(def request) {
     if (!env.fed_repo) {
         try {
@@ -330,4 +336,22 @@ def repoFromRequest(def request) {
             env.fed_repo = "pkg name unavailable"
         }
     }
+}
+
+/**
+ * Check the fedora version number. Must be fc[2-9][0-9]
+ * @param msgRelease
+ * @return null or fedora release
+ */
+def checkRelease(String msgRelease) {
+    def targetRelease = null
+
+    def release = msgRelease.tokenize('.').last()
+    if (release ==~ /fc[2-9][0-9]/) {
+        targetRelease = release[2, 3]
+    } else {
+        println "Invalid release"
+    }
+
+   return targetRelease
 }
