@@ -1,0 +1,103 @@
+/**
+ * Upstream Fedora Stage Pipeline Trigger
+ *
+ * This is a declarative pipeline for the upstream fedora stage pipeline trigger
+ *
+ */
+
+// Openshift project
+openshiftProject = "continuous-infra"
+DOCKER_REPO_URL = '172.30.254.79:5000'
+
+// git commit default
+env.ghprbActualCommit = env.ghprbActualCommit ?: 'master'
+
+// Fedora Fedmsg Message Provider for stage
+MSG_PROVIDER = "fedora-fedmsg-stage"
+
+// IRC properties
+IRC_NICK = "contra-bot"
+IRC_CHANNEL = "#contra-ci-cd"
+
+// CI_MESSAGES known to build successfully
+CANNED_CI_MESSAGES = [:]
+CANNED_CI_MESSAGES['f27'] = '{"commit":{"username":"fgiudici","stats":{"files":{"tests/tests.yml":{"deletions":0,"additions":487,"lines":487}},"total":{"deletions":0,"files":1,"additions":487,"lines":487}},"name":"Vladimir Benes","rev":"c83e23686352561a08a37c7989881957361986ca","namespace":"rpms","agent":"fgiudici","summary":"Add CI tests using the Standard Test Interface","repo":"NetworkManager","branch":"f27","seen":false,"path":"/srv/git/repositories/rpms/NetworkManager.git","message":"Add CI tests using the Standard Test Interface\\n\\nAdding initial set of basic functionality tests for NetworkManager\\naccording to the Standard Test Interface [1]. See Quick Start Guide\\nfor brief introduction about how to run these tests [2].\\n\\n[1] https://fedoraproject.org/wiki/CI/Standard_Test_Interface\\n[2] https://fedoraproject.org/wiki/CI/Quick_Start_Guide\\n","email":"vbenes@redhat.com"},"topic":"org.fedoraproject.prod.git.receive"}'
+
+def libraries = ['cico-pipeline'           : ['master', 'https://github.com/CentOS/cico-pipeline-library.git'],
+                 'ci-pipeline'             : ['master', 'https://github.com/CentOS-PaaS-SIG/ci-pipeline.git']]
+
+libraries.each { name, repo ->
+    library identifier: "${name}@${repo[0]}",
+            retriever: modernSCM([$class: 'GitSCMSource',
+                                  remote: repo[1]])
+}
+
+pipeline {
+    agent {
+        kubernetes {
+            cloud 'openshift'
+            label 'stage-trigger-' + env.ghprbActualCommit
+            containerTemplate {
+                name 'jnlp'
+                args '${computer.jnlpmac} ${computer.name}'
+                image DOCKER_REPO_URL + '/' + openshiftProject + '/jenkins-continuous-infra-slave:' + STABLE_LABEL
+                ttyEnabled false
+                command ''
+            }
+        }
+    }
+    stages {
+        stage("Get Changelog") {
+            steps {
+                node('master') {
+                    script {
+                        echo "PR number is: ${env.ghprbPullId}"
+                        env.changeLogStr = pipelineUtils.getChangeLogFromCurrentBuild()
+                        echo env.changeLogStr
+                    }
+                    writeFile file: 'changelog.txt', text: env.changeLogStr
+                    archiveArtifacts allowEmptyArchive: true, artifacts: 'changelog.txt'
+                }
+            }
+        }
+        stage("f27 run stage job") {
+            steps {
+                sleep 30
+                build job: 'fedora-f27-stage-pr-pipeline',
+                        parameters: [
+                                string(name: 'CI_MESSAGE', value: CANNED_CI_MESSAGES['f27']),
+                                string(name: 'ghprbActualCommit', value: "${env.ghprbActualCommit}"),
+                                string(name: 'ghprbGhRepository', value: "${env.ghprbGhRepository}"),
+                                string(name: 'ghprbPullAuthorLogin', value: "${env.ghprbPullAuthorLogin}"),
+                                string(name: 'sha1', value: "${env.sha1}"),
+                                string(name: 'ghprbPullId', value: "${env.ghprbPullId}"),
+                                string(name: 'SLAVE_TAG', value: 'stable'),
+                                string(name: 'RPMBUILD_TAG', value: 'stable'),
+                                string(name: 'INQUIRER_TAG', value: 'stable'),
+                                string(name: 'CLOUD_IMAGE_COMPOSE_TAG', value: 'stable'),
+                                string(name: 'OSTREE_BOOT_IMAGE_TAG', value: 'stable'),
+                                string(name: 'SINGLEHOST_TEST_TAG', value: 'stable')
+                        ],
+                        wait: true
+            }
+        }
+    }
+    post {
+        always {
+            script {
+                String prMsg = ""
+                if (env.ghprbActualCommit != null && env.ghprbActualCommit != "master") {
+                    prMsg = "(PR #${env.ghprbPullId} ${env.ghprbPullAuthorLogin})"
+                }
+                def message = "${JOB_NAME} ${prMsg} build #${BUILD_NUMBER}: ${currentBuild.currentResult}: ${BUILD_URL}"
+                pipelineUtils.sendIRCNotification("${IRC_NICK}-${UUID.randomUUID()}", IRC_CHANNEL, message)
+            }
+        }
+        success {
+            echo "yay!"
+        }
+        failure {
+            error "build failed!"
+        }
+    }
+}
