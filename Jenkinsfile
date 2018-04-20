@@ -221,6 +221,7 @@ podTemplate(name: podName,
                             // If a task id was provided, use those artifacts and
                             // bypass submitting a new rpm build
                             if (env.PROVIDED_KOJI_TASKID?.trim()) {
+                                env.messageStage = 'kojibuild.complete'
                                 // Run script that simply downloads artifacts
                                 // and stores them in jenkins workspace
                                 pipelineUtils.executeInContainer(currentStage, "rpmbuild", "/tmp/pull_old_task.sh")
@@ -250,7 +251,7 @@ podTemplate(name: podName,
                         }
 
                         // Set our message topic, properties, and content
-                        messageFields = packagepipelineUtils.setMessageFields("package.complete")
+                        messageFields = packagepipelineUtils.setMessageFields(messageStage)
 
                         // Send message org.centos.prod.ci.pipeline.allpackages.package.complete on fedmsg
                         pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
