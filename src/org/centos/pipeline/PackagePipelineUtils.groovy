@@ -348,7 +348,7 @@ def checkRelease() {
     if (env.fed_msg_release) {
         def release = env.fed_msg_release.tokenize('.').last()
         if (release ==~ /fc[2-9][0-9]/) {
-            targetRelease = release[2, 3]
+            targetRelease = "f${release[2, 3]}"
         } else {
             println "Not validating release: ${release} at this time."
 
