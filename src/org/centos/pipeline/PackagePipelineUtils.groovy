@@ -38,10 +38,11 @@ def setDistBranch() {
 /**
  * Library to set message fields to be published
  * @param messageType: ${MAIN_TOPIC}.ci.pipeline.allpackages.<defined-in-README>
+ * @param artifact ${MAIN_TOPIC}.ci.pipeline.allpackages.${artifact}.<defined-in-README>
  * @return
  */
-def setMessageFields(String messageType) {
-    topic = "${MAIN_TOPIC}.ci.pipeline.allpackages.${messageType}"
+def setMessageFields(String messageType, String artifact) {
+    topic = "${MAIN_TOPIC}.ci.pipeline.allpackages.${artifact}.${messageType}"
 
     // Create a HashMap of default message property keys and values
     // These properties should be applicable to ALL message types.

@@ -23,10 +23,11 @@ class packagepipelineUtils implements Serializable {
     /**
      * Method to set message fields to be published
      * @param messageType ${MAIN_TOPIC}.ci.pipeline.<defined-in-README>
+     * @param artifact ${MAIN_TOPIC}.ci.pipeline.allpackages.${artifact}.<defined-in-README>
      * @return
      */
-    def setMessageFields(String messageType) {
-        packagePipelineUtils.setMessageFields(messageType)
+    def setMessageFields(String messageType, String artifact) {
+        packagePipelineUtils.setMessageFields(messageType, artifact)
     }
 
     /**
