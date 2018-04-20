@@ -19,6 +19,8 @@ MSG_PROVIDER = "fedora-fedmsg-stage"
 IRC_NICK = "contra-bot"
 IRC_CHANNEL = "#contra-ci-cd"
 
+STABLE_LABEL = 'stable'
+
 // CI_MESSAGES known to build successfully
 CANNED_CI_MESSAGES = [:]
 CANNED_CI_MESSAGES['f27'] = '{"commit":{"username":"fgiudici","stats":{"files":{"tests/tests.yml":{"deletions":0,"additions":487,"lines":487}},"total":{"deletions":0,"files":1,"additions":487,"lines":487}},"name":"Vladimir Benes","rev":"c83e23686352561a08a37c7989881957361986ca","namespace":"rpms","agent":"fgiudici","summary":"Add CI tests using the Standard Test Interface","repo":"NetworkManager","branch":"f27","seen":false,"path":"/srv/git/repositories/rpms/NetworkManager.git","message":"Add CI tests using the Standard Test Interface\\n\\nAdding initial set of basic functionality tests for NetworkManager\\naccording to the Standard Test Interface [1]. See Quick Start Guide\\nfor brief introduction about how to run these tests [2].\\n\\n[1] https://fedoraproject.org/wiki/CI/Standard_Test_Interface\\n[2] https://fedoraproject.org/wiki/CI/Quick_Start_Guide\\n","email":"vbenes@redhat.com"},"topic":"org.fedoraproject.prod.git.receive"}'
@@ -71,12 +73,12 @@ pipeline {
                                 string(name: 'ghprbPullAuthorLogin', value: "${env.ghprbPullAuthorLogin}"),
                                 string(name: 'sha1', value: "${env.sha1}"),
                                 string(name: 'ghprbPullId', value: "${env.ghprbPullId}"),
-                                string(name: 'SLAVE_TAG', value: 'stable'),
-                                string(name: 'RPMBUILD_TAG', value: 'stable'),
-                                string(name: 'INQUIRER_TAG', value: 'stable'),
-                                string(name: 'CLOUD_IMAGE_COMPOSE_TAG', value: 'stable'),
-                                string(name: 'OSTREE_BOOT_IMAGE_TAG', value: 'stable'),
-                                string(name: 'SINGLEHOST_TEST_TAG', value: 'stable')
+                                string(name: 'SLAVE_TAG', value: STABLE_LABEL),
+                                string(name: 'RPMBUILD_TAG', value: STABLE_LABEL),
+                                string(name: 'INQUIRER_TAG', value: STABLE_LABEL),
+                                string(name: 'CLOUD_IMAGE_COMPOSE_TAG', value: STABLE_LABEL),
+                                string(name: 'OSTREE_BOOT_IMAGE_TAG', value: STABLE_LABEL),
+                                string(name: 'SINGLEHOST_TEST_TAG', value: STABLE_LABEL)
                         ],
                         wait: true
             }
