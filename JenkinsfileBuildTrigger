@@ -21,7 +21,7 @@ properties(
                 ),
                 pipelineTriggers(
                         [
-                                [$class: 'CIBuildTrigger', checks: [[expectedValue: 1, field: 'new']], providerName: 'fedora-fedmsg', selector: 'topic = "org.fedoraproject.prod.buildsys.build.state.change"']]
+                                [$class: 'CIBuildTrigger', checks: [[expectedValue: '1', field: 'new']], providerName: 'fedora-fedmsg', selector: 'topic = "org.fedoraproject.prod.buildsys.build.state.change"']]
                 )
         ]
 )
