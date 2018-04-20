@@ -23,10 +23,11 @@ class packagepipelineUtils implements Serializable {
     /**
      * Method to set message fields to be published
      * @param messageType ${MAIN_TOPIC}.ci.pipeline.<defined-in-README>
+     * @param artifact ${MAIN_TOPIC}.ci.pipeline.allpackages.${artifact}.<defined-in-README>
      * @return
      */
-    def setMessageFields(String messageType) {
-        packagePipelineUtils.setMessageFields(messageType)
+    def setMessageFields(String messageType, String artifact) {
+        packagePipelineUtils.setMessageFields(messageType, artifact)
     }
 
     /**
@@ -91,6 +92,22 @@ class packagepipelineUtils implements Serializable {
      */
     def checkBranch() {
         return packagePipelineUtils.checkBranch()
+    }
+
+    /**
+     * Parse the repo out of the request
+     * @return None
+     */
+    def repoFromRequest() {
+        packagePipelineUtils.repoFromRequest()
+    }
+
+    /**
+     * Check the fedora version number. Must be fc[2-9][0-9]
+     * @return null or fedora release
+     */
+    def checkRelease() {
+        return packagePipelineUtils.checkRelease()
     }
 
 

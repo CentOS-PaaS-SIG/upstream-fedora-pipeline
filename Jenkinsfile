@@ -183,13 +183,17 @@ podTemplate(name: podName,
                             deleteDir()
 
                             if (!env.PROVIDED_KOJI_TASKID?.trim()) {
+                                env.artifact = 'distgitpr'
                                 // Parse the CI_MESSAGE and inject it as env vars
                                 pipelineUtils.injectPRVars(env.CI_MESSAGE)
 
                                 // Decorate our build
                                 String buildName = "PR-${env.fed_id}:${env.fed_repo}:${env.fed_branch}"
                                 pipelineUtils.setCustomBuildNameAndDescription(buildName, buildName)
+                            } else {
+                                env.artifact = 'kojibuild'
                             }
+
                             packagepipelineUtils.setDefaultEnvVars()
 
                             // Prepare Credentials (keys, passwords, etc)
@@ -214,7 +218,7 @@ podTemplate(name: podName,
                             packagepipelineUtils.setStageEnvVars(currentStage)
 
                             // Return a map (messageFields) of our message topic, properties, and content
-                            messageFields = packagepipelineUtils.setMessageFields("package.running")
+                            messageFields = packagepipelineUtils.setMessageFields("package.running", artifact)
 
                             // Send message org.centos.prod.ci.pipeline.allpackages.package.running on fedmsg
                             pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
@@ -254,13 +258,14 @@ podTemplate(name: podName,
                         }
 
                         // Set our message topic, properties, and content
-                        messageFields = packagepipelineUtils.setMessageFields("package.complete")
+
+                        messageFields = packagepipelineUtils.setMessageFields("package.complete", artifact)
 
                         // Send message org.centos.prod.ci.pipeline.allpackages.package.complete on fedmsg
                         pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
                         // Set our message topic, properties, and content
-                        messageFields = packagepipelineUtils.setMessageFields("image.queued")
+                        messageFields = packagepipelineUtils.setMessageFields("image.queued", artifact)
 
                         // Send message org.centos.prod.ci.pipeline.allpackages.image.queued on fedmsg
                         pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
@@ -272,7 +277,7 @@ podTemplate(name: podName,
                         packagepipelineUtils.timedPipelineStep(stepName: currentStage, debug: true) {
 
                             // Set our message topic, properties, and content
-                            messageFields = packagepipelineUtils.setMessageFields("image.running")
+                            messageFields = packagepipelineUtils.setMessageFields("image.running", artifact)
 
                             // Send message org.centos.prod.ci.pipeline.allpackages.image.running on fedmsg
                             pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
@@ -287,13 +292,13 @@ podTemplate(name: podName,
                             pipelineUtils.executeInContainer(currentStage, "cloud-image-compose", "/tmp/cloud-image-compose.sh")
 
                             // Set our message topic, properties, and content
-                            messageFields = packagepipelineUtils.setMessageFields("image.complete")
+                            messageFields = packagepipelineUtils.setMessageFields("image.complete", artifact)
 
                             // Send message org.centos.prod.ci.pipeline.allpackages.image.complete on fedmsg
                             pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
                             // Set our message topic, properties, and content
-                            //messageFields = packagepipelineUtils.setMessageFields("image.test.smoke.queued")
+                            //messageFields = packagepipelineUtils.setMessageFields("image.test.smoke.queued", artifact)
 
                             // Send message org.centos.prod.ci.pipeline.allpackages.image.test.smoke.queued on fedmsg
                             //pipelineUtils.sendMessageWithAudit(messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
@@ -308,7 +313,7 @@ podTemplate(name: podName,
                             //packagepipelineUtils.setStageEnvVars(currentStage)
 
                             // Set our message topic, properties, and content
-                            //messageFields = packagepipelineUtils.setMessageFields("image.test.smoke.running")
+                            //messageFields = packagepipelineUtils.setMessageFields("image.test.smoke.running", artifact)
 
                             // Send message org.centos.prod.ci.pipeline.allpackages.image.test.smoke.running on fedmsg
                             //pipelineUtils.sendMessageWithAudit(messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
@@ -327,7 +332,7 @@ podTemplate(name: podName,
                             //pipelineUtils.executeInContainer(currentStage, "ostree-boot-image", "/home/ostree-boot-image.sh")
 
                             // Set our message topic, properties, and content
-                            //messageFields = packagepipelineUtils.setMessageFields("image.test.smoke.complete")
+                            //messageFields = packagepipelineUtils.setMessageFields("image.test.smoke.complete", artifact)
 
                             // Send message org.centos.prod.ci.pipeline.allpackages.image.test.smoke.complete on fedmsg
                             //pipelineUtils.sendMessageWithAudit(messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
@@ -338,7 +343,7 @@ podTemplate(name: podName,
                     if (pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')) {
 
                         // Set our message topic, properties, and content
-                        messageFields = packagepipelineUtils.setMessageFields("package.test.functional.queued")
+                        messageFields = packagepipelineUtils.setMessageFields("package.test.functional.queued", artifact)
 
                         // Send message org.centos.prod.ci.pipeline.allpackages.package.test.functional.queued on fedmsg
                         pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
@@ -355,7 +360,7 @@ podTemplate(name: podName,
                                 packagepipelineUtils.setStageEnvVars(currentStage)
 
                                 // Set our message topic, properties, and content
-                                messageFields = packagepipelineUtils.setMessageFields("package.test.functional.running")
+                                messageFields = packagepipelineUtils.setMessageFields("package.test.functional.running", artifact)
 
                                 // Send message org.centos.prod.ci.pipeline.allpackages.package.test.functional.running on fedmsg
                                 pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
@@ -381,7 +386,7 @@ podTemplate(name: podName,
                                 }
 
                                 // Set our message topic, properties, and content
-                                messageFields = packagepipelineUtils.setMessageFields("package.test.functional.complete")
+                                messageFields = packagepipelineUtils.setMessageFields("package.test.functional.complete", artifact)
 
                                 // Send message org.centos.prod.ci.pipeline.allpackages.package.test.functional.complete on fedmsg
                                 pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
@@ -398,7 +403,7 @@ podTemplate(name: podName,
                     currentBuild.result = buildResult
 
                     // Send message org.centos.prod.ci.pipeline.allpackages.<stage>.complete on fedmsg if stage failed
-                    messageFields = packagepipelineUtils.setMessageFields(messageStage)
+                    messageFields = packagepipelineUtils.setMessageFields(messageStage, artifact)
                     pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
                     // Report the exception
@@ -420,7 +425,7 @@ podTemplate(name: podName,
                     }
 
                     // Set our message topic, properties, and content
-                    messageFields = packagepipelineUtils.setMessageFields("complete")
+                    messageFields = packagepipelineUtils.setMessageFields("complete", artifact)
 
                     // Send message org.centos.prod.ci.pipeline.allpackages.complete on fedmsg
                     pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)

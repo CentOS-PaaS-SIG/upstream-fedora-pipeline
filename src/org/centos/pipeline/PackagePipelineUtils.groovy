@@ -38,10 +38,11 @@ def setDistBranch() {
 /**
  * Library to set message fields to be published
  * @param messageType: ${MAIN_TOPIC}.ci.pipeline.allpackages.<defined-in-README>
+ * @param artifact ${MAIN_TOPIC}.ci.pipeline.allpackages.${artifact}.<defined-in-README>
  * @return
  */
-def setMessageFields(String messageType) {
-    topic = "${MAIN_TOPIC}.ci.pipeline.allpackages.${messageType}"
+def setMessageFields(String messageType, String artifact) {
+    topic = "${MAIN_TOPIC}.ci.pipeline.allpackages.${artifact}.${messageType}"
 
     // Create a HashMap of default message property keys and values
     // These properties should be applicable to ALL message types.
@@ -254,6 +255,11 @@ def watchForMessages(String msg_provider, String message) {
 
 }
 
+/**
+ * Function to wrap a pipeline
+ * @param body
+ * @return
+ */
 def ciPipeline(Closure body) {
     ansiColor('xterm') {
         timestamps {
@@ -264,6 +270,12 @@ def ciPipeline(Closure body) {
     }
 }
 
+/**
+ * Wrap a pipeline step with try/catch and debugging information
+ * @param config
+ * @param body
+ * @return
+ */
 def handlePipelineStep(Map config, Closure body) {
     try {
 
@@ -286,6 +298,10 @@ def handlePipelineStep(Map config, Closure body) {
     }
 }
 
+/**
+ * Influxdb measurement for a step
+ * @return
+ */
 def timedMeasurement() {
     return env.JOB_NAME
 }
@@ -306,21 +322,40 @@ def checkBranch() {
     return result
 }
 
-def packageMetrics() {
-    def tags = [:]
-    def fields = [:]
-    def measurement = env.fed_repo
-    tags['build_result'] = currentBuild.result
-    fields['build_time'] = currentBuild.getDuration().toString()
-
-    return [measurement, tags, fields]
+/**
+ * Parse the repo name from the request list.
+ * Sets env.fed_repo
+ * @return
+ */
+def repoFromRequest() {
+    if (!env.fed_repo) {
+        try {
+            def pkgUrlTok = env.fed_msg_request[0].tokenize('/')
+            env.fed_repo = pkgUrlTok.last().tokenize('.')[0]
+        } catch(e) {
+            env.fed_repo = "pkg name unavailable"
+        }
+    }
 }
 
-def pipelineMetrics() {
-    def tags = [:]
-    def fields = [:]
-    def measurement = 'pipeline'
-    tags['build_result'] = currentBuild.result
+/**
+ * Check the fedora version number. Must be fc[2-9][0-9]
+ * @return null or fedora release
+ */
+def checkRelease() {
+    def targetRelease = null
 
-    return [measurement, tags, fields]
+    if (env.fed_msg_release) {
+        def release = env.fed_msg_release.tokenize('.').last()
+        if (release ==~ /fc[2-9][0-9]/) {
+            targetRelease = "f${release[2, 3]}"
+        } else {
+            println "Not validating release: ${release} at this time."
+
+        }
+    } else {
+        println "This message does not contain a release variable"
+    }
+
+    return targetRelease
 }
