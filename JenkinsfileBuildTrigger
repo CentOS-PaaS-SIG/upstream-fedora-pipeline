@@ -44,8 +44,9 @@ node() {
 
                     print "CI_MESSAGE"
                     print CI_MESSAGE
-                    sh 'env'
                     pipelineUtils.flattenJSON('fed', env.CI_MESSAGE)
+                    print 'env vars'
+                    sh 'env'
                     packagepipelineUtils.repoFromRequest()
                     pipelineUtils.setBuildDisplayAndDescription()
                     targetRelease = packagepipelineUtils.checkRelease()
