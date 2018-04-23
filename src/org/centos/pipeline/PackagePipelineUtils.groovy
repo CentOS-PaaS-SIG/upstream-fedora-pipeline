@@ -12,6 +12,7 @@ import groovy.json.JsonSlurper
  */
 def setDistBranch() {
     echo "Currently in setDistBranch for ${env.fed_branch}"
+    sh 'env'
 
     if (env.fed_branch != 'rawhide') {
         if (env.fed_branch[0] == 'f') {
