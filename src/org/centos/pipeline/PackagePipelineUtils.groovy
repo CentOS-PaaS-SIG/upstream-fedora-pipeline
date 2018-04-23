@@ -157,27 +157,27 @@ def setDefaultEnvVars(Map envMap=null){
 def setStageEnvVars(String stage){
     def stages =
             ["koji-build"                                     : [
-                    fed_branch                : "${env.fed_branch}",
-                    fed_repo                  : "${env.fed_repo}",
-                    fed_rev                   : "${env.fed_rev}",
-                    rpm_repo                  : "${env.WORKSPACE}/${env.fed_repo}_repo",
+                    fed_branch                : env.fed_branch,
+                    fed_repo                  : env.fed_repo,
+                    fed_rev                   : env.fed_rev,
+                    rpm_repo                  : env.WORKSPACE + "/" + env.fed_repo + "_repo",
             ],
              "cloud-image-compose"                            : [
-                     rpm_repo                 : "${env.WORKSPACE}/${env.fed_repo}_repo",
-                     package                  : "${env.fed_repo}",
-                     branch                   : "${env.branch}",
-                     fed_branch               : "${env.fed_branch}"
+                     rpm_repo                 : env.WORKSPACE + "/" + env.fed_repo + "_repo",
+                     package                  : env.fed_repo,
+                     branch                   : env.branch,
+                     fed_branch               : env.fed_branch
 
              ],
              "image-boot-sanity"                               : [
-                     rpm_repo                 : "${env.WORKSPACE}/${env.fed_repo}_repo",
-                     package                  : "${env.fed_repo}",
+                     rpm_repo                 : env.WORKSPACE + "/" + env.fed_repo + "_repo",
+                     package                  : env.fed_repo,
              ],
              "package-tests"                                   : [
-                     package                  : "${env.fed_repo}",
+                     package                  : env.fed_repo,
                      python3                  : "yes",
                      TAG                      : "classic",
-                     branch                   : "${env.fed_branch}"
+                     branch                   : env.fed_branch
              ]
             ]
 
