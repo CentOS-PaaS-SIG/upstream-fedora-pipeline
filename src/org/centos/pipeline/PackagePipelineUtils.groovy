@@ -11,13 +11,13 @@ import groovy.json.JsonSlurper
  * @return
  */
 def setDistBranch() {
-    echo "Currently in setDistBranch for ${env.branch}"
+    echo "Currently in setDistBranch for ${env.fed_branch}"
 
-    if (env.branch != 'rawhide') {
-        if (env.branch[0] == 'f') {
-            env.DIST_BRANCH = 'fc' + env.branch.substring(1)
+    if (env.fed_branch != 'rawhide') {
+        if (env.fed_branch[0] == 'f') {
+            env.DIST_BRANCH = 'fc' + env.fed_branch.substring(1)
         } else {
-            throw new Exception("Invalid Branch Name ${env.branch}")
+            throw new Exception("Invalid Branch Name ${env.fed_branch}")
         }
     } else {
         def dist_branch = sh (returnStdout: true, script: '''
@@ -27,7 +27,7 @@ def setDistBranch() {
             assert dist_branch.isNumber()
         }
         catch (AssertionError e) {
-            echo "There was a fatal error finding the proper mapping for ${env.branch}"
+            echo "There was a fatal error finding the proper mapping for ${env.fed_branch}"
             echo "We will not continue without a proper DIST_BRANCH value. Throwing exception..."
             throw new Exception('Rsync branch identifier failed!')
         }
