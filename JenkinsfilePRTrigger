@@ -30,7 +30,7 @@ properties(
                 // Will need to add pagure.pull-request.comment.added and
                 // whatever it is for commits added soon most likely
                 pipelineTriggers(
-                        [[$class: 'CIBuildTrigger', checks: [[expectedValue: 'rpms', field: '$.pullrequest.project.namespace']], providerName: 'fedora-fedmsg', selector: 'topic = "org.fedoraproject.prod.pagure.pull-request.new"'
+                        [[$class: 'CIBuildTrigger', checks: [[expectedValue: 'rpms', field: '$.pullrequest.project.namespace']], providerName: 'fedora-fedmsg', selector: 'topic = "org.fedoraproject.prod.pagure.pull-request.new" OR topic = "org.fedoraproject.prod.pagure.pull-request.comment.added"'
                           ]]
                 ),
 
@@ -66,12 +66,15 @@ node() {
                         pipelineUtils.updateBuildDisplayAndDescription()
                         validMessage = packagepipelineUtils.checkBranch()
                         testsExist = pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')
+                        // Function only returns false if comments exist,
+                        // but the latest was uninteresting
+                        commentTrigger = pipelineUtils.checkUpdatedPR(env.CI_MESSAGE, '[citest]')
                         // create audit message file
                         pipelineUtils.initializeAuditFile(msgAuditFile)
                     }
                 }
 
-                if (validMessage && testsExist) {
+                if (validMessage && testsExist && commentTrigger) {
                     messageFields = packagepipelineUtils.setMessageFields('package.queued', 'distgitpr')
                     pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
