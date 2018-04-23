@@ -1,10 +1,5 @@
 #!groovy
 
-/*
-Find what data is grouped with certain containers
-*/
-
-
 // CANNED CI_MESSAGE
 def CANNED_CI_MESSAGE = '{"commit":{"username":"eseyman","stats":{"files":{"perl-Net-FTPSSL.spec":{"deletions":2,"additions":5,"lines":7},".gitignore":{"deletions":0,"additions":1,"lines":1},"sources":{"deletions":1,"additions":1,"lines":2}},"total":{"deletions":3,"files":3,"additions":7,"lines":10}},"name":"Emmanuel Seyman","rev":"c1c7de158fa72de5bd279daaaac9f75d0b3e65cd","namespace":"rpms","agent":"eseyman","summary":"Update to 0.40","repo":"perl-Net-FTPSSL","branch":"master","seen":false,"path":"/srv/git/repositories/rpms/perl-Net-FTPSSL.git","message":"Update to 0.40\n","email":"emmanuel@seyman.fr"},"topic":"org.fedoraproject.prod.git.receive"}'
 
@@ -49,7 +44,7 @@ libraries.each { name, repo ->
 }
 
 // Check out PR's version of library
-library identifier: "fedora-upstream-pipeline@${env.ghprbActualCommit}",
+library identifier: "upstream-fedora-pipeline@${env.ghprbActualCommit}",
         retriever: modernSCM([$class: 'GitSCMSource',
                               remote: "https://github.com/${env.ghprbGhRepository}",
                               traits: [[$class: 'jenkins.plugins.git.traits.BranchDiscoveryTrait'],
@@ -64,22 +59,54 @@ properties(
                 [$class: 'JobPropertyImpl', throttle: [count: 150, durationName: 'hour', userBoost: false]],
                 parameters(
                         [
-                                string(defaultValue: '', description: 'Give an integer only task id to use those artifacts and bypass the rpm build stage (example 123456)', name: 'PROVIDED_KOJI_TASKID'),
-                                string(defaultValue: 'master', description: '', name: 'ghprbActualCommit'),
-                                string(defaultValue: '', description: '', name: 'ghprbGhRepository'),
-                                string(defaultValue: '', description: '', name: 'sha1'),
-                                string(defaultValue: '', description: 'Pull Request Number', name: 'ghprbPullId'),
-                                string(defaultValue: '', description: 'Pull Request Author username', name: 'ghprbPullAuthorLogin'),
-                                string(defaultValue: 'stable', description: 'Tag for slave image', name: 'SLAVE_TAG'),
-                                string(defaultValue: 'stable', description: 'Tag for rpmbuild image', name: 'RPMBUILD_TAG'),
-                                string(defaultValue: 'stable', description: 'Tag for inquirer image', name: 'INQUIRER_TAG'),
-                                string(defaultValue: 'stable', description: 'Tag for cloud-image-compose image', name: 'CLOUD_IMAGE_COMPOSE_TAG'),
-                                string(defaultValue: 'stable', description: 'Tag for ostree boot image', name: 'OSTREE_BOOT_IMAGE_TAG'),
-                                string(defaultValue: 'stable', description: 'Tag for singlehost test image', name: 'SINGLEHOST_TEST_TAG'),
-                                string(defaultValue: '172.30.254.79:5000', description: 'Docker repo url for Openshift instance', name: 'DOCKER_REPO_URL'),
-                                string(defaultValue: 'continuous-infra', description: 'Project namespace for Openshift operations', name: 'OPENSHIFT_NAMESPACE'),
-                                string(defaultValue: 'jenkins', description: 'Service Account for Openshift operations', name: 'OPENSHIFT_SERVICE_ACCOUNT'),
-                                string(defaultValue: CANNED_CI_MESSAGE, description: 'CI_MESSAGE', name: 'CI_MESSAGE')
+                                string(name: 'PROVIDED_KOJI_TASKID',
+                                       defaultValue: ''
+                                       description: 'Give an integer only task id to use those artifacts and bypass the rpm build stage (example 123456)'),
+                                string(name: 'ghprbActualCommit',
+                                       defaultValue: 'master',
+                                       description: 'The GitHub pull request commit'),
+                                string(name: 'ghprbGhRepository',
+                                       defaultValue: '',
+                                       description: 'The repo the PR is against'),
+                                string(name: 'sha1',
+                                       defaultValue: '',
+                                       description: ''),
+                                string(name: 'ghprbPullId',
+                                       defaultValue: '',
+                                       description: 'Pull Request Number'),
+                                string(name: 'ghprbPullAuthorLogin',
+                                       defaultValue: '',
+                                       description: 'Pull Request Author username'),
+                                string(name: 'SLAVE_TAG',
+                                       defaultValue: 'stable',
+                                       description: 'Tag for slave image'),
+                                string(name: 'RPMBUILD_TAG',
+                                       defaultValue: 'stable',
+                                       description: 'Tag for rpmbuild image'),
+                                string(name: 'INQUIRER_TAG',
+                                       defaultValue: 'stable',
+                                       description: 'Tag for inquirer image'),
+                                string(name: 'CLOUD_IMAGE_COMPOSE_TAG',
+                                       defaultValue: 'stable',
+                                       description: 'Tag for cloud-image-compose image'),
+                                string(name: 'OSTREE_BOOT_IMAGE_TAG',
+                                       defaultValue: 'stable',
+                                       description: 'Tag for ostree boot image'),
+                                string(name: 'SINGLEHOST_TEST_TAG',
+                                       defaultValue: 'stable',
+                                       description: 'Tag for singlehost test image'),
+                                string(name: 'DOCKER_REPO_URL',
+                                       defaultValue: '172.30.254.79:5000',
+                                       description: 'Docker repo url for Openshift instance'),
+                                string(name: 'OPENSHIFT_NAMESPACE',
+                                       defaultValue: 'continuous-infra',
+                                       description: 'Project namespace for Openshift operations'),
+                                string(name: 'OPENSHIFT_SERVICE_ACCOUNT',
+                                       defaultValue: 'jenkins',
+                                       description: 'Service Account for Openshift operations'),
+                                string(name: 'CI_MESSAGE',
+                                       defaultValue: CANNED_CI_MESSAGE,
+                                       description: 'CI_MESSAGE')
                         ]
                 ),
         ]
@@ -189,6 +216,9 @@ podTemplate(name: podName,
 
                                 // Decorate our build
                                 String buildName = "PR-${env.fed_id}:${env.fed_repo}:${env.fed_branch}"
+                                // Once we have stage job running lets make build description
+                                // a hyperlink to PR like
+                                // <a href="https://src.fedoraproject.org/rpms/${env.fed_repo}/pull-request/${env.fed_id}"> PR #${env.fed_id} ${env.fed_repo}</a>
                                 pipelineUtils.setCustomBuildNameAndDescription(buildName, buildName)
                             } else {
                                 env.artifact = 'kojibuild'
@@ -206,7 +236,6 @@ podTemplate(name: podName,
                             pipelineUtils.initializeAuditFile(msgAuditFile)
 
                         }
-
                     }
 
                     // Set our current stage value
@@ -258,7 +287,6 @@ podTemplate(name: podName,
                         }
 
                         // Set our message topic, properties, and content
-
                         messageFields = packagepipelineUtils.setMessageFields("package.complete", artifact)
 
                         // Send message org.centos.prod.ci.pipeline.allpackages.package.complete on fedmsg
