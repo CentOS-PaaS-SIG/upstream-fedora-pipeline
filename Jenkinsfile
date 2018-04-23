@@ -60,7 +60,7 @@ properties(
                 parameters(
                         [
                                 string(name: 'PROVIDED_KOJI_TASKID',
-                                       defaultValue: ''
+                                       defaultValue: '',
                                        description: 'Give an integer only task id to use those artifacts and bypass the rpm build stage (example 123456)'),
                                 string(name: 'ghprbActualCommit',
                                        defaultValue: 'master',
