@@ -330,7 +330,7 @@ def checkBranch() {
 def repoFromRequest() {
     if (!env.fed_repo) {
         try {
-            def pkgUrlTok = env.fed_msg_request[0].tokenize('/')
+            def pkgUrlTok = env.fed_request_0.tokenize('/')
             env.fed_repo = pkgUrlTok.last().tokenize('.')[0]
         } catch(e) {
             env.fed_repo = "pkg name unavailable"
@@ -345,8 +345,8 @@ def repoFromRequest() {
 def checkRelease() {
     def targetRelease = null
 
-    if (env.fed_msg_release) {
-        def release = env.fed_msg_release.tokenize('.').last()
+    if (env.fed_release) {
+        def release = env.fed_release.tokenize('.').last()
         if (release ==~ /fc[2-9][0-9]/) {
             targetRelease = "f${release[2, 3]}"
         } else {
