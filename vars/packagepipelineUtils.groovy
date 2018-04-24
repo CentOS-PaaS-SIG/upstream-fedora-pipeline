@@ -103,12 +103,11 @@ class packagepipelineUtils implements Serializable {
     }
 
     /**
-     * Check the fedora version number. Must be fc[2-9][0-9]
-     * @return null or fedora release
+     * Set the branch based off of the candidate branch
+     * @return
      */
-    def checkRelease() {
-        return packagePipelineUtils.checkRelease()
+    def setBuildBranch() {
+        packagePipelineUtils.setBuildBranch()
     }
-
 
 }
