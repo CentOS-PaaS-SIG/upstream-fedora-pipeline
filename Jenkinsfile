@@ -210,7 +210,7 @@ podTemplate(name: podName,
                             deleteDir()
 
                             if (!env.PROVIDED_KOJI_TASKID?.trim()) {
-                                env.artifact = 'distgitpr'
+                                env.artifact = 'pr'
                                 // Parse the CI_MESSAGE and inject it as env vars
                                 pipelineUtils.injectPRVars(env.CI_MESSAGE)
 
@@ -221,7 +221,7 @@ podTemplate(name: podName,
                                 // <a href="https://src.fedoraproject.org/rpms/${env.fed_repo}/pull-request/${env.fed_id}"> PR #${env.fed_id} ${env.fed_repo}</a>
                                 pipelineUtils.setCustomBuildNameAndDescription(buildName, buildName)
                             } else {
-                                env.artifact = 'kojibuild'
+                                env.artifact = 'build'
                             }
 
                             packagepipelineUtils.setDefaultEnvVars()
