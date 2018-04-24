@@ -212,7 +212,7 @@ podTemplate(name: podName,
                             if (!env.PROVIDED_KOJI_TASKID?.trim()) {
                                 env.artifact = 'pr'
                                 // Parse the CI_MESSAGE and inject it as env vars
-                                pipelineUtils.injectPRVars(env.CI_MESSAGE)
+                                pipelineUtils.injectPRVars("fed", env.CI_MESSAGE)
 
                                 // Decorate our build
                                 String buildName = "PR-${env.fed_id}:${env.fed_repo}:${env.fed_branch}"
