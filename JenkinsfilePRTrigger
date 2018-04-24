@@ -61,6 +61,10 @@ node() {
                 stage(stepName) {
 
                     packagepipelineUtils.timedPipelineStep(stepName: stepName, debug: true) {
+
+                        print "CI_MESSAGE"
+                        print CI_MESSAGE
+
                         packagepipelineUtils.setDefaultEnvVars()
                         pipelineUtils.injectPRVars(env.CI_MESSAGE)
                         pipelineUtils.updateBuildDisplayAndDescription()
