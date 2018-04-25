@@ -32,11 +32,13 @@ def targetRelease = null
 
 node() {
 
-    ciMetrics.prefix = 'upstream-fedora-pipeline'
+    // pull in ciMetrics from ci-pipeline
+    def jobMeasurement = packagepipelineUtils.timedMeasurement()
+    ciMetrics.prefix = 'Fedora_All_Packages_Pipeline'
     packagepipelineUtils.cimetrics = ciMetrics
 
-    try {
-        packagepipelineUtils.ciPipeline {
+    packagepipelineUtils.ciPipeline {
+        try {
             stepName = 'upstream-fedora-pipeline-build-trigger'
             stage(stepName) {
 
@@ -75,10 +77,14 @@ node() {
 
             currentBuild.result = 'SUCCESS'
 
+        } catch(e) {
+              currentBuild.result = 'FAILURE'
+              throw e
+        } finally {
+            // set the metrics we want
+            ciMetrics.setMetricTag(jobMeasurement, 'package_name', env.fed_repo)
+            ciMetrics.setMetricTag(jobMeasurement, 'build_result', currentBuild.result)
+            ciMetrics.setMetricField(jobMeasurement, 'build_time', currentBuild.getDuration())
         }
-    } catch(Throwable err) {
-        currentBuild.result = 'FAILURE'
-        throw err
-
     }
 }
