@@ -11,6 +11,13 @@ libraries.each { name, repo ->
 
 }
 
+// Audit file for all messages sent.
+msgAuditFile = "messages/message-audit.json"
+
+// Number of times to keep retrying to make sure message is ingested
+// by datagrepper
+fedmsgRetryCount = 120
+
 properties(
         [
                 buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '500', daysToKeepStr: '', numToKeepStr: '500')),
@@ -57,6 +64,8 @@ node() {
             }
 
             if (targetBranch && testsExist) {
+                messageFields = packagepipelineUtils.setMessageFields('package.queued', 'build')
+                pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
                 stepName = 'schedule build'
                 stage(stepName) {
 
@@ -73,6 +82,9 @@ node() {
 
             } else {
                 echo "CI_MESSAGE was invalid. Skipping..."
+                messageFields = packagepipelineUtils.setMessageFields('package.ignored', 'build')
+                pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                currentBuild.description = "*Build Skipped*"
             }
 
             currentBuild.result = 'SUCCESS'
