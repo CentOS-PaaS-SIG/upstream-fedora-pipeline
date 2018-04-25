@@ -28,7 +28,6 @@ properties(
 
 def TRIGGER_RETRY_COUNT = 3
 def stepName = null
-def targetRelease = null
 
 node() {
 
@@ -62,7 +61,7 @@ node() {
                     retry(TRIGGER_RETRY_COUNT) {
                         packagepipelineUtils.timedPipelineStep(stepName: stepName, debug: true) {
 
-                            build job: "fedora-${targetRelease}-build-pipeline",
+                            build job: "fedora-${env.branch}-build-pipeline",
                                     parameters: [string(name: 'PROVIDED_KOJI_TASKID', value: env.fed_task_id)],
                                     wait: false
                         }
