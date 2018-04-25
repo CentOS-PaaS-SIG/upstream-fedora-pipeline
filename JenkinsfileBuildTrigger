@@ -46,14 +46,16 @@ node() {
                     print CI_MESSAGE
                     pipelineUtils.flattenJSON('fed', env.CI_MESSAGE)
                     packagepipelineUtils.repoFromRequest()
+                    packagepipelineUtils.setBuildBranch()
                     pipelineUtils.setBuildDisplayAndDescription()
-                    targetRelease = packagepipelineUtils.checkRelease()
+                    testsExist = pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')
+                    targetBranch = packagepipelineUtils.checkBranch()
 
                 }
 
             }
 
-            if (targetRelease) {
+            if (targetBranch && testsExist) {
                 stepName = 'schedule build'
                 stage(stepName) {
 
