@@ -59,6 +59,7 @@ node() {
                     pipelineUtils.setBuildDisplayAndDescription()
                     testsExist = pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')
                     targetBranch = packagepipelineUtils.checkBranch()
+                    pipelineUtils.initializeAuditFile(msgAuditFile)
 
                 }
 
