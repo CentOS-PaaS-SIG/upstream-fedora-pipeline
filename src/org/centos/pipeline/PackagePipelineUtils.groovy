@@ -317,8 +317,6 @@ def checkBranch() {
         result = true
     } else if (env.fed_branch == 'master') {
         result = true
-    } else if (env.fed_branch == 'rawhide') {
-        result = true
     } else {
         println "Branch ${env.fed_branch} is not being checked at this time."
     }
@@ -349,8 +347,8 @@ def repoFromRequest() {
 def setBuildBranch() {
     try {
         if (env.fed_request_1 == 'rawhide') {
-            env.fed_branch = env.fed_request_1
-            env.branch = 'master'
+            env.branch = env.fed_request_1
+            env.fed_branch = 'master'
         } else {
             // assume that env.fed_request_1 is f**-candidate
             env.fed_branch = env.fed_request_1.tokenize('-')[0]
