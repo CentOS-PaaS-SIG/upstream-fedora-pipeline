@@ -79,7 +79,7 @@ node() {
                 }
 
                 if (validMessage && testsExist && commentTrigger) {
-                    messageFields = packagepipelineUtils.setMessageFields('package.queued', 'distgitpr')
+                    messageFields = packagepipelineUtils.setMessageFields('package.queued', 'pr')
                     pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
                     stepName = 'schedule build'
@@ -104,7 +104,7 @@ node() {
 
                 } else {
                     echo "CI_MESSAGE was invalid. Skipping..."
-                    messageFields = packagepipelineUtils.setMessageFields('package.ignored', 'distgitpr')
+                    messageFields = packagepipelineUtils.setMessageFields('package.ignored', 'pr')
                     pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
                     currentBuild.description = "*Build Skipped*"
                 }
