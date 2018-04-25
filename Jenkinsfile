@@ -34,7 +34,7 @@ def executionID = UUID.randomUUID().toString()
 def podName = 'fedora-cloud-' + executionID + '-allpkgs'
 
 def libraries = ['cico-pipeline'           : ['master', 'https://github.com/CentOS/cico-pipeline-library.git'],
-                 'ci-pipeline'             : ['master', 'https://github.com/CentOS-PaaS-SIG/ci-pipeline.git']]
+                 'ci-pipeline'             : ['fedBranchandBranch', 'https://github.com/joejstuart/ci-pipeline.git']]
 
 libraries.each { name, repo ->
     library identifier: "${name}@${repo[0]}",
@@ -44,9 +44,9 @@ libraries.each { name, repo ->
 }
 
 // Check out PR's version of library
-library identifier: "upstream-fedora-pipeline@${env.ghprbActualCommit}",
+library identifier: "upstream-fedora-pipeline@fedBranch",
         retriever: modernSCM([$class: 'GitSCMSource',
-                              remote: "https://github.com/${env.ghprbGhRepository}",
+                              remote: "https://github.com/joejstuart/upstream-fedora-pipeline",
                               traits: [[$class: 'jenkins.plugins.git.traits.BranchDiscoveryTrait'],
                                        [$class: 'RefSpecsSCMSourceTrait',
                                         templates: [[value: '+refs/heads/*:refs/remotes/@{remote}/*'],
