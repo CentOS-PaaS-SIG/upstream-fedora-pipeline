@@ -52,12 +52,14 @@ node() {
 
                     print "CI_MESSAGE"
                     print CI_MESSAGE
+                    packagepipelineUtils.setDefaultEnvVars()
                     pipelineUtils.flattenJSON('fed', env.CI_MESSAGE)
                     packagepipelineUtils.repoFromRequest()
                     packagepipelineUtils.setBuildBranch()
                     pipelineUtils.setBuildDisplayAndDescription()
                     testsExist = pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')
                     targetBranch = packagepipelineUtils.checkBranch()
+                    pipelineUtils.initializeAuditFile(msgAuditFile)
 
                 }
 
