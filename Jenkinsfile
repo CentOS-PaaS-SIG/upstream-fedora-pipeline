@@ -46,7 +46,7 @@ libraries.each { name, repo ->
 // Check out PR's version of library
 library identifier: "upstream-fedora-pipeline@${env.ghprbActualCommit}",
         retriever: modernSCM([$class: 'GitSCMSource',
-                              remote: "https://github.com/${envghprbGhRepository}",
+                              remote: "https://github.com/${env.ghprbGhRepository}",
                               traits: [[$class: 'jenkins.plugins.git.traits.BranchDiscoveryTrait'],
                                        [$class: 'RefSpecsSCMSourceTrait',
                                         templates: [[value: '+refs/heads/*:refs/remotes/@{remote}/*'],
