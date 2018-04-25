@@ -222,7 +222,11 @@ podTemplate(name: podName,
                                 pipelineUtils.setCustomBuildNameAndDescription(buildName, buildName)
                             } else {
                                 env.artifact = 'build'
+                                pipelineUtils.flattenJSON('fed', env.CI_MESSAGE)
+                                packagepipelineUtils.repoFromRequest()
+                                packagepipelineUtils.setBuildBranch()
                             }
+
 
                             packagepipelineUtils.setDefaultEnvVars()
 
