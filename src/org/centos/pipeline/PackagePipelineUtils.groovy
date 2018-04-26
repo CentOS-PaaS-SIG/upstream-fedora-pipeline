@@ -333,7 +333,15 @@ def repoFromRequest() {
     if (!env.fed_repo) {
         try {
             def pkgUrlTok = env.fed_request_0.tokenize('/')
-            env.fed_repo = pkgUrlTok.last().tokenize('.')[0]
+
+            if (pkgUrlTok[1] == 'pkgs.fedoraproject.org') {
+                env.fed_repo = pkgUrlTok.last().tokenize('?')[0]
+            } else if (pkgUrlTok[1] == 'src.fedoraproject.org') {
+                env.fed_repo = pkgUrlTok.last().tokenize('.')[0]
+            } else {
+                throw new Exception("Invalid request url: ${pkgUrlTok[1]}")
+
+            }
         } catch(e) {
             throw new Exception('Package name unavailable', e)
         }
