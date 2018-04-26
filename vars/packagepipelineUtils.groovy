@@ -102,12 +102,4 @@ class packagepipelineUtils implements Serializable {
         packagePipelineUtils.repoFromRequest()
     }
 
-    /**
-     * Set the branch based off of the candidate branch
-     * @return
-     */
-    def setBuildBranch() {
-        packagePipelineUtils.setBuildBranch()
-    }
-
 }
