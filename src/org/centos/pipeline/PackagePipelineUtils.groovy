@@ -58,7 +58,7 @@ def setMessageFields(String messageType, String artifact) {
             original_spec_nvr: env.original_spec_nvr,
             ref              : env.basearch,
             repo             : env.fed_repo,
-            rev              : env.fed_rev,
+            rev              : (artifact == 'build') ? "kojitask-${env.task_id}" : env.fed_rev,
             status           : currentBuild.currentResult,
             test_guidance    : "''",
             topic            : topic,
@@ -358,4 +358,5 @@ def setBuildBranch() {
         throw new Exception('Something went wrong parsing branch', e)
     }
 }
+
 
