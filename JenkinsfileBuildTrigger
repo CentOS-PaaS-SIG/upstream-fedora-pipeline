@@ -55,7 +55,7 @@ node() {
                     pipelineUtils.flattenJSON('fed', env.CI_MESSAGE)
                     packagepipelineUtils.setDefaultEnvVars()
                     packagepipelineUtils.repoFromRequest()
-                    packagepipelineUtils.setBuildBranch()
+                    pipelineUtils.setBuildBranch(env.fed_request_1, "fed")
                     pipelineUtils.setBuildDisplayAndDescription()
                     testsExist = pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')
                     targetBranch = packagepipelineUtils.checkBranch()

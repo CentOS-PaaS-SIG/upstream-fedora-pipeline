@@ -339,24 +339,3 @@ def repoFromRequest() {
         }
     }
 }
-
-/**
- * Set branch and fed_branch based on the candidate branch.
- * @return
- */
-def setBuildBranch() {
-    try {
-        if (env.fed_request_1 == 'rawhide') {
-            env.branch = env.fed_request_1
-            env.fed_branch = 'master'
-        } else {
-            // assume that env.fed_request_1 is f**-candidate
-            env.fed_branch = env.fed_request_1.tokenize('-')[0]
-            env.branch = env.fed_branch
-        }
-    } catch(e) {
-        throw new Exception('Something went wrong parsing branch', e)
-    }
-}
-
-
