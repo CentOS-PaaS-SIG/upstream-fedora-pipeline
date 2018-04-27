@@ -323,19 +323,3 @@ def checkBranch() {
 
     return result
 }
-
-/**
- * Parse the repo name from the request list.
- * Sets env.fed_repo
- * @return
- */
-def repoFromRequest() {
-    if (!env.fed_repo) {
-        try {
-            def pkgUrlTok = env.fed_request_0.tokenize('/')
-            env.fed_repo = pkgUrlTok.last().tokenize('.')[0]
-        } catch(e) {
-            throw new Exception('Package name unavailable', e)
-        }
-    }
-}

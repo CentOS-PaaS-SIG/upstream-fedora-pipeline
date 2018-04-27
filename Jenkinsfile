@@ -223,7 +223,7 @@ podTemplate(name: podName,
                             } else {
                                 env.artifact = 'build'
                                 pipelineUtils.flattenJSON('fed', env.CI_MESSAGE)
-                                packagepipelineUtils.repoFromRequest()
+                                pipelineUtils.repoFromRequest(env.fed_request_0, 'fed')
                                 pipelineUtils.setBuildBranch(env.fed_request_1, "fed")
                             }
 
