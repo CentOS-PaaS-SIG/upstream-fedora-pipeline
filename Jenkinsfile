@@ -371,16 +371,6 @@ podTemplate(name: podName,
                         //}
                     //}
 
-                    // Only run this stage if tests exist
-                    if (pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')) {
-
-                        // Set our message topic, properties, and content
-                        messageFields = packagepipelineUtils.setMessageFields("package.test.functional.queued", artifact)
-
-                        // Send message org.centos.prod.ci.pipeline.allpackages.package.test.functional.queued on fedmsg
-                        pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
-                    }
-
                     currentStage = "package-tests"
                     stage(currentStage) {
                         // Only run this stage if tests exist
@@ -388,6 +378,12 @@ podTemplate(name: podName,
                             pipelineUtils.skip(currentStage)
                         } else {
                             packagepipelineUtils.timedPipelineStep(stepName: currentStage, debug: true) {
+                                // Set our message topic, properties, and content
+                                messageFields = packagepipelineUtils.setMessageFields("package.test.functional.queued", artifact)
+
+                                // Send message org.centos.prod.ci.pipeline.allpackages.package.test.functional.queued on fedmsg
+                                pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+
                                 // Set stage specific vars
                                 packagepipelineUtils.setStageEnvVars(currentStage)
 
