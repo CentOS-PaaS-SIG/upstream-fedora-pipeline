@@ -174,6 +174,7 @@ def setStageEnvVars(String stage){
                      package                  : env.fed_repo,
              ],
              "package-tests"                                   : [
+                     TEST_SUBJECTS            : "${env.WORKSPACE}/test_subject.qcow2",
                      package                  : env.fed_repo,
                      python3                  : "yes",
                      TAG                      : "classic",

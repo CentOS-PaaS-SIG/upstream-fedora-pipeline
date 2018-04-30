@@ -321,7 +321,7 @@ podTemplate(name: podName,
                             env.messageStage = 'image.complete'
 
                             // Compose image
-                            pipelineUtils.executeInContainer(currentStage, "cloud-image-compose", "/tmp/cloud-image-compose.sh")
+                            pipelineUtils.executeInContainer(currentStage, "cloud-image-compose", "/tmp/virt-customize.sh")
 
                             // Set our message topic, properties, and content
                             messageFields = packagepipelineUtils.setMessageFields("image.complete", artifact)
