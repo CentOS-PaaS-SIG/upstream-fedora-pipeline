@@ -34,7 +34,7 @@ def executionID = UUID.randomUUID().toString()
 def podName = 'fedora-cloud-' + executionID + '-allpkgs'
 
 def libraries = ['cico-pipeline'           : ['master', 'https://github.com/CentOS/cico-pipeline-library.git'],
-                 'ci-pipeline'             : ['virtcustomize', 'https://github.com/joejstuart/ci-pipeline.git']]
+                 'ci-pipeline'             : ['master', 'https://github.com/CentOS-PaaS-SIG/ci-pipeline.git']]
 
 libraries.each { name, repo ->
     library identifier: "${name}@${repo[0]}",
