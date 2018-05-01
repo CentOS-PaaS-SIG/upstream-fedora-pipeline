@@ -374,7 +374,7 @@ podTemplate(name: podName,
                     currentStage = "package-tests"
                     stage(currentStage) {
                         // Only run this stage if tests exist
-                        if (!pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')) {
+                        if (!pipelineUtils.checkTests(env.fed_repo, (env.artifact == 'pr' ? env.fed_id : env.fed_branch), 'classic')) {
                             pipelineUtils.skip(currentStage)
                         } else {
                             packagepipelineUtils.timedPipelineStep(stepName: currentStage, debug: true) {

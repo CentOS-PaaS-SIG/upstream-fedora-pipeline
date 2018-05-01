@@ -69,7 +69,7 @@ node() {
                         pipelineUtils.injectPRVars("fed", env.CI_MESSAGE)
                         pipelineUtils.updateBuildDisplayAndDescription()
                         validMessage = packagepipelineUtils.checkBranch()
-                        testsExist = pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')
+                        testsExist = pipelineUtils.checkTests(env.fed_repo, env.fed_id, 'classic')
                         // Function only returns false if comments exist,
                         // but the latest was uninteresting
                         commentTrigger = pipelineUtils.checkUpdatedPR(env.CI_MESSAGE, '[citest]')
