@@ -394,7 +394,7 @@ podTemplate(name: podName,
                                 pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
                                 // This can't be in setStageEnvVars because it depends on env.WORKSPACE
-                                env.TEST_SUBJECTS = "${env.WORKSPACE}/images/untested-cloud.qcow2"
+                                env.TEST_SUBJECTS = "${env.WORKSPACE}/images/test_subject.qcow2"
 
                                 // Prepare to send stage.complete message on failure
                                 env.messageStage = 'package.test.functional.complete'
