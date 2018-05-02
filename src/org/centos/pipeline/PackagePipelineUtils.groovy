@@ -179,7 +179,7 @@ def setStageEnvVars(String stage){
                      python3                  : "yes",
                      TAG                      : "classic",
                      branch                   : env.fed_branch,
-                     build_pr_id              : env.fed_pr_id
+                     build_pr_id              : (env.fed_pr_id) ?: ''
              ]
             ]
 
