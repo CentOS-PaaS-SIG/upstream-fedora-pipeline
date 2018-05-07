@@ -458,10 +458,12 @@ podTemplate(name: podName,
                     pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
                     // set the metrics we want
+                    def packageMeasurement = "${ciMetrics.prefix}_${env.fed_repo}"
                     ciMetrics.setMetricTag(jobMeasurement, 'package_name', env.fed_repo)
                     ciMetrics.setMetricTag(jobMeasurement, 'build_result', currentBuild.result)
                     ciMetrics.setMetricField(jobMeasurement, 'build_time', currentBuild.getDuration())
-                    ciMetrics.setMetricField("${ciMetrics.prefix}_${env.fed_repo}", 'build_time', currentBuild.getDuration())
+                    ciMetrics.setMetricField(packageMeasurement, 'build_time', currentBuild.getDuration())
+                    ciMetrics.setMetricTag(packageMeasurement, 'package_name', env.fed_repo)
 
                 }
             }
