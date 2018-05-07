@@ -177,9 +177,9 @@ podTemplate(name: podName,
     node(podName) {
 
         // pull in ciMetrics from ci-pipeline
-        def jobMeasurement = packagepipelineUtils.timedMeasurement()
-        ciMetrics.prefix = 'Fedora_All_Packages_Pipeline'
+        ciMetrics.prefix = packagepipelineUtils.influxDBPrefix()
         packagepipelineUtils.cimetrics = ciMetrics
+        def jobMeasurement = packagepipelineUtils.timedMeasurement()
 
         def buildResult = null
 
@@ -235,7 +235,6 @@ podTemplate(name: podName,
 
                             // Gather some info about the node we are running on for diagnostics
                             pipelineUtils.verifyPod(OPENSHIFT_NAMESPACE, env.NODE_NAME)
-
                             // create audit message file
                             pipelineUtils.initializeAuditFile(msgAuditFile)
 
@@ -459,10 +458,12 @@ podTemplate(name: podName,
                     pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
                     // set the metrics we want
+                    def packageMeasurement = "${ciMetrics.prefix}_${env.fed_repo}"
                     ciMetrics.setMetricTag(jobMeasurement, 'package_name', env.fed_repo)
                     ciMetrics.setMetricTag(jobMeasurement, 'build_result', currentBuild.result)
                     ciMetrics.setMetricField(jobMeasurement, 'build_time', currentBuild.getDuration())
-                    ciMetrics.setMetricField(env.fed_repo, 'build_time', currentBuild.getDuration())
+                    ciMetrics.setMetricField(packageMeasurement, 'build_time', currentBuild.getDuration())
+                    ciMetrics.setMetricTag(packageMeasurement, 'package_name', env.fed_repo)
 
                 }
             }

@@ -49,9 +49,10 @@ def stepName = null
 node() {
 
     // pull in ciMetrics from ci-pipeline
-    def jobMeasurement = packagepipelineUtils.timedMeasurement()
-    ciMetrics.prefix = 'Fedora_All_Packages_Pipeline'
+    ciMetrics.prefix = packagepipelineUtils.influxDBPrefix()
     packagepipelineUtils.cimetrics = ciMetrics
+    def jobMeasurement = packagepipelineUtils.timedMeasurement()
+
 
     timeout(time: 30, unit: 'MINUTES') {
 

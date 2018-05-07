@@ -83,7 +83,7 @@ class packagepipelineUtils implements Serializable {
     }
 
     def timedMeasurement() {
-        return packagePipelineUtils.timedMeasurement()
+        return "${influxDBPrefix()}_${packagePipelineUtils.timedMeasurement()}"
     }
 
     /**
@@ -92,6 +92,10 @@ class packagepipelineUtils implements Serializable {
      */
     def checkBranch() {
         return packagePipelineUtils.checkBranch()
+    }
+
+    def influxDBPrefix() {
+        return "Fedora_All_Packages_Pipeline"
     }
 
 }
