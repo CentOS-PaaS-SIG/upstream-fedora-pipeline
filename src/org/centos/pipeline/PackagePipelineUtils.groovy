@@ -264,11 +264,10 @@ def watchForMessages(String msg_provider, String message) {
  */
 def ciPipeline(Closure body) {
     ansiColor('xterm') {
-        timestamps {
-            deleteDir()
+        deleteDir()
 
-            body()
-        }
+        body()
+
     }
 }
 
