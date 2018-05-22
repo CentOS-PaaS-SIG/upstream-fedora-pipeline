@@ -109,11 +109,7 @@ pipeline {
                                        value: STABLE_LABEL),
                                 string(name: 'RPMBUILD_TAG',
                                        value: STABLE_LABEL),
-                                string(name: 'INQUIRER_TAG',
-                                       value: STABLE_LABEL),
                                 string(name: 'CLOUD_IMAGE_COMPOSE_TAG',
-                                       value: STABLE_LABEL),
-                                string(name: 'OSTREE_BOOT_IMAGE_TAG',
                                        value: STABLE_LABEL),
                                 string(name: 'SINGLEHOST_TEST_TAG',
                                        value: STABLE_LABEL)

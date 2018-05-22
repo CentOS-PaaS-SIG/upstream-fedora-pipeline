@@ -169,9 +169,12 @@ def setStageEnvVars(String stage){
                      fed_branch               : env.fed_branch
 
              ],
-             "image-boot-sanity"                               : [
-                     rpm_repo                 : env.WORKSPACE + "/" + env.fed_repo + "_repo",
+             "nvr-verify"                                     : [
+                     python3                  : "yes",
                      package                  : env.fed_repo,
+                     expected                 : env.nvr,
+                     TEST_SUBJECTS            : "${env.WORKSPACE}/test_subject.qcow2"
+
              ],
              "package-tests"                                   : [
                      TEST_SUBJECTS            : "${env.WORKSPACE}/test_subject.qcow2",
