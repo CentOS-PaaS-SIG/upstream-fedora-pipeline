@@ -134,6 +134,9 @@
             <configVersion>2</configVersion>
             <userRemoteConfigs>
                 <hudson.plugins.git.UserRemoteConfig>
+                    <refspec>
+                        +refs/heads/*:refs/remotes/origin/* +refs/pull/*:refs/remotes/origin/pr/*
+                    </refspec>
                     <url>
                         https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline
                     </url>
@@ -141,7 +144,7 @@
             </userRemoteConfigs>
             <branches>
                 <hudson.plugins.git.BranchSpec>
-                    <name>*/master</name>
+                    <name>${ghprbActualCommit}</name>
                 </hudson.plugins.git.BranchSpec>
             </branches>
             <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
