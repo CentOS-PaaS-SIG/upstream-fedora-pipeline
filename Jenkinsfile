@@ -16,10 +16,8 @@ timestamps {
     // Needed for podTemplate()
     env.SLAVE_TAG = env.SLAVE_TAG ?: 'stable'
     env.RPMBUILD_TAG = env.RPMBUILD_TAG ?: 'stable'
-    env.INQUIRER_TAG = env.INQUIRER_TAG ?: 'stable'
     env.CLOUD_IMAGE_COMPOSE_TAG = env.CLOUD_IMAGE_COMPOSE_TAG ?: 'stable'
     env.SINGLEHOST_TEST_TAG = env.SINGLEHOST_TEST_TAG ?: 'stable'
-    env.OSTREE_BOOT_IMAGE_TAG = env.OSTREE_BOOT_IMAGE_TAG ?: 'stable'
 
     // Audit file for all messages sent.
     msgAuditFile = "messages/message-audit.json"
@@ -84,15 +82,9 @@ timestamps {
                                     string(name: 'RPMBUILD_TAG',
                                            defaultValue: 'stable',
                                            description: 'Tag for rpmbuild image'),
-                                    string(name: 'INQUIRER_TAG',
-                                           defaultValue: 'stable',
-                                           description: 'Tag for inquirer image'),
                                     string(name: 'CLOUD_IMAGE_COMPOSE_TAG',
                                            defaultValue: 'stable',
                                            description: 'Tag for cloud-image-compose image'),
-                                    string(name: 'OSTREE_BOOT_IMAGE_TAG',
-                                           defaultValue: 'stable',
-                                           description: 'Tag for ostree boot image'),
                                     string(name: 'SINGLEHOST_TEST_TAG',
                                            defaultValue: 'stable',
                                            description: 'Tag for singlehost test image'),
@@ -136,16 +128,6 @@ timestamps {
                             command: 'cat',
                             privileged: true,
                             workingDir: '/workDir'),
-                    // This adds the inquirer container to the pod.
-                    /*
-                    containerTemplate(name: 'inquirer',
-                            alwaysPullImage: true,
-                            image: DOCKER_REPO_URL + '/' + OPENSHIFT_NAMESPACE + '/inquirer:' + RPMBUILD_TAG,
-                            ttyEnabled: true,
-                            command: 'cat',
-                            privileged: true,
-                            workingDir: '/workDir'),
-                     */
                     // This adds the cloud-image-compose test container to the pod.
                     containerTemplate(name: 'cloud-image-compose',
                             alwaysPullImage: true,
@@ -162,16 +144,6 @@ timestamps {
                             command: 'cat',
                             privileged: true,
                             workingDir: '/workDir')
-                    // This adds the ostree boot image container to the pod.
-                    /*
-                    containerTemplate(name: 'ostree-boot-image',
-                            alwaysPullImage: true,
-                            image: DOCKER_REPO_URL + '/' + OPENSHIFT_NAMESPACE + '/ostree-boot-image:' + OSTREE_BOOT_IMAGE_TAG,
-                            ttyEnabled: true,
-                            command: '/usr/sbin/init',
-                            privileged: true,
-                            workingDir: '/workDir')
-                    */
             ],
             volumes: [emptyDirVolume(memory: false, mountPath: '/sys/class/net')])
     {
@@ -329,47 +301,20 @@ timestamps {
                                 // Send message org.centos.prod.ci.pipeline.allpackages.image.complete on fedmsg
                                 pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
-                                // Set our message topic, properties, and content
-                                //messageFields = packagepipelineUtils.setMessageFields("image.test.smoke.queued", artifact)
-
-                                // Send message org.centos.prod.ci.pipeline.allpackages.image.test.smoke.queued on fedmsg
-                                //pipelineUtils.sendMessageWithAudit(messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
                             }
                         }
 
-                        //currentStage = "image-boot-sanity"
-                        //stage(currentStage) {
+                        currentStage = "nvr-verify"
+                        stage(currentStage) {
 
-                            //packagepipelineUtils.timedPipelineStep(stepName: currentStage, debug: true) {
+                            packagepipelineUtils.timedPipelineStep(stepName: currentStage, debug: true) {
                                 // Set stage specific vars
-                                //packagepipelineUtils.setStageEnvVars(currentStage)
+                                packagepipelineUtils.setStageEnvVars(currentStage)
 
-                                // Set our message topic, properties, and content
-                                //messageFields = packagepipelineUtils.setMessageFields("image.test.smoke.running", artifact)
-
-                                // Send message org.centos.prod.ci.pipeline.allpackages.image.test.smoke.running on fedmsg
-                                //pipelineUtils.sendMessageWithAudit(messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
-
-                                //env.image2boot = "${env.WORKSPACE}/images/untested-cloud.qcow2"
-
-                                // Find out which rpm should be running
-                                //pipelineUtils.executeInContainer(currentStage, "inquirer", "/tmp/find_nvr.sh")
-                                // Inject the $expected variable
-                                //def package_props = "${env.WORKSPACE}/" + currentStage + "/logs/package.props"
-                                //def package_props_groovy = "${env.WORKSPACE}/package.props.groovy"
-                                //pipelineUtils.convertProps(package_props, package_props_groovy)
-                                //load(package_props_groovy)
-
-                                // Run boot sanity on image
-                                //pipelineUtils.executeInContainer(currentStage, "ostree-boot-image", "/home/ostree-boot-image.sh")
-
-                                // Set our message topic, properties, and content
-                                //messageFields = packagepipelineUtils.setMessageFields("image.test.smoke.complete", artifact)
-
-                                // Send message org.centos.prod.ci.pipeline.allpackages.image.test.smoke.complete on fedmsg
-                                //pipelineUtils.sendMessageWithAudit(messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
-                            //}
-                        //}
+                                // Run nvr verification
+                                pipelineUtils.executeInContainer(currentStage, "singlehost-test", "/tmp/verify-rpm.sh")
+                            }
+                        }
 
                         currentStage = "package-tests"
                         stage(currentStage) {

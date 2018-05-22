@@ -11,10 +11,8 @@ templates=""
 
 ## List templates to get from ci-pipeline upstream repo
 upstream_templates="rpmbuild/rpmbuild-buildconfig-template.yaml \
-inquirer/inquirer-buildconfig-template.yaml \
 cloud-image-compose/cloud-image-compose-buildconfig-template.yaml \
-singlehost-test/singlehost-test-buildconfig-template.yaml \
-ostree-boot-image/ostree-boot-image-buildconfig-template.yaml"
+singlehost-test/singlehost-test-buildconfig-template.yaml"
 
 function logerror {
   echo "Error: $1"
