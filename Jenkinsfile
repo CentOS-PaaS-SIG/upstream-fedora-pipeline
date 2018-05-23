@@ -312,7 +312,7 @@ timestamps {
                                 packagepipelineUtils.setStageEnvVars(currentStage)
 
                                 // Run nvr verification
-                                //pipelineUtils.executeInContainer(currentStage, "singlehost-test", "/tmp/verify-rpm.sh")
+                                pipelineUtils.executeInContainer(currentStage, "singlehost-test", "/tmp/verify-rpm.sh")
                             }
                         }
 

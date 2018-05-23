@@ -171,8 +171,7 @@ def setStageEnvVars(String stage){
              ],
              "nvr-verify"                                     : [
                      python3                  : "yes",
-                     package                  : env.fed_repo,
-                     expected                 : env.nvr,
+                     rpm_repo                 : env.WORKSPACE + "/" + env.fed_repo + "_repo",
                      TEST_SUBJECTS            : "${env.WORKSPACE}/test_subject.qcow2"
 
              ],
