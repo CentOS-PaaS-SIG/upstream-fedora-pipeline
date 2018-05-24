@@ -311,8 +311,11 @@ timestamps {
                                 // Set stage specific vars
                                 packagepipelineUtils.setStageEnvVars(currentStage)
 
+                                // This can't be in setStageEnvVars because it depends on env.WORKSPACE
+                                env.TEST_SUBJECTS = "${env.WORKSPACE}/images/test_subject.qcow2"
+
                                 // Run nvr verification
-                                //pipelineUtils.executeInContainer(currentStage, "singlehost-test", "/tmp/verify-rpm.sh")
+                                pipelineUtils.executeInContainer(currentStage, "singlehost-test", "/tmp/verify-rpm.sh")
                             }
                         }
 
