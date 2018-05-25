@@ -55,8 +55,11 @@ timestamps {
                         print CI_MESSAGE
                         pipelineUtils.flattenJSON('fed', env.CI_MESSAGE)
                         packagepipelineUtils.setDefaultEnvVars()
-                        pipelineUtils.setBuildBranch(env.fed_request_1, "fed")
-                        targetBranch = packagepipelineUtils.checkBranch()
+                        targetBranch = false
+                        if (env.fed_request_1) {
+                            pipelineUtils.setBuildBranch(env.fed_request_1, "fed")
+                            targetBranch = packagepipelineUtils.checkBranch()
+                        }
                         if (targetBranch) {
                             pipelineUtils.repoFromRequest(env.fed_request_0, 'fed')
                             testsExist = pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')
