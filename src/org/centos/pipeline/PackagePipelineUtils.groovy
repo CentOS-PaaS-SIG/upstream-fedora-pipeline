@@ -3,8 +3,6 @@ package org.centos.pipeline
 
 import org.centos.*
 
-import groovy.json.JsonSlurper
-
 /**
  * Library to check the dist branch to as rawhide should map to a release number
  * This value will begin with 'fc'
@@ -226,7 +224,7 @@ def watchForMessages(String msg_provider, String message) {
                 ],
                 overrides: [topic: 'org.centos.stage']
         echo msg
-        def msg_data = new JsonSlurper().parseText(msg)
+        def msg_data = readJSON text: msg
         allFound = true
 
         def errorMsg = ""
