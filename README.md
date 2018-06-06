@@ -102,6 +102,8 @@ Below are the different message types that we listen and publish.  There will be
   - ex. qcow2
 * test_guidance - <comma-separated-list-of-test-suites-to-run> required by downstream CI
   - ex. "''"
+* comment_id - For pipeline runs triggered by PR comment activity, that comment's unique id
+  - ex. 1234
 * ref - Indication of what we are building distro/branch/arch/distro_type
   - ex. x86_64
 * msgJson - A full dump of the message properties in one field of JSON
@@ -214,6 +216,7 @@ email=jchaloup@redhat.com
     "status": "SUCCESS", 
     "branch": "master", 
     "test_guidance": "''", 
+    "comment_id": "",
     "ref": "x86_64"
   }
 }
@@ -250,6 +253,7 @@ email=jchaloup@redhat.com
     "status": "SUCCESS", 
     "branch": "master", 
     "test_guidance": "''", 
+    "comment_id": "",
     "ref": "x86_64"
   }
 }
@@ -286,6 +290,7 @@ email=jchaloup@redhat.com
     "status": "SUCCESS", 
     "branch": "master", 
     "test_guidance": "''", 
+    "comment_id": "",
     "ref": "x86_64"
   }
 }
@@ -323,6 +328,7 @@ email=jchaloup@redhat.com
     "branch": "master", 
     "type": "qcow2", 
     "test_guidance": "''", 
+    "comment_id": "",
     "ref": "x86_64"
   }
 }
@@ -360,6 +366,7 @@ email=jchaloup@redhat.com
     "branch": "master", 
     "type": "''", 
     "test_guidance": "''", 
+    "comment_id": "",
     "ref": "x86_64"
   }
 }
@@ -397,6 +404,7 @@ email=jchaloup@redhat.com
     "branch": "master", 
     "type": "qcow2", 
     "test_guidance": "''", 
+    "comment_id": "",
     "ref": "x86_64"
   }
 }
@@ -433,6 +441,7 @@ email=jchaloup@redhat.com
     "status": "SUCCESS", 
     "branch": "master", 
     "test_guidance": "''", 
+    "comment_id": "",
     "ref": "x86_64"
   }
 }
@@ -469,6 +478,7 @@ email=jchaloup@redhat.com
     "status": "SUCCESS", 
     "branch": "master", 
     "test_guidance": "''", 
+    "comment_id": "",
     "ref": "x86_64"
   }
 }
@@ -505,6 +515,7 @@ email=jchaloup@redhat.com
     "status": "SUCCESS", 
     "branch": "master", 
     "test_guidance": "''", 
+    "comment_id": "",
     "ref": "x86_64"
   }
 }
@@ -541,6 +552,7 @@ email=jchaloup@redhat.com
     "status": "SUCCESS", 
     "branch": "master", 
     "test_guidance": "''", 
+    "comment_id": "",
     "ref": "x86_64"
   }
 }
@@ -577,6 +589,7 @@ email=jchaloup@redhat.com
     "status": "SUCCESS", 
     "branch": "master", 
     "test_guidance": "''", 
+    "comment_id": "1234",
     "ref": "x86_64"
   }
 }
@@ -613,6 +626,7 @@ email=jchaloup@redhat.com
     "status": "SUCCESS", 
     "branch": "master", 
     "test_guidance": "''", 
+    "comment_id": "1234",
     "ref": "x86_64"
   }
 }
@@ -649,6 +663,7 @@ email=jchaloup@redhat.com
     "status": "SUCCESS", 
     "branch": "master", 
     "test_guidance": "''", 
+    "comment_id": "1234",
     "ref": "x86_64"
   }
 }
@@ -686,6 +701,7 @@ email=jchaloup@redhat.com
     "branch": "master", 
     "type": "qcow2", 
     "test_guidance": "''", 
+    "comment_id": "1234",
     "ref": "x86_64"
   }
 }
@@ -723,6 +739,7 @@ email=jchaloup@redhat.com
     "branch": "master", 
     "type": "''", 
     "test_guidance": "''", 
+    "comment_id": "1234",
     "ref": "x86_64"
   }
 }
@@ -760,6 +777,7 @@ email=jchaloup@redhat.com
     "branch": "master", 
     "type": "qcow2", 
     "test_guidance": "''", 
+    "comment_id": "1234",
     "ref": "x86_64"
   }
 }
@@ -796,6 +814,7 @@ email=jchaloup@redhat.com
     "status": "SUCCESS", 
     "branch": "master", 
     "test_guidance": "''", 
+    "comment_id": "1234",
     "ref": "x86_64"
   }
 }
@@ -832,6 +851,7 @@ email=jchaloup@redhat.com
     "status": "SUCCESS", 
     "branch": "master", 
     "test_guidance": "''", 
+    "comment_id": "1234",
     "ref": "x86_64"
   }
 }
@@ -868,6 +888,7 @@ email=jchaloup@redhat.com
     "status": "SUCCESS", 
     "branch": "master", 
     "test_guidance": "''", 
+    "comment_id": "1234",
     "ref": "x86_64"
   }
 }
@@ -904,6 +925,7 @@ email=jchaloup@redhat.com
     "status": "SUCCESS", 
     "branch": "master", 
     "test_guidance": "''", 
+    "comment_id": "1234",
     "ref": "x86_64"
   }
 }
