@@ -29,7 +29,7 @@ timestamps {
                     ),
                     pipelineTriggers(
                             [
-                                    [$class: 'CIBuildTrigger', checks: [[expectedValue: '1', field: 'new']], providerName: 'fedora-fedmsg', selector: 'topic = "org.fedoraproject.prod.buildsys.build.state.change"']]
+                                    [$class: 'CIBuildTrigger', checks: [[expectedValue: '1', field: 'new']], providerName: 'fedora-fedmsg', selector: 'topic = "org.fedoraproject.prod.buildsys.build.state.change" OR topic = "org.fedoraproject.prod.buildsys.task.state.change']]
                     )
             ]
     )
@@ -54,6 +54,9 @@ timestamps {
                         print "CI_MESSAGE"
                         print CI_MESSAGE
                         pipelineUtils.flattenJSON('fed', env.CI_MESSAGE)
+                        # Get request vars from scratch messages
+                        env.fed_request_0 = env.fed_request_0 ?: env.fed_info_request_0
+                        env.fed_request_1 = env.fed_request_1 ?: env.fed_info_request_1
                         packagepipelineUtils.setDefaultEnvVars()
                         targetBranch = false
                         if (env.fed_request_1) {
@@ -85,7 +88,8 @@ timestamps {
                             packagepipelineUtils.timedPipelineStep(stepName: stepName, debug: true) {
 
                                 build job: "fedora-${env.branch}-build-pipeline",
-                                        parameters: [string(name: 'PROVIDED_KOJI_TASKID', value: env.fed_task_id),
+                                        // Scratch messages from task.state.changed call it id, not task_id
+                                        parameters: [string(name: 'PROVIDED_KOJI_TASKID', value: env.fed_task_id ?: env.fed_id),
                                                      string(name: 'CI_MESSAGE', value: env.CI_MESSAGE)],
                                         wait: false
                             }
