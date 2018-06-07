@@ -29,7 +29,7 @@ timestamps {
                     ),
                     pipelineTriggers(
                             [
-                                    [$class: 'CIBuildTrigger', checks: [[expectedValue: '1', field: 'new']], providerName: 'fedora-fedmsg', selector: 'topic = "org.fedoraproject.prod.buildsys.build.state.change" OR topic = "org.fedoraproject.prod.buildsys.task.state.change"']]
+                                    [$class: 'CIBuildTrigger', checks: [[expectedValue: '1|CLOSED', field: 'new']], providerName: 'fedora-fedmsg', selector: 'topic = "org.fedoraproject.prod.buildsys.build.state.change" OR topic = "org.fedoraproject.prod.buildsys.task.state.change"']]
                     )
             ]
     )
