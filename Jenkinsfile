@@ -12,6 +12,8 @@ timestamps {
 
     // Task ID to bypass rpm build and grab artifacts from koji
     env.PROVIDED_KOJI_TASKID = env.PROVIDED_KOJI_TASKID ?: ''
+    // Default to build being scratch, will be overridden if triggered by nonscratch build
+    env.isScratch = true
 
     // Needed for podTemplate()
     env.SLAVE_TAG = env.SLAVE_TAG ?: 'stable'
@@ -199,6 +201,13 @@ timestamps {
                                     // Scratch build messages store things in info
                                     pipelineUtils.repoFromRequest(env.fed_request_0 ?: env.fed_info_request_0, "fed")
                                     pipelineUtils.setBuildBranch(env.fed_request_1 ?: env.fed_info_request_1, "fed")
+                                    // Use message bus format to determine if scratch build
+                                    String scratchTag = ""
+                                    env.isScratch = false
+                                    if (env.fed_info_request_0) {
+                                        scratchTag = ":S"
+                                        env.isScratch = true
+                                    }
                                 }
 
 
@@ -258,13 +267,6 @@ timestamps {
                             }
 
                             if (env.PROVIDED_KOJI_TASKID?.trim()) {
-                                // Use message bus format to determine if scratch build
-                                String scratchTag = ""
-                                env.isScratch = false
-                                if (env.fed_info_request_0) {
-                                    scratchTag = ":S"
-                                    env.isScratch = true
-                                }
                                 // Decorate our build to not be null now
                                 String buildName = "${env.koji_task_id}${scratchTag}:${env.nvr}"
                                 pipelineUtils.setCustomBuildNameAndDescription(buildName, buildName)

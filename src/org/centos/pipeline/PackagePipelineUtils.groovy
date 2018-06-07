@@ -55,6 +55,7 @@ def setMessageFields(String messageType, String artifact) {
             nvr              : env.nvr,
             original_spec_nvr: env.original_spec_nvr,
             ref              : env.basearch,
+            scratch          : env.isScratch ? env.isScratch.toBoolean() : "",
             repo             : env.fed_repo,
             rev              : (artifact == 'build') ? "kojitask-${env.fed_task_id}" : env.fed_rev,
             status           : currentBuild.currentResult,
