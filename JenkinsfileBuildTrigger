@@ -29,7 +29,7 @@ timestamps {
                     ),
                     pipelineTriggers(
                             [
-                                    [$class: 'CIBuildTrigger', checks: [[expectedValue: '1', field: 'new']], providerName: 'fedora-fedmsg', selector: 'topic = "org.fedoraproject.prod.buildsys.build.state.change"']]
+                                    [$class: 'CIBuildTrigger', checks: [[expectedValue: '1', field: 'new']], providerName: 'fedora-fedmsg', selector: 'topic = "org.fedoraproject.prod.buildsys.build.state.change" OR topic = "org.fedoraproject.prod.buildsys.task.state.change']]
                     )
             ]
     )
@@ -54,11 +54,24 @@ timestamps {
                         print "CI_MESSAGE"
                         print CI_MESSAGE
                         pipelineUtils.flattenJSON('fed', env.CI_MESSAGE)
+                        // Get request vars from scratch messages
+                        env.fed_request_0 = env.fed_request_0 ?: env.fed_info_request_0
+                        env.fed_request_1 = env.fed_request_1 ?: env.fed_info_request_1
+                        // Determine if scratch build
+                        env.isScratch = false
+                        if (env.fed_info_request_0) {
+                            env.isScratch = true
+                        }
                         packagepipelineUtils.setDefaultEnvVars()
                         targetBranch = false
                         if (env.fed_request_1) {
                             pipelineUtils.setBuildBranch(env.fed_request_1, "fed")
                             targetBranch = packagepipelineUtils.checkBranch()
+                        }
+                        // If the PR pipeline submit the build, let's just set targetBranch to false so we don't run
+                        if (env.fed_owner == "bpeck/jenkins-continuous-infra.apps.ci.centos.org") {
+                            print("This build is for a scratch build from the PR pipeline. Not triggering.")
+                            targetBranch = false
                         }
                         if (targetBranch) {
                             pipelineUtils.repoFromRequest(env.fed_request_0, 'fed')
@@ -85,7 +98,8 @@ timestamps {
                             packagepipelineUtils.timedPipelineStep(stepName: stepName, debug: true) {
 
                                 build job: "fedora-${env.branch}-build-pipeline",
-                                        parameters: [string(name: 'PROVIDED_KOJI_TASKID', value: env.fed_task_id),
+                                        // Scratch messages from task.state.changed call it id, not task_id
+                                        parameters: [string(name: 'PROVIDED_KOJI_TASKID', value: env.fed_task_id ?: env.fed_id),
                                                      string(name: 'CI_MESSAGE', value: env.CI_MESSAGE)],
                                         wait: false
                             }

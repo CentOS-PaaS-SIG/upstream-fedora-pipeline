@@ -106,6 +106,8 @@ Below are the different message types that we listen and publish.  There will be
   - ex. 1234
 * ref - Indication of what we are building distro/branch/arch/distro_type
   - ex. x86_64
+* scratch - Is this message for a scratch build?
+  - ex. false
 * msgJson - A full dump of the message properties in one field of JSON
 
 
@@ -217,7 +219,8 @@ email=jchaloup@redhat.com
     "branch": "master", 
     "test_guidance": "''", 
     "comment_id": "",
-    "ref": "x86_64"
+    "ref": "x86_64",
+    "scratch": false
   }
 }
 ````
@@ -254,7 +257,8 @@ email=jchaloup@redhat.com
     "branch": "master", 
     "test_guidance": "''", 
     "comment_id": "",
-    "ref": "x86_64"
+    "ref": "x86_64",
+    "scratch": false
   }
 }
 ````
@@ -291,7 +295,8 @@ email=jchaloup@redhat.com
     "branch": "master", 
     "test_guidance": "''", 
     "comment_id": "",
-    "ref": "x86_64"
+    "ref": "x86_64",
+    "scratch": false
   }
 }
 ````
@@ -329,7 +334,8 @@ email=jchaloup@redhat.com
     "type": "qcow2", 
     "test_guidance": "''", 
     "comment_id": "",
-    "ref": "x86_64"
+    "ref": "x86_64",
+    "scratch": false
   }
 }
 ````
@@ -367,7 +373,8 @@ email=jchaloup@redhat.com
     "type": "''", 
     "test_guidance": "''", 
     "comment_id": "",
-    "ref": "x86_64"
+    "ref": "x86_64",
+    "scratch": false
   }
 }
 ````
@@ -405,7 +412,8 @@ email=jchaloup@redhat.com
     "type": "qcow2", 
     "test_guidance": "''", 
     "comment_id": "",
-    "ref": "x86_64"
+    "ref": "x86_64",
+    "scratch": false
   }
 }
 ````
@@ -442,7 +450,8 @@ email=jchaloup@redhat.com
     "branch": "master", 
     "test_guidance": "''", 
     "comment_id": "",
-    "ref": "x86_64"
+    "ref": "x86_64",
+    "scratch": false
   }
 }
 ````
@@ -479,7 +488,8 @@ email=jchaloup@redhat.com
     "branch": "master", 
     "test_guidance": "''", 
     "comment_id": "",
-    "ref": "x86_64"
+    "ref": "x86_64",
+    "scratch": false
   }
 }
 ````
@@ -516,7 +526,8 @@ email=jchaloup@redhat.com
     "branch": "master", 
     "test_guidance": "''", 
     "comment_id": "",
-    "ref": "x86_64"
+    "ref": "x86_64",
+    "scratch": false
   }
 }
 ````
@@ -553,7 +564,8 @@ email=jchaloup@redhat.com
     "branch": "master", 
     "test_guidance": "''", 
     "comment_id": "",
-    "ref": "x86_64"
+    "ref": "x86_64",
+    "scratch": false
   }
 }
 ````
@@ -590,7 +602,8 @@ email=jchaloup@redhat.com
     "branch": "master", 
     "test_guidance": "''", 
     "comment_id": "1234",
-    "ref": "x86_64"
+    "ref": "x86_64",
+    "scratch": true
   }
 }
 ````
@@ -627,7 +640,8 @@ email=jchaloup@redhat.com
     "branch": "master", 
     "test_guidance": "''", 
     "comment_id": "1234",
-    "ref": "x86_64"
+    "ref": "x86_64",
+    "scratch": true
   }
 }
 ````
@@ -664,7 +678,8 @@ email=jchaloup@redhat.com
     "branch": "master", 
     "test_guidance": "''", 
     "comment_id": "1234",
-    "ref": "x86_64"
+    "ref": "x86_64",
+    "scratch": true
   }
 }
 ````
@@ -702,7 +717,8 @@ email=jchaloup@redhat.com
     "type": "qcow2", 
     "test_guidance": "''", 
     "comment_id": "1234",
-    "ref": "x86_64"
+    "ref": "x86_64",
+    "scratch": true
   }
 }
 ````
@@ -740,7 +756,8 @@ email=jchaloup@redhat.com
     "type": "''", 
     "test_guidance": "''", 
     "comment_id": "1234",
-    "ref": "x86_64"
+    "ref": "x86_64",
+    "scratch": true
   }
 }
 ````
@@ -778,7 +795,8 @@ email=jchaloup@redhat.com
     "type": "qcow2", 
     "test_guidance": "''", 
     "comment_id": "1234",
-    "ref": "x86_64"
+    "ref": "x86_64",
+    "scratch": true
   }
 }
 ````
@@ -815,7 +833,8 @@ email=jchaloup@redhat.com
     "branch": "master", 
     "test_guidance": "''", 
     "comment_id": "1234",
-    "ref": "x86_64"
+    "ref": "x86_64",
+    "scratch": true
   }
 }
 ````
@@ -852,7 +871,8 @@ email=jchaloup@redhat.com
     "branch": "master", 
     "test_guidance": "''", 
     "comment_id": "1234",
-    "ref": "x86_64"
+    "ref": "x86_64",
+    "scratch": true
   }
 }
 ````
@@ -889,7 +909,8 @@ email=jchaloup@redhat.com
     "branch": "master", 
     "test_guidance": "''", 
     "comment_id": "1234",
-    "ref": "x86_64"
+    "ref": "x86_64",
+    "scratch": true
   }
 }
 ````
@@ -926,7 +947,8 @@ email=jchaloup@redhat.com
     "branch": "master", 
     "test_guidance": "''", 
     "comment_id": "1234",
-    "ref": "x86_64"
+    "ref": "x86_64",
+    "scratch": true
   }
 }
 ````
