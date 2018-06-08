@@ -47,6 +47,8 @@ def setMessageFields(String messageType, String artifact) {
     // If something is applicable to only some subset of messages,
     // add it below per the existing examples.
 
+    taskid = env.fed_task_id ?: env.fed_id
+
     def messageProperties = [
             branch           : env.fed_branch,
             build_id         : env.BUILD_ID,
@@ -57,12 +59,12 @@ def setMessageFields(String messageType, String artifact) {
             ref              : env.basearch,
             scratch          : env.isScratch ? env.isScratch.toBoolean() : "",
             repo             : env.fed_repo,
-            rev              : (artifact == 'build') ? "kojitask-${env.fed_task_id}" : env.fed_rev,
+            rev              : (artifact == 'build') ? "kojitask-" + taskid : env.fed_rev,
             status           : currentBuild.currentResult,
             test_guidance    : "''",
             comment_id       : env.fed_lastcid,
             topic            : topic,
-            username         : env.fed_username,
+            username         : env.fed_owner,
     ]
 
     // Add image type to appropriate message types
