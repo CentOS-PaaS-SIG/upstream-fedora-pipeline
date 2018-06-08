@@ -69,7 +69,7 @@ timestamps {
                             targetBranch = packagepipelineUtils.checkBranch()
                         }
                         // If the PR pipeline submit the build, let's just set targetBranch to false so we don't run
-                        if (env.fed_owner == "bpeck/jenkins-continuous-infra.apps.ci.centos.org") {
+                        if (env.fed_owner == "bpeck/jenkins-continuous-infra.apps.ci.centos.org" || env.fed_owner == "koschei") {
                             print("This build is for a scratch build from the PR pipeline. Not triggering.")
                             targetBranch = false
                         }
