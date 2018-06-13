@@ -37,7 +37,7 @@ timestamps {
     def TRIGGER_RETRY_COUNT = 3
     def stepName = null
 
-    node() {
+    node('master') {
 
         // pull in ciMetrics from ci-pipeline
         ciMetrics.prefix = packagepipelineUtils.influxDBPrefix()
