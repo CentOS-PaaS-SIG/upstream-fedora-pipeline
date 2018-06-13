@@ -47,7 +47,7 @@ timestamps {
     def validMessage = true
     def stepName = null
 
-    node() {
+    node('master') {
 
         // pull in ciMetrics from ci-pipeline
         ciMetrics.prefix = packagepipelineUtils.influxDBPrefix()
