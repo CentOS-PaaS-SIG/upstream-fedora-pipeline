@@ -29,7 +29,7 @@ pipeline{
     agent {
         kubernetes {
             cloud 'openshift'
-            label 'fedora-image-test'
+            label "fedora-image-test-${UUID.randomUUID().toString()}"
             containerTemplate {
                 name 'jnlp'
                 args '${computer.jnlpmac} ${computer.name}'
