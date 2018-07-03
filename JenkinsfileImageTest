@@ -37,9 +37,9 @@ imageName = null
 try {
     deployOpenShiftTemplate(podName: "fedora-image-test-${UUID.randomUUID().toString()}", docker_repo_url: '172.30.254.79:5000') {
         stage('download image') {
-            handlePipelineStep {
+            //handlePipelineStep {
                 imageName = downloadCompose()
-            }
+            //}
         }
 
         stage('test compose') {
