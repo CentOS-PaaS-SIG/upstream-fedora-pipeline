@@ -2,7 +2,7 @@ def call(Map parameters = [:]) {
     def ciMessage = readJSON text: parameters.get('ciMessage', env.CI_MESSAGE)
     def imagePrefix = parameters.get('imagePrefix', 'Fedora')
 
-    def compose = ciMessage['compose']
+    def compose = ciMessage['compose_id']
     def release_version = ciMessage['release_version']
     def location = ciMessage['location']
 
