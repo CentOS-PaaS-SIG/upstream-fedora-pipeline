@@ -5,7 +5,7 @@ def call(Map parameters = [:]) {
               rm -rf /tmp/artifacts && \
               pip3 install requests && \
               python validate-test-subject.py -s ${imageName} && \
-              test /tmp/artifacts && false || true
+              exit \$?
               """
     executeInContainer(containerName: 'singlehost-test', containerScript: cmd)
 
