@@ -37,7 +37,7 @@ def call(Map parameters = [:]) {
         error("There are no qcow2 images available")
     }
 
-    sh("curl -o ${imageName} ${location}/${imagePath}")
+    sh("curl -Lo ${imageName} ${location}/${imagePath}")
 
     return imageName
 
