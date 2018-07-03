@@ -58,7 +58,7 @@ pipeline{
                 script{
                     sh """
                         rm -f images.json 
-                        curl ${env.location}/metadata/images.json > images.json
+                        curl -O ${env.location}/metadata/images.json
 
                         cat << 'EOF' > path.py
                         import json
@@ -81,14 +81,14 @@ pipeline{
                     if (env.img_path == "") {
                         error("Could not find compose")
                     }
-                    sh("curl ${env.location}/${env.img_path} > test_subject.qcow2")
+                    sh("curl -o test_subject.qcow2 ${env.location}/${env.img_path}")
                 }
             }
         }
         stage("test compose"){
             steps{
                 script{
-                    sh("wget https://pagure.io/upstream-fedora-ci/raw/master/f/fedora-ci-monitor/validate-test-subject.py")
+                    sh("curl -O https://pagure.io/upstream-fedora-ci/raw/master/f/fedora-ci-monitor/validate-test-subject.py")
                     sh("rm -rf /tmp/artifacts; python3 validate-test-subject.py -s test_subject.qcow2")
                 }
             }
