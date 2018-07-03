@@ -53,6 +53,7 @@ pipeline{
                 }
             }
         }
+        imageName = "Fedora-${env.release_version}.qcow2"
         stage("get image url"){
             steps{
                 script{
@@ -81,7 +82,7 @@ pipeline{
                     if (env.img_path == "") {
                         error("Could not find compose")
                     }
-                    sh("curl -o test_subject.qcow2 ${env.location}/${env.img_path}")
+                    sh("curl -o ${imageName} ${env.location}/${env.img_path}")
                 }
             }
         }
@@ -89,7 +90,7 @@ pipeline{
             steps{
                 script{
                     sh("curl -O https://pagure.io/upstream-fedora-ci/raw/master/f/fedora-ci-monitor/validate-test-subject.py")
-                    sh("rm -rf /tmp/artifacts; python3 validate-test-subject.py -s test_subject.qcow2")
+                    sh("rm -rf /tmp/artifacts; python3 validate-test-subject.py -s ${imageName}")
                 }
             }
         }
@@ -103,7 +104,7 @@ pipeline{
     }
     post {
         always {
-            sh("rm -f test_subject.qcow2")
+            sh("rm -f ${imageName}")
         }
     }
 }
