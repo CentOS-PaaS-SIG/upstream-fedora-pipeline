@@ -50,10 +50,10 @@ pipeline{
                     env.location = sh(script: "cat ci_message.txt | jq -r .location", returnStdout: true).trim()
                     env.buildname = "${env.release_version} - ${env.compose}"
                     currentBuild.displayName = "${env.buildname}"
+                    imageName = "Fedora-${env.release_version}.qcow2"
                 }
             }
         }
-        imageName = "Fedora-${env.release_version}.qcow2"
         stage("get image url"){
             steps{
                 script{
