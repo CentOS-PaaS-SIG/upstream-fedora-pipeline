@@ -15,6 +15,7 @@ def call(Map parameters = [:]) {
        curl -O ${location}/metadata/images.json
     """
 
+    sh('cat images.json')
     def imageJson = readJSON file: 'images.json'
     def images = imageJson['payload']['images']
     def imagePath = null
