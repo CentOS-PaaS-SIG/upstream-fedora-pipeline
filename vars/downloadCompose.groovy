@@ -12,10 +12,9 @@ def call(Map parameters = [:]) {
 
     sh """
        rm -f images.json 
-       curl -O ${location}/metadata/images.json
+       curl -LO ${location}/metadata/images.json
     """
 
-    sh('cat images.json')
     def imageJson = readJSON file: 'images.json'
     def images = imageJson['payload']['images']
     def imagePath = null
