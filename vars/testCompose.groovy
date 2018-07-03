@@ -6,6 +6,6 @@ def call(Map parameters = [:]) {
               python validate-test-subject.py -s ${imageName} && \
               test /tmp/artifacts && false || true
               """
-    executeInContainer(cmd)
-    
+    executeInContainer(containerName: 'singlehost-test', containerScript: cmd)
+
 }
