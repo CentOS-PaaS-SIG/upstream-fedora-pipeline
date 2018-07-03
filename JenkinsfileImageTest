@@ -1,0 +1,86 @@
+properties(
+        [
+                buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '1000', daysToKeepStr: '', numToKeepStr: '1000')),
+                pipelineTriggers(
+                        [[
+                                 $class: 'CIBuildTrigger',
+                                 checks: [
+                                         [expectedValue: 'Fedora-Cloud$|Fedora$', field: 'release_short'],
+                                         [expectedValue: 'ga', field: 'release_type'],
+                                         [expectedValue: 'FINISHED', field: 'status'],
+                                 ],
+                                 providerName: 'FedMsg', selector: 'topic = "org.fedoraproject.prod.pungi.compose.status.change"'
+                         ]]
+                ),
+                parameters(
+                        [
+                                string(defaultvalue: "", description: 'CI_MESSAGE', name: 'CI_MESSAGE'),
+                                string(defaultvalue: "", description: 'MESSAGE_HEADERS', name: 'MESSAGE_HEADERS')
+                        ]
+                )
+        ]
+)
+pipeline{
+    agent {label 'fedora-upstream'}
+    stages{
+        stage("set build name"){
+            steps{
+                step([$class: 'WsCleanup'])
+                script{
+                    sh("echo \$CI_MESSAGE > ci_message.txt")
+                    env.compose = sh(script: "cat ci_message.txt | jq -r .compose_id", returnStdout: true).trim()
+                    env.release_version = sh(script: "cat ci_message.txt | jq -r .release_version", returnStdout: true).trim()
+                    env.location = sh(script: "cat ci_message.txt | jq -r .location", returnStdout: true).trim()
+                    env.buildname = "${env.release_version} - ${env.compose}"
+                    currentBuild.displayName = "${env.buildname}"
+                }
+            }
+        }
+        stage("get image url"){
+            steps{
+                script{
+                    sh("rm -f images.json; wget ${env.location}/metadata/images.json")
+                    sh("echo 'import json' > ./path.py")
+                    sh("echo \"images = json.load(open('images.json'))['payload']['images'] \" >> ./path.py")
+                    sh("echo \"for image in images:\">> ./path.py")
+                    sh("echo \"     if image == 'AtomicHost':\" >> ./path.py")
+                    sh("echo \"         continue\" >> ./path.py")
+                    sh("echo \"     if 'x86_64' in images[image]:\" >> ./path.py")
+                    sh("echo \"         for builds in images[image]['x86_64']:\">> ./path.py")
+                    sh("echo \"             if builds['format'] == 'qcow2':\">> ./path.py")
+                    sh("echo \"                 print(builds['path'])\">> ./path.py")
+                    sh("cat ./path.py")
+                    sh("python3 ./path.py > path.txt")
+                    sh("cat ./path.txt")
+                    env.img_path = sh(script: "cat ./path.txt", returnStdout: true).trim()
+                    if (env.img_path == "") {
+                        error("Could not find compose")
+                    }
+                    sh("wget -q ${env.location}/${env.img_path} -O test_subject.qcow2")
+
+
+                }
+            }
+        }
+        stage("test compose"){
+            steps{
+                script{
+                    sh("wget https://pagure.io/upstream-fedora-ci/raw/master/f/fedora-ci-monitor/validate-test-subject.py")
+                    sh("rm -rf /tmp/artifacts; python3 validate-test-subject.py -s test_subject.qcow2")
+                }
+            }
+        }
+        stage("make sure it run on test subject"){
+            steps{
+                script{
+                    sh("test /tmp/artifacts && false || true")
+                }
+            }
+        }
+    }
+    post {
+        always {
+            sh("rm -f test_subject.qcow2")
+        }
+    }
+}
