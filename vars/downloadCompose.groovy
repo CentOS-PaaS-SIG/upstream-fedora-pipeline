@@ -16,6 +16,7 @@ def call(Map parameters = [:]) {
     """
 
     def imageJson = readJSON file: images.json
+    echo imageJson
     def images = imageJson['payload']['images']
     def imagePath = null
 
