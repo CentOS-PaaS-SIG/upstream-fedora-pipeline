@@ -1,5 +1,5 @@
 
-def libraries = ['contra-lib': ['master', 'https://github.com/openshift/contra-lib.git'],
+def libraries = ['contra-lib': ['master', 'https://github.com/joejstuart    /contra-lib.git'],
                  'upstream-fedora': ['imageTestGroovy', 'https://github.com/joejstuart/upstream-fedora-pipeline.git']]
 
 libraries.each { name, repo ->
