@@ -1,3 +1,13 @@
+
+def libraries = ['contra-lib': ['master': 'https://github.com/openshift/contra-lib.git']]
+
+libraries.each { name, repo ->
+    library identifier: "${name}@${repo[0]}",
+            retriever: modernSCM([$class: 'GitSCMSource',
+                                  remote: repo[1]])
+
+}
+
 properties(
         [
                 buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '1000', daysToKeepStr: '', numToKeepStr: '1000')),
@@ -22,90 +32,27 @@ properties(
 )
 
 
-openshiftProject = "continuous-infra"
-DOCKER_REPO_URL = '172.30.254.79:5000'
+try {
+    deployOpenshiftTemplate(podName: "fedora-image-test-${UUID.randomUUID().toString()}", docker_repo_url: '172.30.254.79:5000') {
+        stage('download image') {
+            handlePipelineStep {
+                imageName = downloadCompose()
+            }
+        }
 
-pipeline{
-    agent {
-        kubernetes {
-            cloud 'openshift'
-            label "fedora-image-test-${UUID.randomUUID().toString()}"
-            containerTemplate {
-                name 'jnlp'
-                args '${computer.jnlpmac} ${computer.name}'
-                image DOCKER_REPO_URL + '/' + openshiftProject + '/jenkins-continuous-infra-slave:stable'
-                ttyEnabled false
-                command ''
+        stage('test compose') {
+            handlePipelineStep {
+                testCompose(imageName: imageName)
+            }
+        }
+
+        stage('archive image') {
+            handlePipelineStep {
+                step([$class     : 'ArtifactArchiver', allowEmptyArchive: true,
+                      artifacts  : '*.qcow2', fingerprint: true])
             }
         }
     }
-    stages{
-        stage("set build name"){
-            steps{
-                step([$class: 'WsCleanup'])
-                script{
-                    sh("echo \$CI_MESSAGE > ci_message.txt")
-                    env.compose = sh(script: "cat ci_message.txt | jq -r .compose_id", returnStdout: true).trim()
-                    env.release_version = sh(script: "cat ci_message.txt | jq -r .release_version", returnStdout: true).trim()
-                    env.location = sh(script: "cat ci_message.txt | jq -r .location", returnStdout: true).trim()
-                    env.buildname = "${env.release_version} - ${env.compose}"
-                    currentBuild.displayName = "${env.buildname}"
-                    imageName = "Fedora-${env.release_version}.qcow2"
-                }
-            }
-        }
-        stage("get image url"){
-            steps{
-                script{
-                    sh """
-                        rm -f images.json 
-                        curl -O ${env.location}/metadata/images.json
-
-                        cat << 'EOF' > path.py
-                        import json
-                        
-                        images = json.load(open('images.json'))['payload']['images']
-                        for image in images:
-                            if image == 'AtomicHost':
-                                continue
-                            if 'x86_64' in images[image]:
-                                for builds in images[image]['x86_64']:
-                                    if builds['format'] == 'qcow2':
-                                        print(builds['path'])
-                        EOF
-                        
-                        python3 ./path.py > path.txt
-                           
-                    """
-
-                    env.img_path = sh(script: "cat ./path.txt", returnStdout: true).trim()
-                    if (env.img_path == "") {
-                        error("Could not find compose")
-                    }
-                    sh("curl -o ${imageName} ${env.location}/${env.img_path}")
-                }
-            }
-        }
-        stage("test compose"){
-            steps{
-                script{
-                    sh("curl -O https://pagure.io/upstream-fedora-ci/raw/master/f/fedora-ci-monitor/validate-test-subject.py")
-                    sh("rm -rf /tmp/artifacts; python3 validate-test-subject.py -s ${imageName}")
-                }
-            }
-        }
-        stage("make sure it runs on test subject"){
-            steps{
-                script{
-                    sh("test /tmp/artifacts && false || true")
-                }
-            }
-        }
-    }
-    post {
-        always {
-            archiveArtifacts artifacts: '*.qcow2', fingerprint: true
-            sh("rm -f ${imageName}")
-        }
-    }
+} catch(e) {
+    throw e
 }
