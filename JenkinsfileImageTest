@@ -1,5 +1,5 @@
 
-def libraries = ['contra-lib': ['master': 'https://github.com/openshift/contra-lib.git']]
+def libraries = ['contra-lib': ['master', 'https://github.com/openshift/contra-lib.git']]
 
 libraries.each { name, repo ->
     library identifier: "${name}@${repo[0]}",
@@ -31,6 +31,7 @@ properties(
         ]
 )
 
+imageName = null
 
 try {
     deployOpenshiftTemplate(podName: "fedora-image-test-${UUID.randomUUID().toString()}", docker_repo_url: '172.30.254.79:5000') {
@@ -48,8 +49,8 @@ try {
 
         stage('archive image') {
             handlePipelineStep {
-                step([$class     : 'ArtifactArchiver', allowEmptyArchive: true,
-                      artifacts  : '*.qcow2', fingerprint: true])
+                step([$class   : 'ArtifactArchiver', allowEmptyArchive: true,
+                      artifacts: '*.qcow2', fingerprint: true])
             }
         }
     }
