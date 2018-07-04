@@ -173,12 +173,10 @@ def setStageEnvVars(String stage){
 
              ],
              "nvr-verify"                                     : [
-                     python3                  : "yes",
                      rpm_repo                 : "/etc/yum.repos.d/" + env.fed_repo,
              ],
              "package-tests"                                   : [
                      package                  : env.fed_repo,
-                     python3                  : "yes",
                      TAG                      : "classic",
                      branch                   : env.fed_branch,
                      build_pr_id              : (env.fed_pr_id) ?: ''
