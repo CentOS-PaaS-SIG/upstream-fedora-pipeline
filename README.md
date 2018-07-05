@@ -3,11 +3,15 @@
 **Table of Contents**
 
 - [All Packages Fedora Pipeline Overview](#all-packages-fedora-pipeline-overview)
-- [Fedora Atomic Host Pipeline Stages](#all-packages-fedora-pipeline-stages)
+- [Koji Build and PR Pipeline Stages](#koji-build-and-pr-pipeline-stages)
   - [Trigger](#trigger)
-  - [Build Package](#build-package)
-  - [Compose cloud qcow2 image](#compose-cloud-qcow2-image)
-  - [Functional Tests on Packages](#functional-tests-on-packages)
+  - [Koji Build](#koji-build)
+  - [Image Customize](#image-customize)
+  - [RPM Verify](#rpm-verify)
+  - [Package Tests](#package-tests)
+- [Stage Pipeline](#stage-pipeline)
+  - [Triggering](#triggering)
+  - [Reporting Results](#reporting-results)
 - [fedmsg Bus](#fedmsg-bus)
   - [fedmsg - Message Types](#fedmsg---message-types)
     - [fedmsg - Message Legend](#fedmsg---message-legend)
@@ -38,41 +42,105 @@
 
 # All Packages Fedora Pipeline Overview
 
-The All Packages Fedora Pipeline serves to test all commits to dist-git for Fedora packages. The pipeline watches all branches corresponding to major Fedora releases and Rawhide. The pipeline begins by submitting a koji scratch build for the new change. Once that build is finished, the pipeline uses imagefactory to construct a cloud qcow2 image. The pipeline adds the newly created rpm at build time to the qcow2 image. Once the image generation is complete, the pipeline runs any tests that are included in the package's dist-git repo, as defined by the standard-test-roles. All stages of the pipeline send out messages on fedmsg for their status.<br><br>
+The All Packages Fedora Pipeline serves to test all pull requests to dist-git as well as completed Koji builds for Fedora packages.
+The pipeline watches all branches corresponding to major Fedora releases and Rawhide.
+The goal of these pipelines is to validate pull request changes before they are merged and to ensure still things work properly once Koji builds complete.
+The more packages that utilize these pipelines, the less bugs that should exist.
+Also, all stages of the pipeline send out messages on fedmsg for their status for easy integration with other tools.
+This repository holds all the code for the Jenkins pipeline workflow, but the workflow is highly dependent on the containers stored in the [ci-pipeline repo](https://github.com/CentOS-PaaS-SIG/ci-pipeline), specifically the [rpmbuild container](https://github.com/CentOS-PaaS-SIG/ci-pipeline/tree/master/config/Dockerfiles/rpmbuild), the [cloud-image-compose container](https://github.com/CentOS-PaaS-SIG/ci-pipeline/tree/master/config/Dockerfiles/cloud-image-compose), and the [singlehost-test container](https://github.com/CentOS-PaaS-SIG/ci-pipeline/tree/master/config/Dockerfiles/singlehost-test).<br><br>
 
-# All Packages Fedora Pipeline Stages
+# Koji Build and PR Pipeline Stages
 
 ## Trigger
 
-Once packages are pushed to Fedora dist-git this will trigger a message.  The pipeline will be triggered via the [Jenkins JMS plugin](https://wiki.jenkins-ci.org/display/JENKINS/JMS+Messaging+Plugin) for dist-git messages on fedmsg.
-Only changes pushed to a fXX or master branch in dist-git are monitored.
+The All Packages Fedora Pipelines start with a trigger from Fedmsg received via the [Jenkins JMS plugin](https://wiki.jenkins-ci.org/display/JENKINS/JMS+Messaging+Plugin).
+The triggers listen for completed Koji builds (scratch or official) and pull request activity in [Pagure](https://pagure.io/).
+Only changes proposed to a fXX or master branch in dist-git are monitored.
+Once a message is received, the trigger ensures that there are [Standard Test Roles](https://fedoraproject.org/wiki/CI/Standard_Test_Roles) defined tests for this package or present in this pull request (with proper branch checkout).
+If the above holds true, the respective pipeline is triggered.<br>
 
-Pipeline messages sent via fedmsg for this stage are captured by the topics org.centos.prod.ci.pipeline.allpackages.package.[queued,ignored].
+Pipeline messages sent via fedmsg for this stage are captured by the topics org.centos.prod.ci.pipeline.allpackages.package-[build,pr].[queued,ignored].<br><br>
 
-## Build Package
+## Koji Build
 
-The pipeline job begins by submitting a new scratch build to koji for the rpm. Once the koji build is complete, the artifacts, including logs, are downloaded to the Jenkins workspace to be used by the pipeline build and stored as artifacts in Jenkins.
+The Koji Build stage of the comes from the [rpmbuild container](https://github.com/CentOS-PaaS-SIG/ci-pipeline/tree/master/config/Dockerfiles/rpmbuild).
+In the case of the build pipeline (the one starting from a completed Koji build), this stage simply pulls down the Koji artifacts.
+It is set to only download x86_64, src, and noarch artifacts, creates a repo, and stores it all in the Jenkins workspace.<br>
 
-Pipeline messages sent via fedmsg for this stage are captured by the topics org.centos.prod.ci.pipeline.allpackages.package.[running,complete].
+For the pr pipeline, this stage submits a Koji scratch build for the change.
+The spec file is modified to change NVR to NVR.pr.uid where uid comes from the pagure pull request.
+Assuming the build is successful in Koji, the artifacts are pulled down, a repo is generated, and it is all stored in the Jenkins workspace.
+From this point forward, the only difference between the build and pr pipelines are the message topics they publish on.<br>
 
-## Compose cloud qcow2 image
+Pipeline messages sent via fedmsg for this stage are captured by the topics org.centos.prod.ci.pipeline.allpackages-[build,pr].package.[running,complete].<br><br>
 
-The pipeline next uses virt-customize to grab the latest built qcow2 image for the Fedora major release and install the newly built rpms on the host.
+## Image Customize
 
-Pipeline messages sent via fedmsg for this stage are captured by the topics org.centos.prod.ci.pipeline.allpackages.image.[queued,running,complete].
+The image customize stage of the pipeline comes from the [cloud-image-compose container](https://github.com/CentOS-PaaS-SIG/ci-pipeline/tree/master/config/Dockerfiles/cloud-image-compose), specifically the [virt-customize script](https://github.com/CentOS-PaaS-SIG/ci-pipeline/tree/master/config/Dockerfiles/cloud-image-compose/virt-customize.sh).
+It begins by pulling the latest Fedora qcow2 for the release under test from [Fedora sources](https://dl.fedoraproject.org/pub/fedora/linux).
+Once the image is pulled, the pipeline finds a list of packages to install by using repoquery to check the repo generated in the previous stage for installable rpms.
+All packages with -devel or -debug are ignored.
+Once the list is generated, virt-customize is used to install the rpms into the qcow2 image.<br>
 
-## Functional Tests on Packages
+Pipeline messages sent via fedmsg for this stage are captured by the topics org.centos.prod.ci.pipeline.allpackages-[build,pr].image.[queued,running,complete].<br><br>
 
-Functional tests will be executed on the produced package from the previous stage of the pipeline if they exist.  This will help identify issues isolated to the package themselves.  Success or failure will result with a fedmsg back to the Fedora package maintainer. The tests are pulled from the dist-git repos and are executed with the standard-test-roles. If no tests exist, this stage is skipped.
+## RPM Verify
 
-Pipeline messages sent via fedmsg for this stage are captured by the topics org.centos.prod.ci.pipeline.allpackages.package.test.functional.[queued,running,complete].
+The rpm verify stage comes from the [verify-rpm script](https://github.com/CentOS-PaaS-SIG/ci-pipeline/blob/master/config/Dockerfiles/singlehost-test/verify-rpm.sh).
+This stage is relatively short.
+All it does is boot up the customized qcow2 image and check to make sure at least one rpm from the repo generated in the first stage is actually installed on the host.
+This is to catch instances where nothing was actually installed to ensure that the rpm subjects are actually about to be tested.<br><br>
+
+## Package Tests
+
+The package test stage comes from the [singlehost-test container](https://github.com/CentOS-PaaS-SIG/ci-pipeline/tree/master/config/Dockerfiles/singlehost-test), specifically the [package-tests script](https://github.com/CentOS-PaaS-SIG/ci-pipeline/blob/master/config/Dockerfiles/singlehost-test/package-test.sh).
+This stage is where the actual testing happens.
+Note that if the workflow somehow got this far and tests do not actually exist for the current branch of the package, then this stage will be skipped.
+The execution here is quite simple; the appropriate variables are exported, and ansible-playbook runs all of the defined tests.
+Standard Test Roles defines test.log to exist as an artifact if testing finished.
+Thus, if there is no test.log file when execution completes, the build is marked as failure.
+However, if there is a test.log file, the build will be marked as either success or unstable, depending on the return code of the ansible playbook call.
+All logs are stored in the Jenkins workspace to be archived.
+Also, if the status is marked as unstable (meaning test.log exists, but the testing did not pass), the qcow2 image will be stored in the artifacts for one day for debugging purposes.<br>
+
+Pipeline messages sent via fedmsg for this stage are captured by the topics org.centos.prod.ci.pipeline.allpackages.package-[build,pr].test.functional.[queued,running,complete].<br><br>
+
+# Stage Pipeline
+
+In order to ensure that the production pipeline is always operational, there is a stage pipeline set up to validate code changes to the workflow itself.
+This provides CI for the CI pipeline.
+The Stage Pipeline serves as a test that any change to the workflow will still allow the pipeline to properly run from start to finish.<br><br>
+
+## Triggering
+
+The stage pipeline is triggered by a pull request.
+The pull request must be opened against this repo, or it can be opened against the [ci-pipeline repo](https://github.com/CentOS-PaaS-SIG/ci-pipeline).
+The only way a pull request against the [ci-pipeline repo](https://github.com/CentOS-PaaS-SIG/ci-pipeline) triggers this workflow's stage pipeline is if the pull request touches config/Dockerfiles/[rpmbuild,cloud-image-compose,singlehost-test].
+This is done because the All Packages Pipeline workflow depends on these containers, despite them not being present in this repository.
+If the pull request proposed is to a container, a new container is built in OpenShift, and it is tagged with the pull request number (it will not automatically be tagged with stable, which is the tag the production pipeline uses for all containers).
+Next, the stage pipeline is run, which is an exact clone of the production pipeline (it is the same file), but it uses the pull request's fork of the repository, appropriately checking out the user's shared library and Jenkinsfile.<br><br>
+
+## Reporting Results
+
+The stage pipeline is set up to publish a message on the stage fedmsg instance.
+More interesting is that the results of the stage pipeline are directly posted on the pull request.
+There will be a check (Stage Job in this repo, Upstream Fedora Stage Pipeline Build in ci-pipeline) that posts the results.
+If a developer wishes to retrigger the stage pipeline from the pull request, he/she can either add a commit, comment [test] if the pull request is to this repo, or comment [upstream-test] if the pull request is to the ci-pipeline repo.<br>
+
+If a change is deemed good, it can be merged.
+However, it is not recommended to merge the merge request through the typical UI button.
+Instead, a developer should comment [merge].
+This will trigger the [Stage Merge job](https://jenkins-continuous-infra.apps.ci.centos.org/job/fedora-stage-pipeline-merge/), which will merge the request for you.
+If the pull request is to the [ci-pipeline repo](https://github.com/CentOS-PaaS-SIG/ci-pipeline), [upstream-merge] should be used instead.
+Due to the potential of the OpenShift hosted images being changed, the merge job will also promote the respective stage images to stable when the [merge](or [upstream-merge]) command is used.
+This way, there is no need to use oc commands or mess around in the OpenShift UI to make your changes to the containers live.<br><br>
 
 # fedmsg Bus
 
-Communication between Fedora, CentOS, and Red Hat infrastructures will be done via fedmsg.  Messages will be received of updates to Fedora dist-git repos.  Triggering will happen from Fedora dist-git. The pipeline in CentOS infrastructure will build packages, compose a cloud qcow2 image, and run the standard test roles standard tests from the package's dist-git.  We are dependant on CentOS Infrastructure for allowing us a hub for publishing messages to fedmsg.
+Communication between Fedora, CentOS, and Red Hat infrastructures will be done via fedmsg.  Messages will be received of updates to Fedora dist-git repos.  Triggering will happen from Fedora dist-git. The pipeline in CentOS infrastructure will build packages, customize a cloud qcow2 image, and run the standard test roles standard tests from the package's dist-git.  We are dependent on CentOS Infrastructure for allowing us a hub for publishing messages to fedmsg.
 
 ## fedmsg - Message Types
-Below are the different message types that we listen and publish.  There will be different subtopics so we can keep things organized under the org.centos.prod.ci.pipeline.allpackages.* umbrella. The fact that ‘org.centos’ is contained in the messages is a side effect of the way fedmsg enforces message naming. The messages for the build pipelines use allpackages-build in the topic and the messages for the pull request pipelines use allpackages-pr in the topic.
+Below are the different message types that we listen to and publish.  There will be different subtopics so we can keep things organized under the org.centos.prod.ci.pipeline.allpackages-[build-pr].* umbrella. The fact that ‘org.centos’ is contained in the messages is a side effect of the way fedmsg enforces message naming. The messages for the build pipelines use allpackages-build in the topic and the messages for the pull request pipelines use allpackages-pr in the topic.
 
 ### fedmsg - Message Legend
 
