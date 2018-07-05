@@ -3,6 +3,7 @@ def call(Map parameters = [:]) {
     def cmd = """
               curl -O https://pagure.io/upstream-fedora-ci/raw/master/f/fedora-ci-monitor/validate-test-subject.py && \
               rm -rf /tmp/artifacts && \
+              yum install -y python-pip && \
               pip install requests && \
               python validate-test-subject.py -s \$(pwd)/${imageName} && \
               exit \$?
