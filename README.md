@@ -137,7 +137,9 @@ This way, there is no need to use oc commands or mess around in the OpenShift UI
 
 # fedmsg Bus
 
-Communication between Fedora, CentOS, and Red Hat infrastructures will be done via fedmsg.  Messages will be received of updates to Fedora dist-git repos.  Triggering will happen from Fedora dist-git. The pipeline in CentOS infrastructure will build packages, customize a cloud qcow2 image, and run the standard test roles standard tests from the package's dist-git.  We are dependent on CentOS Infrastructure for allowing us a hub for publishing messages to fedmsg.
+Communication between Fedora, CentOS, and Red Hat infrastructures will be done via fedmsg.  Messages will be received of updates to Fedora dist-git repos.  Triggering will happen from Fedora dist-git. The pipeline in CentOS infrastructure will build packages, customize a cloud qcow2 image, and run the standard test roles standard tests from the package's dist-git.  We are dependent on CentOS Infrastructure for allowing us a hub for publishing messages to fedmsg.<br>
+
+If any change is made to the topics that the pipeline publishes on, they need to be merged into fedmsg_meta_fedora_infrastructure first. See https://pagure.io/fedora-infrastructure/issue/6991 for more information.
 
 ## fedmsg - Message Types
 Below are the different message types that we listen to and publish.  There will be different subtopics so we can keep things organized under the org.centos.prod.ci.pipeline.allpackages-[build-pr].* umbrella. The fact that ‘org.centos’ is contained in the messages is a side effect of the way fedmsg enforces message naming. The messages for the build pipelines use allpackages-build in the topic and the messages for the pull request pipelines use allpackages-pr in the topic.
