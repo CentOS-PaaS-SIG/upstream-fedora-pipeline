@@ -1,6 +1,5 @@
 
-def libraries = ['contra-lib': ['master', 'https://github.com/joejstuart/contra-lib.git'],
-                 'upstream-fedora': ['imageTestGroovy', 'https://github.com/joejstuart/upstream-fedora-pipeline.git']]
+def libraries = ['contra-lib': ['master', 'https://github.com/joejstuart/contra-lib.git']]
 
 libraries.each { name, repo ->
     library identifier: "${name}@${repo[0]}",
@@ -41,15 +40,11 @@ try {
                             docker_repo_url: '172.30.254.79:5000',
                             containers: containers) {
         stage('download image') {
-            handlePipelineStep {
-                imageName = downloadCompose()
-            }
+            imageName = downloadCompose()
         }
 
         stage('test compose') {
-            handlePipelineStep {
-                testCompose(imageName: imageName)
-            }
+            testCompose(imageName: imageName)
         }
 
         stage('archive image') {
