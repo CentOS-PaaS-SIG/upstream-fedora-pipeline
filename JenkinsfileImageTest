@@ -1,5 +1,5 @@
 
-def libraries = ['contra-lib': ['master', 'https://github.com/joejstuart/contra-lib.git']]
+def libraries = ['contra-lib': ['master', 'https://github.com/openshift/contra-lib.git']]
 
 libraries.each { name, repo ->
     library identifier: "${name}@${repo[0]}",
