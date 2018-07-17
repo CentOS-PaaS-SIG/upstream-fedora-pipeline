@@ -1,0 +1,11 @@
+
+def libraries = ['upstream-fedora-pipeline': ['imageTestGroovy', 'https://github.com/joejstuart/upstream-fedora-pipeline.git']]
+
+libraries.each { name, repo ->
+    library identifier: "${name}@${repo[0]}",
+            retriever: modernSCM([$class: 'GitSCMSource',
+                                  remote: repo[1]])
+
+}
+
+fedoraImageTest('f26')
