@@ -1,5 +1,5 @@
 
-def libraries = ['upstream-fedora-pipeline': ['imageTestGroovy', 'https://github.com/joejstuart/upstream-fedora-pipeline.git']]
+def libraries = ['upstream-fedora-pipeline': ['master', 'https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline.git']]
 
 libraries.each { name, repo ->
     library identifier: "${name}@${repo[0]}",
