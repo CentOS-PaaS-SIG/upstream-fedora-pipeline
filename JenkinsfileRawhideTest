@@ -8,4 +8,4 @@ libraries.each { name, repo ->
 
 }
 
-fedoraImageTest('Rawhide')
+fedoraImageTest(fedoraRelease: 'Rawhide')

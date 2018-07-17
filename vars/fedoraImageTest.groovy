@@ -1,4 +1,7 @@
-def call(String fedoraRelease) {
+def call(Map parameters = [:]) {
+
+    def fedoraRelease = parameters.get('fedoraRelease')
+    def imageType = parameters.get('imageType', 'Cloud')
 
     def libraries = ['contra-lib': ['master', 'https://github.com/openshift/contra-lib.git']]
 
@@ -41,7 +44,7 @@ def call(String fedoraRelease) {
                 docker_repo_url: '172.30.254.79:5000',
                 containers: containers) {
             stage('download image') {
-                imageName = downloadCompose()
+                imageName = downloadCompose(imageType: imageType)
             }
 
             stage('test compose') {
