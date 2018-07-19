@@ -8,4 +8,4 @@ libraries.each { name, repo ->
 
 }
 
-fedoraImageTest(fedoraRelease: 'f27', imageType: 'CloudImages')
+fedoraImageTest(fedoraRelease: '27', imageType: 'CloudImages')

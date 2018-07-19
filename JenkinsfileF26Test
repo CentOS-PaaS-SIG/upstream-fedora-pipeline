@@ -8,4 +8,4 @@ libraries.each { name, repo ->
 
 }
 
-fedoraImageTest(fedoraRelease: 'f26')
+fedoraImageTest(fedoraRelease: '26')
