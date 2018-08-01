@@ -179,6 +179,7 @@ def setStageEnvVars(String stage){
                      package                  : env.fed_repo,
                      TAG                      : "classic",
                      branch                   : env.fed_branch,
+                     nvr                      : env.nvr,
                      build_pr_id              : (env.fed_pr_id) ?: ''
              ]
             ]
