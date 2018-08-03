@@ -11,7 +11,6 @@ def call(Map parameters = [:]) {
                 docker_repo_url: '172.30.254.79:5000',
                 containers: containers) {
             stage('download image') {
-                sh 'env'
                 imageName = downloadCompose(imageType: imageType)
             }
 
