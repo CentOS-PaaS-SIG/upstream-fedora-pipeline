@@ -1,5 +1,5 @@
 
-def libraries = ['upstream-fedora-pipeline': ['master', 'https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline.git'],
+def libraries = ['upstream-fedora-pipeline': ['imageFix', 'https://github.com/joejstuart/upstream-fedora-pipeline.git'],
                  'contra-lib': ['master', 'https://github.com/openshift/contra-lib.git']]
 
 libraries.each { name, repo ->
