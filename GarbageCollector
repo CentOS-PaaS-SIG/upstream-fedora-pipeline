@@ -9,7 +9,7 @@ properties(
         [
                 buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '15', daysToKeepStr: '', numToKeepStr: '15')),
                 disableConcurrentBuilds(),
-                pipelineTriggers([cron('0 9 * * *')])
+                pipelineTriggers([cron('0 */2 * * *')])
         ]
 )
 
