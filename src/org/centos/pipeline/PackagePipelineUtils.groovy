@@ -126,7 +126,7 @@ def setDefaultEnvVars(Map envMap=null){
     // We also set dataGrepperUrl which is needed for message tracking
     // and the correct jms-messaging message provider
 
-    if (env.ghprbActualCommit != null && env.ghprbActualCommit != "master") {
+    if (env.ghprbActualCommit != null && (env.ghprbActualCommit != "master" || env.ghprbGhRepository == "CentOS-PaaS-SIG/upstream-fedora-pipeline")) {
         env.MAIN_TOPIC = env.MAIN_TOPIC ?: 'org.centos.stage'
         env.dataGrepperUrl = 'https://apps.stg.fedoraproject.org/datagrepper'
         env.MSG_PROVIDER = "fedora-fedmsg-stage"
