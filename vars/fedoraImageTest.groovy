@@ -14,6 +14,10 @@ def call(Map parameters = [:]) {
                 imageName = downloadCompose(imageType: imageType)
             }
 
+            stage('resize compose') {
+                resizeCompose(imageName: imageName, increase: '10G')
+            }
+
             stage('test compose') {
                 testCompose(imageName: imageName)
             }
