@@ -165,8 +165,9 @@ timestamps {
 
             def buildResult = null
 
-            // Would do ~1.5 hours but kernel builds take a long time
-            timeout(time: 5, unit: 'HOURS') {
+            // Setting timeout to 8 hours, some packages can take few hours to build in koji
+            // and tests can take up to 4 hours to run.
+            timeout(time: 8, unit: 'HOURS') {
 
                 def currentStage = ""
 
