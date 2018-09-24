@@ -337,7 +337,7 @@ timestamps {
                         currentStage = "package-tests"
                         stage(currentStage) {
                             // Only run this stage if tests exist
-                            if (!pipelineUtils.checkTests(env.fed_repo, (env.artifact == 'pr' ? env.fed_id : env.fed_branch), 'classic')) {
+                            if (!pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic', (env.artifact == 'pr' ? env.fed_id : null))) {
                                 pipelineUtils.skip(currentStage)
                             } else {
                                 packagepipelineUtils.timedPipelineStep(stepName: currentStage, debug: true) {
