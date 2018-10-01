@@ -1,9 +1,6 @@
 #!groovy
 
 timestamps {
-    // CANNED CI_MESSAGE
-    // TODO
-    def CANNED_CI_MESSAGE = '{"commit":{"username":"eseyman","stats":{"files":{"perl-Net-FTPSSL.spec":{"deletions":2,"additions":5,"lines":7},".gitignore":{"deletions":0,"additions":1,"lines":1},"sources":{"deletions":1,"additions":1,"lines":2}},"total":{"deletions":3,"files":3,"additions":7,"lines":10}},"name":"Emmanuel Seyman","rev":"c1c7de158fa72de5bd279daaaac9f75d0b3e65cd","namespace":"rpms","agent":"eseyman","summary":"Update to 0.40","repo":"perl-Net-FTPSSL","branch":"master","seen":false,"path":"/srv/git/repositories/rpms/perl-Net-FTPSSL.git","message":"Update to 0.40\n","email":"emmanuel@seyman.fr"},"topic":"org.fedoraproject.prod.git.receive"}'
 
     // Initialize all the ghprb variables we need
     env.ghprbGhRepository = env.ghprbGhRepository ?: 'CentOS-PaaS-SIG/upstream-fedora-pipeline'
@@ -13,7 +10,7 @@ timestamps {
 
     // Needed for podTemplate()
     env.SLAVE_TAG = env.SLAVE_TAG ?: 'stable'
-    env.SINGLEHOST_TEST_TAG = env.SINGLEHOST_TEST_TAG ?: 'stable'
+    env.STR_CONTAINER_TEST_TAG = env.STR_CONTAINER_TEST_TAG ?: 'stable'
 
     // Audit file for all messages sent.
     msgAuditFile = "messages/message-audit.json"
@@ -72,9 +69,9 @@ timestamps {
                                     string(name: 'SLAVE_TAG',
                                            defaultValue: 'stable',
                                            description: 'Tag for slave image'),
-                                    string(name: 'SINGLEHOST_TEST_TAG',
+                                    string(name: 'STR_CONTAINER_TEST_TAG',
                                            defaultValue: 'stable',
-                                           description: 'Tag for singlehost test image'),
+                                           description: 'Tag for str-container-test image'),
                                     string(name: 'DOCKER_REPO_URL',
                                            defaultValue: '172.30.254.79:5000',
                                            description: 'Docker repo url for Openshift instance'),
@@ -85,7 +82,7 @@ timestamps {
                                            defaultValue: 'jenkins',
                                            description: 'Service Account for Openshift operations'),
                                     string(name: 'CI_MESSAGE',
-                                           defaultValue: CANNED_CI_MESSAGE,
+                                           defaultValue: '',
                                            description: 'CI_MESSAGE')
                             ]
                     ),
@@ -107,12 +104,12 @@ timestamps {
                             args: '${computer.jnlpmac} ${computer.name}',
                             command: '',
                             workingDir: '/workDir'),
-                    // This adds the singlehost test container to the pod.
-                    containerTemplate(name: 'singlehost-test',
+                    // This adds the str-container-test container to the pod.
+                    containerTemplate(name: 'str-container-test',
                             alwaysPullImage: true,
-                            image: DOCKER_REPO_URL + '/' + OPENSHIFT_NAMESPACE + '/singlehost-test:' + SINGLEHOST_TEST_TAG,
+                            image: DOCKER_REPO_URL + '/' + OPENSHIFT_NAMESPACE + '/str-container-test:' + STR_CONTAINER_TEST_TAG,
                             ttyEnabled: true,
-                            command: 'cat',
+                            command: '/usr/sbin/init',
                             // Request - minimum required, Limit - maximum possible (hard quota)
                             // https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-cpu
                             // https://blog.openshift.com/managing-compute-resources-openshiftkubernetes/
@@ -134,8 +131,7 @@ timestamps {
 
             def buildResult = null
 
-            // Would do ~1.5 hours but kernel builds take a long time
-            timeout(time: 5, unit: 'HOURS') {
+            timeout(time: 3, unit: 'HOURS') {
 
                 def currentStage = ""
 
@@ -182,16 +178,10 @@ timestamps {
                         currentStage = "container-tests"
                         stage(currentStage) {
                             // Only run this stage if tests exist
-                            if (!pipelineUtils.checkTests(env.fed_repo, (env.artifact == 'pr' ? env.fed_id : env.fed_branch), 'container')) {
+                            if (!pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'container', (env.fed_id ?: null), 'container')) {
                                 pipelineUtils.skip(currentStage)
                             } else {
                                 packagepipelineUtils.timedPipelineStep(stepName: currentStage, debug: true) {
-                                    // Set our message topic, properties, and content
-                                    messageFields = packagepipelineUtils.setMessageFields("container.test.functional.queued", artifact)
-
-                                    // Send message org.centos.prod.ci.pipeline.allpackages.container.test.functional.queued on fedmsg
-                                    pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
-
                                     // Set stage specific vars
                                     packagepipelineUtils.setStageEnvVars(currentStage)
 
@@ -199,14 +189,14 @@ timestamps {
                                     messageFields = packagepipelineUtils.setMessageFields("container.test.functional.running", artifact)
 
                                     // Send message org.centos.prod.ci.pipeline.allpackages.container.test.functional.running on fedmsg
-                                    pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                                    //pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
                                     // Prepare to send stage.complete message on failure
                                     env.messageStage = 'container.test.functional.complete'
 
                                     // Run functional tests
                                     try {
-                                        pipelineUtils.executeInContainer(currentStage, "singlehost-test", "/tmp/container-test.sh")
+                                        pipelineUtils.executeInContainer(currentStage, "str-container-test", "/home/container-test.sh")
                                     } catch(e) {
                                         if (pipelineUtils.fileExists("${WORKSPACE}/${currentStage}/logs/test.log")) {
                                             buildResult = 'UNSTABLE'
@@ -222,7 +212,7 @@ timestamps {
                                     messageFields = packagepipelineUtils.setMessageFields("container.test.functional.complete", artifact)
 
                                     // Send message org.centos.prod.ci.pipeline.allpackages.container.test.functional.complete on fedmsg
-                                    pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                                    //pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
                                 }
                             }
@@ -237,7 +227,7 @@ timestamps {
 
                         // Send message org.centos.prod.ci.pipeline.allpackages.<stage>.complete on fedmsg if stage failed
                         messageFields = packagepipelineUtils.setMessageFields(messageStage, artifact)
-                        pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                        //pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
                         // Report the exception
                         echo "Error: Exception from " + currentStage + ":"
@@ -254,18 +244,11 @@ timestamps {
                         step([$class: 'ArtifactArchiver', allowEmptyArchive: true, artifacts: '**/logs/**,*.txt,*.groovy,**/job.*,**/*.groovy,**/inventory.*', excludes: '**/*.example', fingerprint: true])
 
                         // Set our message topic, properties, and content
+                        // TODO
                         messageFields = packagepipelineUtils.setMessageFields("complete", artifact)
 
                         // Send message org.centos.prod.ci.pipeline.allpackages.complete on fedmsg
-                        pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
-
-                        // set the metrics we want
-                        def packageMeasurement = "${ciMetrics.prefix}_${env.fed_repo}"
-                        ciMetrics.setMetricTag(jobMeasurement, 'package_name', env.fed_repo)
-                        ciMetrics.setMetricTag(jobMeasurement, 'build_result', currentBuild.result)
-                        ciMetrics.setMetricField(jobMeasurement, 'build_time', currentBuild.getDuration())
-                        ciMetrics.setMetricField(packageMeasurement, 'build_time', currentBuild.getDuration())
-                        ciMetrics.setMetricTag(packageMeasurement, 'package_name', env.fed_repo)
+                        //pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
                     }
                 }

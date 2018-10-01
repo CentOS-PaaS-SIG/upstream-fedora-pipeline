@@ -1,0 +1,119 @@
+#!groovy
+
+timestamps {
+    def libraries = ['cico-pipeline'           : ['master', 'https://github.com/CentOS/cico-pipeline-library.git'],
+                     'ci-pipeline'             : ['master', 'https://github.com/CentOS-PaaS-SIG/ci-pipeline.git'],
+                     'fedora-upstream-pipeline': ['master', 'https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline.git']]
+
+    libraries.each { name, repo ->
+        library identifier: "${name}@${repo[0]}",
+                retriever: modernSCM([$class: 'GitSCMSource',
+                                      remote: repo[1]])
+
+    }
+
+    // Audit file for all messages sent.
+    msgAuditFile = "messages/message-audit.json"
+
+    // Number of times to keep retrying to make sure message is ingested
+    // by datagrepper
+    fedmsgRetryCount = 120
+
+    //noinspection GroovyAssignabilityCheck
+    properties(
+            [
+                    buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '100', daysToKeepStr: '', numToKeepStr: '100')),
+                    disableConcurrentBuilds(),
+                    pipelineTriggers(
+                            [[$class: 'CIBuildTrigger', checks: [[expectedValue: 'rcontainer', field: '$.pullrequest.project.namespace']], providerName: 'fedora-fedmsg', selector: 'topic = "org.fedoraproject.prod.pagure.pull-request.new" OR topic = "org.fedoraproject.prod.pagure.pull-request.comment.added"'
+                             ]]
+                    ),
+
+                    parameters(
+                            [
+                                    string(defaultValue: '', description: 'CI_MESSAGE', name: 'CI_MESSAGE')
+                            ]
+                    )
+            ]
+    )
+
+    def TRIGGER_RETRY_COUNT = 3
+    def validMessage = true
+    def stepName = null
+
+    node('master') {
+
+        // pull in ciMetrics from ci-pipeline
+        ciMetrics.prefix = packagepipelineUtils.influxDBPrefix()
+        packagepipelineUtils.cimetrics = ciMetrics
+        def jobMeasurement = packagepipelineUtils.timedMeasurement()
+
+
+        timeout(time: 30, unit: 'MINUTES') {
+
+            packagepipelineUtils.ciPipeline {
+                try {
+                    stepName = 'fedora-container-pr-trigger'
+                    stage(stepName) {
+
+                        packagepipelineUtils.timedPipelineStep(stepName: stepName, debug: true) {
+
+                            print "CI_MESSAGE"
+                            print CI_MESSAGE
+
+                            packagepipelineUtils.setDefaultEnvVars()
+                            pipelineUtils.injectPRVars("fed", env.CI_MESSAGE)
+                            pipelineUtils.updateBuildDisplayAndDescription()
+                            validMessage = packagepipelineUtils.checkBranch()
+                            testsExist = pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'container', (env.fed_id ?: null), 'container')
+                            // Function only returns false if comments exist,
+                            // but the latest was uninteresting
+                            commentTrigger = pipelineUtils.checkUpdatedPR(env.CI_MESSAGE, '[citest]')
+                            // create audit message file
+                            pipelineUtils.initializeAuditFile(msgAuditFile)
+                        }
+                    }
+
+                    if (validMessage && testsExist && commentTrigger) {
+                        // Since pipeline is only functional test stage,
+                        // send the message for that stage
+                        messageFields = packagepipelineUtils.setMessageFields('container.test.functional.queued', 'pr')
+                        //pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+
+                        stepName = 'schedule build'
+                        stage(stepName) {
+
+                            try {
+                                retry(TRIGGER_RETRY_COUNT) {
+                                    packagepipelineUtils.timedPipelineStep(stepName: stepName, debug: true) {
+
+                                        build job: "fedcontainer-${env.branch}-pr-pipeline",
+                                                parameters: [string(name: 'CI_MESSAGE', value: env.CI_MESSAGE)],
+                                                wait: false
+                                    }
+
+                                }
+                            } catch (Throwable err) {
+                                currentBuild.description = "*TRIGGER FAILURE*"
+                                error "Error: Build could not be added to queue after " + TRIGGER_RETRY_COUNT + " tries"
+                                throw err
+                            }
+                        }
+
+                    } else {
+                        echo "CI_MESSAGE was invalid. Skipping..."
+                        messageFields = packagepipelineUtils.setMessageFields('container.ignored', 'pr')
+                        //pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                        currentBuild.description = "*Build Skipped*"
+                    }
+
+                    currentBuild.result = 'SUCCESS'
+
+                } catch (Throwable err) {
+                    currentBuild.result = 'FAILURE'
+                    throw err
+                }
+            }
+        }
+    }
+}
