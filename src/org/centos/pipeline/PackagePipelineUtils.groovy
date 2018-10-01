@@ -181,6 +181,12 @@ def setStageEnvVars(String stage){
                      branch                   : env.fed_branch,
                      nvr                      : env.nvr,
                      build_pr_id              : (env.fed_pr_id) ?: ''
+             ],
+             "container-tests"                                   : [
+                     container                : env.fed_repo,
+                     TAG                      : "container",
+                     branch                   : env.fed_branch,
+                     build_pr_id              : (env.fed_pr_id) ?: ''
              ]
             ]
 
