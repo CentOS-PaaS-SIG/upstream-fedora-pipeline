@@ -35,6 +35,9 @@ timestamps {
 
     }
 
+    // Get Jenkins master pod
+    def jenkinsPod = pipelineUtils.getMasterNode('jenkins')
+
     // Check out PR's version of library
     library identifier: "upstream-fedora-pipeline@${env.ghprbActualCommit}",
             retriever: modernSCM([$class: 'GitSCMSource',
@@ -95,6 +98,20 @@ timestamps {
                 serviceAccount: OPENSHIFT_SERVICE_ACCOUNT,
                 idleMinutes: 0,
                 namespace: OPENSHIFT_NAMESPACE,
+                yaml: """
+apiVersion: v1
+kind: Pod
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: NotIn
+            values:
+            - ${jenkinsPod}
+""",
 
             containers: [
                     // This adds the custom slave container to the pod. Must be first with name 'jnlp'
@@ -113,10 +130,10 @@ timestamps {
                             // Request - minimum required, Limit - maximum possible (hard quota)
                             // https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-cpu
                             // https://blog.openshift.com/managing-compute-resources-openshiftkubernetes/
-                            resourceRequestCpu: '2',
-                            resourceLimitCpu: '2',
-                            resourceRequestMemory: '8Gi',
-                            resourceLimitMemory: '8Gi',
+                            resourceRequestCpu: '4',
+                            resourceLimitCpu: '4',
+                            resourceRequestMemory: '16Gi',
+                            resourceLimitMemory: '16Gi',
                             privileged: true,
                             workingDir: '/workDir')
             ],
