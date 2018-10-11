@@ -25,7 +25,7 @@ timestamps {
                     buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '100', daysToKeepStr: '', numToKeepStr: '100')),
                     disableConcurrentBuilds(),
                     pipelineTriggers(
-                            [[$class: 'CIBuildTrigger', checks: [[expectedValue: 'rcontainer', field: '$.pullrequest.project.namespace']], providerName: 'fedora-fedmsg', selector: 'topic = "org.fedoraproject.prod.pagure.pull-request.new" OR topic = "org.fedoraproject.prod.pagure.pull-request.comment.added"'
+                            [[$class: 'CIBuildTrigger', checks: [[expectedValue: 'container', field: '$.pullrequest.project.namespace']], providerName: 'fedora-fedmsg', selector: 'topic = "org.fedoraproject.prod.pagure.pull-request.new" OR topic = "org.fedoraproject.prod.pagure.pull-request.comment.added"'
                              ]]
                     ),
 

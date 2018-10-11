@@ -124,16 +124,9 @@ spec:
                     // This adds the str-container-test container to the pod.
                     containerTemplate(name: 'str-container-test',
                             alwaysPullImage: true,
-                            image: DOCKER_REPO_URL + '/' + OPENSHIFT_NAMESPACE + '/str-container-test:latest',
+                            image: DOCKER_REPO_URL + '/' + OPENSHIFT_NAMESPACE + '/str-container-test:' + STR_CONTAINER_TEST_TAG,
                             ttyEnabled: true,
                             command: '/usr/sbin/init',
-                            // Request - minimum required, Limit - maximum possible (hard quota)
-                            // https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-cpu
-                            // https://blog.openshift.com/managing-compute-resources-openshiftkubernetes/
-                            //resourceRequestCpu: '4',
-                            //resourceLimitCpu: '4',
-                            //resourceRequestMemory: '16Gi',
-                            //resourceLimitMemory: '16Gi',
                             privileged: true,
                             workingDir: '/workDir')
             ],
@@ -173,6 +166,7 @@ spec:
 
                                 deleteDir()
 
+                                env.artifact = 'pr'
                                 // Parse the CI_MESSAGE and inject it as env vars
                                 pipelineUtils.injectPRVars("fed", env.CI_MESSAGE)
 
