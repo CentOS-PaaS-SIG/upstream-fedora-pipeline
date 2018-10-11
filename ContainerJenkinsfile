@@ -23,7 +23,7 @@ timestamps {
     def executionID = UUID.randomUUID().toString()
 
     // Pod name to use
-    def podName = 'fedora-pipeline-' + executionID + '-container'
+    def podName = 'fedcontainer-' + executionID
 
     def libraries = ['cico-pipeline'           : ['master', 'https://github.com/CentOS/cico-pipeline-library.git'],
                      'ci-pipeline'             : ['master', 'https://github.com/CentOS-PaaS-SIG/ci-pipeline.git']]
@@ -34,6 +34,9 @@ timestamps {
                                       remote: repo[1]])
 
     }
+
+    // Get Jenkins master pod
+    def jenkinsPod = pipelineUtils.getMasterNode('jenkins')
 
     // Check out PR's version of library
     library identifier: "upstream-fedora-pipeline@${env.ghprbActualCommit}",
@@ -95,6 +98,20 @@ timestamps {
                 serviceAccount: OPENSHIFT_SERVICE_ACCOUNT,
                 idleMinutes: 0,
                 namespace: OPENSHIFT_NAMESPACE,
+                yaml: """
+apiVersion: v1
+kind: Pod
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: NotIn
+            values:
+            - ${jenkinsPod}
+""",
 
             containers: [
                     // This adds the custom slave container to the pod. Must be first with name 'jnlp'
@@ -110,13 +127,6 @@ timestamps {
                             image: DOCKER_REPO_URL + '/' + OPENSHIFT_NAMESPACE + '/str-container-test:' + STR_CONTAINER_TEST_TAG,
                             ttyEnabled: true,
                             command: '/usr/sbin/init',
-                            // Request - minimum required, Limit - maximum possible (hard quota)
-                            // https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-cpu
-                            // https://blog.openshift.com/managing-compute-resources-openshiftkubernetes/
-                            resourceRequestCpu: '500m',
-                            resourceLimitCpu: '1',
-                            resourceRequestMemory: '2Gi',
-                            resourceLimitMemory: '4Gi',
                             privileged: true,
                             workingDir: '/workDir')
             ],
@@ -156,6 +166,7 @@ timestamps {
 
                                 deleteDir()
 
+                                env.artifact = 'pr'
                                 // Parse the CI_MESSAGE and inject it as env vars
                                 pipelineUtils.injectPRVars("fed", env.CI_MESSAGE)
 
