@@ -197,7 +197,7 @@ spec:
                                     packagepipelineUtils.setStageEnvVars(currentStage)
 
                                     // Set our message topic, properties, and content
-                                    messageFields = packagepipelineUtils.setMessageFields("container.test.functional.running", artifact)
+                                    messageFields = packagepipelineUtils.setMessageFields("container.test.functional.running", artifact, true)
 
                                     // Send message org.centos.prod.ci.pipeline.allpackages.container.test.functional.running on fedmsg
                                     //pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
@@ -220,7 +220,7 @@ spec:
                                     }
 
                                     // Set our message topic, properties, and content
-                                    messageFields = packagepipelineUtils.setMessageFields("container.test.functional.complete", artifact)
+                                    messageFields = packagepipelineUtils.setMessageFields("container.test.functional.complete", artifact, true)
 
                                     // Send message org.centos.prod.ci.pipeline.allpackages.container.test.functional.complete on fedmsg
                                     //pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
@@ -237,7 +237,7 @@ spec:
                         currentBuild.result = buildResult
 
                         // Send message org.centos.prod.ci.pipeline.allpackages.<stage>.complete on fedmsg if stage failed
-                        messageFields = packagepipelineUtils.setMessageFields(messageStage, artifact)
+                        messageFields = packagepipelineUtils.setMessageFields(messageStage, artifact, true)
                         //pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
                         // Report the exception
@@ -256,7 +256,7 @@ spec:
 
                         // Set our message topic, properties, and content
                         // TODO
-                        messageFields = packagepipelineUtils.setMessageFields("complete", artifact)
+                        messageFields = packagepipelineUtils.setMessageFields("complete", artifact, true)
 
                         // Send message org.centos.prod.ci.pipeline.allpackages.complete on fedmsg
                         //pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)

@@ -26,8 +26,8 @@ class packagepipelineUtils implements Serializable {
      * @param artifact ${MAIN_TOPIC}.ci.pipeline.allpackages-${artifact}.<defined-in-README>
      * @return
      */
-    def setMessageFields(String messageType, String artifact) {
-        packagePipelineUtils.setMessageFields(messageType, artifact)
+    def setMessageFields(String messageType, String artifact, Boolean oldFormat) {
+        packagePipelineUtils.setMessageFields(messageType, artifact, oldFormat)
     }
 
     /**

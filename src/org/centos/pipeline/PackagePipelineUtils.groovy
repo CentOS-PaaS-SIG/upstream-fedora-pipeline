@@ -39,8 +39,12 @@ def setDistBranch() {
  * @param artifact ${MAIN_TOPIC}.ci.pipeline.allpackages-${artifact}.<defined-in-README>
  * @return
  */
-def setMessageFields(String messageType, String artifact) {
-    topic = "${MAIN_TOPIC}.ci.pipeline.allpackages-${artifact}.${messageType}"
+def setMessageFields(String messageType, String artifact, Boolean oldFormat) {
+    if (oldFormat) {
+        topic = "${MAIN_TOPIC}.ci.pipeline.allpackages-${artifact}.${messageType}"
+    } else {
+        topic = "${MAIN_TOPIC}.ci.${artifact}.test.${messageType}"
+    }
     print("Topic is " + topic)
 
     // Create a HashMap of default message property keys and values
@@ -67,12 +71,6 @@ def setMessageFields(String messageType, String artifact) {
             topic            : topic,
             username         : env.fed_owner,
     ]
-
-    // Add image type to appropriate message types
-    if (messageType in ['image.queued', 'image.running', 'image.complete', 'image.test.smoke.queued', 'image.test.smoke.running', 'image.test.smoke.complete'
-    ]) {
-        messageProperties.type = messageType == 'image.running' ? "''" : 'qcow2'
-    }
 
     // Create a string to hold the data from the messageProperties hash map
     String messagePropertiesString = ''
