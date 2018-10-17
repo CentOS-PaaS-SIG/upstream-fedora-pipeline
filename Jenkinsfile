@@ -211,6 +211,7 @@ timestamps {
                                     pipelineUtils.setBuildBranch(env.fed_request_1 ?: env.fed_info_request_1, "fed")
                                     // Use message bus format to determine if scratch build
                                     env.isScratch = env.fed_info_request_0 ? true : false
+                                    env.fed_namespace = 'rpms'
                                 }
 
 
