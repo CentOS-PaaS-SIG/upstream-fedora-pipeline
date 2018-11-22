@@ -100,7 +100,7 @@ def prepareCredentials(String credentials) {
         sh '''
             #!/bin/bash
             set -xeuo pipefail
-    
+
             cp ${FEDORA_KEYTAB} fedora.keytab
             chmod 0600 fedora.keytab
         '''
@@ -168,6 +168,7 @@ def setStageEnvVars(String stage){
              "cloud-image-compose"                            : [
                      rpm_repo                 : env.WORKSPACE + "/" + env.fed_repo + "_repo",
                      package                  : env.fed_repo,
+                     namespace                : env.fed_namespace,
                      branch                   : env.branch,
                      fed_branch               : env.fed_branch
 
@@ -177,6 +178,7 @@ def setStageEnvVars(String stage){
              ],
              "package-tests"                                   : [
                      package                  : env.fed_repo,
+                     namespace                : env.fed_namespace,
                      TAG                      : "classic",
                      branch                   : env.fed_branch,
                      nvr                      : env.nvr,

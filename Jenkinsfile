@@ -198,7 +198,7 @@ timestamps {
                                     pipelineUtils.injectPRVars("fed", env.CI_MESSAGE)
 
                                     // Decorate our build
-                                    String buildName = "PR-${env.fed_id}:${env.fed_repo}:${env.fed_branch}"
+                                    String buildName = "PR-${env.fed_namespace}:${env.fed_id}:${env.fed_repo}:${env.fed_branch}"
                                     // Once we have stage job running lets make build description
                                     // a hyperlink to PR like
                                     // <a href="https://src.fedoraproject.org/rpms/${env.fed_repo}/pull-request/${env.fed_id}"> PR #${env.fed_id} ${env.fed_repo}</a>
@@ -256,18 +256,23 @@ timestamps {
                                     // Get DistBranch value to find rpm NVR
                                     packagepipelineUtils.setDistBranch()
 
-                                    // Build rpms
-                                    pipelineUtils.executeInContainer(currentStage, "rpmbuild", "/tmp/koji_build_pr.sh")
+                                    // For tests namespace there is no package to build
+                                    if (env.fed_namespace != "tests" ) {
+                                        // Build rpms
+                                        pipelineUtils.executeInContainer(currentStage, "rpmbuild", "/tmp/koji_build_pr.sh")
+                                    }
                                 }
 
-                                 // Inject variables
-                                 def job_props = "${env.WORKSPACE}/" + currentStage + "/logs/job.props"
-                                 def job_props_groovy = "${env.WORKSPACE}/job.props.groovy"
-                                 pipelineUtils.convertProps(job_props, job_props_groovy)
-                                 load(job_props_groovy)
+                                // Inject variables
+                                def job_props = "${env.WORKSPACE}/" + currentStage + "/logs/job.props"
+                                if (pipelineUtils.fileExists(job_props)) {
+                                     def job_props_groovy = "${env.WORKSPACE}/job.props.groovy"
+                                     pipelineUtils.convertProps(job_props, job_props_groovy)
+                                     load(job_props_groovy)
 
-                                // Make sure we generated a good repo
-                                pipelineUtils.executeInContainer(currentStage, "rpmbuild", "/tmp/repoquery.sh")
+                                    // Make sure we generated a good repo
+                                    pipelineUtils.executeInContainer(currentStage, "rpmbuild", "/tmp/repoquery.sh")
+                                }
                             }
 
                             if (env.PROVIDED_KOJI_TASKID?.trim()) {
@@ -329,16 +334,20 @@ timestamps {
 
                                 // This can't be in setStageEnvVars because it depends on env.WORKSPACE
                                 env.TEST_SUBJECTS = "${env.WORKSPACE}/images/test_subject.qcow2"
+                                env.TEST_LOCATION = "https://src.fedoraproject.org/${env.fed_namespace}/${env.fed_repo}"
 
-                                // Run nvr verification
-                                pipelineUtils.executeInContainer(currentStage, "singlehost-test", "/tmp/verify-rpm.sh")
+                                // tests namespace does not install any package, so do no need to verify rpm
+                                if (env.fed_namespace != "tests" ) {
+                                    // Run nvr verification
+                                    pipelineUtils.executeInContainer(currentStage, "singlehost-test", "/tmp/verify-rpm.sh")
+                                }
                             }
                         }
 
                         currentStage = "package-tests"
                         stage(currentStage) {
                             // Only run this stage if tests exist
-                            if (!pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic', (env.artifact == 'pr' ? env.fed_id : null))) {
+                            if (!pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic', (env.artifact == 'pr' ? env.fed_id : null), env.fed_namespace)) {
                                 pipelineUtils.skip(currentStage)
                             } else {
                                 packagepipelineUtils.timedPipelineStep(stepName: currentStage, debug: true) {

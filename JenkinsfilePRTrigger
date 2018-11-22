@@ -31,7 +31,7 @@ timestamps {
                     // Will need to add pagure.pull-request.comment.added and
                     // whatever it is for commits added soon most likely
                     pipelineTriggers(
-                            [[$class: 'CIBuildTrigger', checks: [[expectedValue: 'rpms', field: '$.pullrequest.project.namespace']], providerName: 'fedora-fedmsg', selector: 'topic = "org.fedoraproject.prod.pagure.pull-request.new" OR topic = "org.fedoraproject.prod.pagure.pull-request.comment.added"'
+                            [[$class: 'CIBuildTrigger', checks: [[expectedValue: 'rpms|tests', field: '$.pullrequest.project.namespace']], providerName: 'fedora-fedmsg', selector: 'topic = "org.fedoraproject.prod.pagure.pull-request.new" OR topic = "org.fedoraproject.prod.pagure.pull-request.comment.added"'
                              ]]
                     ),
 
@@ -71,7 +71,7 @@ timestamps {
                             pipelineUtils.injectPRVars("fed", env.CI_MESSAGE)
                             pipelineUtils.updateBuildDisplayAndDescription()
                             validMessage = packagepipelineUtils.checkBranch()
-                            testsExist = pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic', env.fed_id)
+                            testsExist = pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic', env.fed_id, env.fed_namespace)
                             // Function only returns false if comments exist,
                             // but the latest was uninteresting
                             commentTrigger = pipelineUtils.checkUpdatedPR(env.CI_MESSAGE, '[citest]')
