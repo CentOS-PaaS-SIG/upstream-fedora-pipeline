@@ -89,6 +89,10 @@ timestamps {
                         messageFields = packagepipelineUtils.setTestMessageFields("queued", "dist-git-pr")
                         pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
+                        // Send message org.centos.prod.ci.dist-git-pr.test.queued on fedmsg
+                        messageFields = packagepipelineUtils.setTestMessageFields("queued", "dist-git-pr")
+                        pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+
                         stepName = 'schedule build'
                         stage(stepName) {
 
