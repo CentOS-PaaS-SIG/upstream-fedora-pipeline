@@ -97,7 +97,7 @@ def setMessageFields(String messageType, String artifact) {
 // Plan is to rename to setMessageFields and remove function above once everything seems fine and stable
 def setTestMessageFields(String messageType, String artifact) {
     // Set values that go in multiple closures
-    myTopic = "${MAIN_TOPIC}.ci.${artifact}.test.${messageType}"
+   myTopic = "${MAIN_TOPIC}.ci.${artifact}.test.${messageType}"
     myType = (artifact == 'koji-build') ? 'tier0' : 'build'
     myComponent = env.fed_repo
     myIssuer = env.fed_owner ?: fed_username
@@ -109,10 +109,8 @@ def setTestMessageFields(String messageType, String artifact) {
     myCategory = (artifact == 'koji-build') ? 'functional' : 'static-analysis'
     myNamespace = "fedora-ci"
 
-    // Create message header
-    myHeader = msgBusHeader(topic: myTopic, type: myType, component: myComponent, issuer: myIssuer, scratch: myScratch, id: myId, nvr: myNvr)
     // Create common message body content
-    myCIContent = msgBusCIContent(name: "fedora-ci", team: "fedora-ci", irc: "#fedora-ci", email: "ci@lists.fedoraproject.org")
+    myContactContent = msgBusContactContent(name: "fedora-ci", team: "fedora-ci", irc: "#fedora-ci", email: "ci@lists.fedoraproject.org")
     // Create artifact closure
     if (artifact == 'koji-build') {
         myArtifactContent = msgBusArtifactContent(type: myType, id: myId, component: myComponent, issuer: myIssuer, nvr: myNvr, scratch: myScratch, dependencies: env.BUILD_DEPS ? env.BUILD_DEPS.split() : [])
@@ -125,23 +123,23 @@ def setTestMessageFields(String messageType, String artifact) {
     // Create type specific content and construct messages
     switch (messageType) {
         case 'queued':
-            myConstructedMessage = msgBusTestQueued(type: myType, category: myCategory, namespace: myNamespace, ci: myCIContent(), artifact: myArtifactContent())
+            myConstructedMessage = msgBusTestQueued(type: myType, category: myCategory, namespace: myNamespace, contact: myContactContent(), artifact: myArtifactContent())
             break
         case 'running':
-            myConstructedMessage = msgBusTestRunning(type: myType, category: myCategory, namespace: myNamespace, ci: myCIContent(), artifact: myArtifactContent())
+            myConstructedMessage = msgBusTestRunning(type: myType, category: myCategory, namespace: myNamespace, contact: myContactContent(), artifact: myArtifactContent())
             break
         case 'complete':
             myPipelineContent = msgBusPipelineContent(id: env.executionID)
             mySystemContent = msgBusSystemContent(label: "upstream-fedora-pipeline", os: env.fed_branch, provider: "CentOS CI", architecture: "x86_64", variant: "Cloud")
             myStageContent = msgBusStageContent(name: env.currentStage)
-            myConstructedMessage = msgBusTestComplete(type: myType, category: myCategory, namespace: myNamespace, ci: myCIContent(), artifact: myArtifactContent(), pipeline: myPipelineContent(), system: mySystemContent(), stage: myStageContent())
+            myConstructedMessage = msgBusTestComplete(type: myType, category: myCategory, namespace: myNamespace, contact: myContactContent(), artifact: myArtifactContent(), pipeline: myPipelineContent(), system: mySystemContent(), stage: myStageContent())
             break
         case 'error':
-            myConstructedMessage = msgBusTestError(type: myType, category: myCategory, namespace: myNamespace, ci: myCIContent(), artifact: myArtifactContent())
+            myConstructedMessage = msgBusTestError(type: myType, category: myCategory, namespace: myNamespace, contact: myContactContent(), artifact: myArtifactContent())
             break
     }
 
-    return [ 'topic': myTopic, 'properties': myHeader(), 'content': myConstructedMessage() ] 
+    return [ 'topic': myTopic, 'properties': '', 'content': myConstructedMessage() ] 
 }
 
 /**
