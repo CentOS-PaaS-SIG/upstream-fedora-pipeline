@@ -88,6 +88,63 @@ def setMessageFields(String messageType, String artifact) {
 }
 
 /**
+ * Method that uses contra-lib shared library
+ * to create the ci.artifact.test.messageType messages
+ * @param messageType: queued, running, complete, error
+ * @param artifact: dist-git-pr, koji-build
+ * @return
+ */
+// Plan is to rename to setMessageFields and remove function above once everything seems fine and stable
+def setTestMessageFields(String messageType, String artifact) {
+    // Set values that go in multiple closures
+    myTopic = "${MAIN_TOPIC}.ci.${artifact}.test.${messageType}"
+    myType = (artifact == 'koji-build') ? 'tier0' : 'build'
+    myComponent = env.fed_repo
+    myIssuer = env.fed_owner ?: fed_username
+    // PR builds are scratch so defaulting to scratch = true
+    myScratch = env.isScratch ? env.isScratch.toBoolean() : true
+    taskid = env.fed_task_id ?: env.fed_id
+    myId = (artifact == 'koji-build') ? taskid : env.fed_rev
+    myNvr = env.nvr ?: ""
+    myCategory = (artifact == 'koji-build') ? 'functional' : 'static-analysis'
+    myNamespace = "fedora-ci"
+
+    // Create message header
+    myHeader = msgBusHeader(topic: myTopic, type: myType, component: myComponent, issuer: myIssuer, scratch: myScratch, id: myId, nvr: myNvr)
+    // Create common message body content
+    myCIContent = msgBusCIContent(name: "fedora-ci", team: "fedora-ci", irc: "#fedora-ci", email: "ci@lists.fedoraproject.org")
+    // Create artifact closure
+    if (artifact == 'koji-build') {
+        myArtifactContent = msgBusArtifactContent(type: myType, id: myId, component: myComponent, issuer: myIssuer, nvr: myNvr, scratch: myScratch, dependencies: env.BUILD_DEPS ? env.BUILD_DEPS.split() : [])
+    } else if (artifact == 'dist-git-pr') {
+        myArtifactContent = msgBusArtifactContent(type: myType, id: myId, component: myComponent, issuer: myIssuer, nvr: myNvr, scratch: myScratch, repository: env.fed_repo, commit_hash: fed_last_commit_hash, uid: fed_uid, comment_id: env.fed_lastcid, dependencies: env.BUILD_DEPS ? env.BUILD_DEPS.split() : [])
+    } else {
+        throw new Exception("Artifact type error - ${artifact} is neither koji-build nor dist-git-pr")
+    }
+
+    // Create type specific content and construct messages
+    switch (messageType) {
+        case 'queued':
+            myConstructedMessage = msgBusTestQueued(type: myType, category: myCategory, namespace: myNamespace, ci: myCIContent(), artifact: myArtifactContent())
+            break
+        case 'running':
+            myConstructedMessage = msgBusTestRunning(type: myType, category: myCategory, namespace: myNamespace, ci: myCIContent(), artifact: myArtifactContent())
+            break
+        case 'complete':
+            myPipelineContent = msgBusPipelineContent(id: env.executionID)
+            mySystemContent = msgBusSystemContent(label: "upstream-fedora-pipeline", os: env.fed_branch, provider: "CentOS CI", architecture: "x86_64", variant: "Cloud")
+            myStageContent = msgBusStageContent(name: env.currentStage)
+            myConstructedMessage = msgBusTestComplete(type: myType, category: myCategory, namespace: myNamespace, ci: myCIContent(), artifact: myArtifactContent(), pipeline: myPipelineContent(), system: mySystemContent(), stage: myStageContent())
+            break
+        case 'error':
+            myConstructedMessage = msgBusTestError(type: myType, category: myCategory, namespace: myNamespace, ci: myCIContent(), artifact: myArtifactContent())
+            break
+    }
+
+    return [ 'topic': myTopic, 'properties': myHeader(), 'content': myConstructedMessage() ] 
+}
+
+/**
  * Library to prepare credentials
  * @return
  */

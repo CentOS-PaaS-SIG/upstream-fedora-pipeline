@@ -31,6 +31,17 @@ class packagepipelineUtils implements Serializable {
     }
 
     /**
+     * Method that uses contra-lib shared library
+     * to create the ci.artifact.test.messageType messages
+     * @param messageType: queued, running, complete, error
+     * @param artifact: dist-git-pr, koji-build
+     * @return
+     */
+    def setTestMessageFields(String messageType, String artifact) {
+        packagePipelineUtils.setTestMessageFields(messageType, artifact)
+    }
+
+    /**
      * Method to set default environmental variables. Performed once at start of Jenkinsfile
      * @param envMap Key/value pairs which will be set as environmental variables.
      * @return
