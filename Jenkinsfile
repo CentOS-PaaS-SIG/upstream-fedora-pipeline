@@ -243,7 +243,7 @@ timestamps {
 
                                 // Send message org.centos.prod.ci.<artifact>.test.running on fedmsg
                                 messageFields = packagepipelineUtils.setTestMessageFields("running", artifact)
-                                pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                                pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['content'], '', msgAuditFile, fedmsgRetryCount)
 
                             }
                         }
@@ -432,7 +432,7 @@ timestamps {
 
                                     // Send message org.centos.prod.ci.<artifact>.test.complete on fedmsg
                                     messageFields = packagepipelineUtils.setTestMessageFields("complete", artifact)
-                                    pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                                    pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['content'], '', msgAuditFile, fedmsgRetryCount)
 
                                 }
                             }
