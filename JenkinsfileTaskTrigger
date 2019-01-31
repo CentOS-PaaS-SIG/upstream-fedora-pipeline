@@ -34,7 +34,7 @@ timestamps {
                                   $class: 'FedMsgSubscriberProviderData',
                                   name: 'fedora-fedmsg',
                                   overrides: [
-                                      topic: 'org.fedoraproject.prod.buildsys.build.state.change'
+                                      topic: 'org.fedoraproject.prod.buildsys.task.state.change'
                                   ],
                                   checks: [
                                       [field: 'new', expectedValue: '1|CLOSED'],

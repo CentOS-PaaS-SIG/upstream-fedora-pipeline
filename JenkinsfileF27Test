@@ -13,16 +13,22 @@ properties(
         [
                 buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '5', daysToKeepStr: '', numToKeepStr: '5')),
                 pipelineTriggers(
-                        [[
-                                 $class: 'CIBuildTrigger',
-                                 checks: [
-                                         [expectedValue: 'Fedora-Cloud$|Fedora$', field: 'release_short'],
-                                         [expectedValue: 'ga', field: 'release_type'],
-                                         [expectedValue: 'FINISHED', field: 'status'],
-                                         [expectedValue: '27', field: 'release_version']
-                                 ],
-                                 providerName: 'fedora-fedmsg', selector: 'topic = "org.fedoraproject.prod.pungi.compose.status.change"'
-                         ]]
+                        [[$class: 'CIBuildTrigger',
+                          noSquash: true,
+                          providerData: [
+                              $class: 'FedMsgSubscriberProviderData',
+                              name: 'fedora-fedmsg',
+                              overrides: [
+                                  topic: 'org.fedoraproject.prod.pungi.compose.status.change'
+                              ],
+                              checks: [
+                                  [field: 'release_short', expectedValue: 'Fedora-Cloud$|Fedora$'],
+                                  [field: 'release_type', expectedValue: 'ga'],
+                                  [field: 'status', expectedValue: 'FINISHED'],
+                                  [field: 'release_version', expectedValue: '27']
+                              ]
+                          ]
+                        ]]
                 ),
                 parameters(
                         [
