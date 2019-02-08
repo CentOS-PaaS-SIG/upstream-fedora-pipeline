@@ -10,6 +10,10 @@
     <string>method java.lang.Class isInstance</string>
     <string>java.lang.Object</string>
     <string>new groovy.json.JsonSlurperClassic</string>
+    <string>staticMethod java.lang.Class forName java.lang.String</string>
+    <string>method java.lang.Class isAssignableFrom java.lang.Class</string>
+    <string>method java.lang.Class getSuperclass</string>
+    <string>staticMethod java.time.Instant now</string>
   </approvedSignatures>
   <aclApprovedSignatures>
   </aclApprovedSignatures>
