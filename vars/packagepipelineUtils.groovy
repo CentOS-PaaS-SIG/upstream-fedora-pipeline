@@ -1,13 +1,16 @@
 import org.centos.pipeline.PackagePipelineUtils
+import org.centos.contra.pipeline.Utils
+import org.centos.Utils
 
 /**
  * A class of methods used in the Jenkinsfile pipeline.
- * These methods are wrappers around methods in the TODO library.
- * TODO - Find out how to libraies are going to be structured
+ * These methods are wrappers around methods in the packagepipelineUtils library.
  */
 class packagepipelineUtils implements Serializable {
 
     def packagePipelineUtils = new PackagePipelineUtils()
+    def contraUtils = new org.centos.contra.pipeline.Utils()
+    def centosUtils = new org.centos.Utils()
 
     // pass in from the jenkinsfile
     // def cimetrics
@@ -107,6 +110,46 @@ class packagepipelineUtils implements Serializable {
 
     def influxDBPrefix() {
         return "Fedora_All_Packages_Pipeline"
+    }
+
+    /**
+     * Test if $tag tests exist for $mypackage on $mybranch in fedora dist-git
+     * For mybranch, use fXX or master, or PR number (digits only)
+     * @param mypackage
+     * @param mybranch - Fedora branch or PR number
+     * @param tag
+     * @return
+     */
+    def checkTests(String mypackage, String mybranch, String tag) {
+        contraUtils.checkTests(mypackage, mybranch, tag)
+    }
+
+    /**
+     *
+     * @param openshiftProject name of openshift namespace/project.
+     * @param nodeName podName we are going to verify.
+     * @return
+     */
+    def verifyPod(String openshiftProject, String nodeName=env.NODE_NAME) {
+        contraUtils.verifyPod(openshiftProject, nodeName)
+    }
+
+    /**
+     * @param request - the url that refers to the package
+     * @return
+     */
+    def repoFromRequest(String request) {
+        contraUtils.repoFromRequest(request)
+    }
+
+    /**
+     * Set branch and repo_branch based on the candidate branch
+     * This is meant to be run with a CI_MESSAGE from a build task
+     * @param tag - The tag from the request field e.g. f27-candidate
+     * @return
+     */
+    def setBuildBranch(String tag) {
+        contraUtils.setBuildBranch(tag)
     }
 
 }
