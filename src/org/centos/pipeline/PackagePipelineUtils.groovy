@@ -245,7 +245,7 @@ def setDefaultEnvVars(Map envMap=null){
 /**
  * Library to set stage specific environmental variables.
  * @param stage - Current stage
- * @return
+ * @return map of vars
  */
 def setStageEnvVars(String stage){
     def stages =
@@ -289,7 +289,10 @@ def setStageEnvVars(String stage){
         stages.get(stage).each { key, value ->
             env."${key}" = value
         }
+        // Return map to pass to executeInContainer
+        return stages.get(stage)
     }
+    return null
 }
 
 /**
