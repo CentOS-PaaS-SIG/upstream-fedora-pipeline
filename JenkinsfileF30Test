@@ -19,7 +19,7 @@ properties(
                                          [expectedValue: 'Fedora-Cloud$|Fedora$', field: 'release_short'],
                                          [expectedValue: 'ga', field: 'release_type'],
                                          [expectedValue: 'FINISHED', field: 'status'],
-                                         [expectedValue: '26', field: 'release_version']
+                                         [expectedValue: '30', field: 'release_version']
                                  ],
                                  providerName: 'fedora-fedmsg', selector: 'topic = "org.fedoraproject.prod.pungi.compose.status.change"'
                          ]]
@@ -32,5 +32,6 @@ properties(
                 )
         ]
 )
+
 
 fedoraImageTest()
