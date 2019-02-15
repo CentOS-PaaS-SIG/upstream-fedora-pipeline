@@ -65,7 +65,6 @@ def setMessageFields(String messageType, String artifact) {
             status           : currentBuild.currentResult,
             test_guidance    : "''",
             comment_id       : env.fed_lastcid,
-            topic            : topic,
             username         : env.fed_owner,
     ]
 
