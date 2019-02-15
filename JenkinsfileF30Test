@@ -25,7 +25,7 @@ properties(
                                   [field: 'release_short', expectedValue: 'Fedora-Cloud$|Fedora$'],
                                   [field: 'release_type', expectedValue: 'ga'],
                                   [field: 'status', expectedValue: 'FINISHED'],
-                                  [field: 'release_version', expectedValue: '27']
+                                  [field: 'release_version', expectedValue: '30']
                               ]
                           ]
                         ]]
@@ -39,5 +39,4 @@ properties(
         ]
 )
 
-
-fedoraImageTest(imageType: 'CloudImages')
+fedoraImageTest()
