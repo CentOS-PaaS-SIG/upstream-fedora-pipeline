@@ -34,11 +34,12 @@ timestamps {
                                   $class: 'FedMsgSubscriberProviderData',
                                   name: 'fedora-fedmsg',
                                   overrides: [
-                                      topic: 'org.fedoraproject.prod.buildsys.build.state.change'
+                                      topic: 'org.fedoraproject.prod.buildsys.task.state.change'
                                   ],
                                   checks: [
                                       [field: 'new', expectedValue: '1|CLOSED'],
-                                      [field: 'owner', expectedValue: '^(?!koschei).*']
+                                      [field: 'owner', expectedValue: '^(?!koschei).*'],
+                                      [field: 'request', expectedValue: null]
                                   ]
                               ]
                             ]]
@@ -58,7 +59,7 @@ timestamps {
 
         packagepipelineUtils.ciPipeline {
             try {
-                stepName = 'upstream-fedora-pipeline-build-trigger'
+                stepName = 'fedora-container-build-trigger'
                 stage(stepName) {
 
                     packagepipelineUtils.timedPipelineStep(stepName: stepName, debug: true) {
@@ -87,7 +88,7 @@ timestamps {
                         }
                         if (targetBranch) {
                             pipelineUtils.repoFromRequest(env.fed_request_0, 'fed')
-                            testsExist = pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')
+                            testsExist = pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'container', (env.fed_id ?: null), 'container')
                             // Ensure message is from primary koji instance
                             primaryKoji = fed_instance == "primary"
                             pipelineUtils.setBuildDisplayAndDescription()
@@ -101,16 +102,19 @@ timestamps {
                 }
 
                 if (targetBranch && testsExist && primaryKoji) {
-                    messageFields = packagepipelineUtils.setMessageFields('package.queued', 'build')
-                    pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                    // Since pipeline is only functional test stage,
+                    // send the message for that stage
+                    messageFields = packagepipelineUtils.setMessageFields('container.test.functional.queued', 'build')
+                    //pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
                     stepName = 'schedule build'
                     stage(stepName) {
 
                         retry(TRIGGER_RETRY_COUNT) {
                             packagepipelineUtils.timedPipelineStep(stepName: stepName, debug: true) {
 
-                                build job: "fedora-${env.branch}-build-pipeline",
+                                build job: "fedcontainer-${env.branch}-build-pipeline",
                                         // Scratch messages from task.state.changed call it id, not task_id
+                                        // TODO
                                         parameters: [string(name: 'PROVIDED_KOJI_TASKID', value: env.fed_task_id ?: env.fed_id),
                                                      string(name: 'CI_MESSAGE', value: env.CI_MESSAGE)],
                                         wait: false
@@ -120,8 +124,8 @@ timestamps {
 
                 } else {
                     echo "CI_MESSAGE was invalid. Skipping..."
-                    messageFields = packagepipelineUtils.setMessageFields('package.ignored', 'build')
-                    pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                    messageFields = packagepipelineUtils.setMessageFields('container.ignored', 'build')
+                    //pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
                     currentBuild.description = "*Build Skipped*"
                 }
 
@@ -130,11 +134,6 @@ timestamps {
             } catch (e) {
                 currentBuild.result = 'FAILURE'
                 throw e
-            } finally {
-                // set the metrics we want
-                ciMetrics.setMetricTag(jobMeasurement, 'package_name', env.fed_repo)
-                ciMetrics.setMetricTag(jobMeasurement, 'build_result', currentBuild.result)
-                ciMetrics.setMetricField(jobMeasurement, 'build_time', currentBuild.getDuration())
             }
         }
     }

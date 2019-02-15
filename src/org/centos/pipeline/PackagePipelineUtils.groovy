@@ -2,6 +2,7 @@
 package org.centos.pipeline
 
 import org.centos.*
+import groovy.json.JsonOutput
 
 /**
  * Library to check the dist branch to as rawhide should map to a release number
@@ -43,14 +44,14 @@ def setMessageFields(String messageType, String artifact) {
     topic = "${MAIN_TOPIC}.ci.pipeline.allpackages-${artifact}.${messageType}"
     print("Topic is " + topic)
 
-    // Create a HashMap of default message property keys and values
+    // Create a HashMap of default message content keys and values
     // These properties should be applicable to ALL message types.
     // If something is applicable to only some subset of messages,
     // add it below per the existing examples.
 
     taskid = env.fed_task_id ?: env.fed_id
 
-    def messageProperties = [
+    def messageContent = [
             branch           : env.fed_branch,
             build_id         : env.BUILD_ID,
             build_url        : env.JENKINS_URL + 'blue/organizations/jenkins/' + env.JOB_NAME + '/detail/' + env.JOB_NAME + '/' + env.BUILD_NUMBER + '/pipeline/',
@@ -71,22 +72,13 @@ def setMessageFields(String messageType, String artifact) {
     // Add image type to appropriate message types
     if (messageType in ['image.queued', 'image.running', 'image.complete', 'image.test.smoke.queued', 'image.test.smoke.running', 'image.test.smoke.complete'
     ]) {
-        messageProperties.type = messageType == 'image.running' ? "''" : 'qcow2'
+        messageContent.type = messageType == 'image.running' ? "''" : 'qcow2'
     }
 
-    // Create a string to hold the data from the messageProperties hash map
-    String messagePropertiesString = ''
+    // Create a string to hold the data from the messageContent hash map
+    String messageContentString = JsonOutput.toJson(messageContent)
 
-    messageProperties.each { k,v ->
-        // Don't add a new line to the last item in the hash map when adding it to the messagePropertiesString
-        if ( k == messageProperties.keySet().last()){
-            messagePropertiesString += "${k}=${v}"
-        } else {
-            messagePropertiesString += "${k}=${v}\n"
-        }
-    }
-
-    def messageContentString = ''
+    def messagePropertiesString = ''
 
     return [ 'topic': topic, 'properties': messagePropertiesString, 'content': messageContentString ]
 }
