@@ -102,7 +102,7 @@ timestamps {
 
                 if (targetBranch && testsExist && primaryKoji) {
                     messageFields = packagepipelineUtils.setMessageFields('package.queued', 'build')
-                    pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                    pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
                     stepName = 'schedule build'
                     stage(stepName) {
 
@@ -121,7 +121,7 @@ timestamps {
                 } else {
                     echo "CI_MESSAGE was invalid. Skipping..."
                     messageFields = packagepipelineUtils.setMessageFields('package.ignored', 'build')
-                    pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                    pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
                     currentBuild.description = "*Build Skipped*"
                 }
 
