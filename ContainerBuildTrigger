@@ -105,7 +105,7 @@ timestamps {
                     // Since pipeline is only functional test stage,
                     // send the message for that stage
                     messageFields = packagepipelineUtils.setMessageFields('container.test.functional.queued', 'build')
-                    //pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                    //pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
                     stepName = 'schedule build'
                     stage(stepName) {
 
@@ -125,7 +125,7 @@ timestamps {
                 } else {
                     echo "CI_MESSAGE was invalid. Skipping..."
                     messageFields = packagepipelineUtils.setMessageFields('container.ignored', 'build')
-                    //pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                    //pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
                     currentBuild.description = "*Build Skipped*"
                 }
 
