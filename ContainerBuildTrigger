@@ -28,21 +28,16 @@ timestamps {
                             ]
                     ),
                     pipelineTriggers(
-                            [[$class: 'CIBuildTrigger',
-                              noSquash: true,
-                              providerData: [
-                                  $class: 'FedMsgSubscriberProviderData',
-                                  name: 'fedora-fedmsg',
-                                  overrides: [
-                                      topic: 'org.fedoraproject.prod.buildsys.build.state.change'
-                                  ],
-                                  checks: [
-                                      [field: 'new', expectedValue: '1|CLOSED'],
-                                      [field: 'owner', expectedValue: '^(?!koschei).*'],
-                                      [field: 'request', expectedValue: null]
-                                  ]
-                              ]
-                            ]]
+                            [
+                                    [$class: 'CIBuildTrigger',
+                                     checks: [
+                                             [expectedValue: '1|CLOSED', field: 'new'],
+                                             [expectedValue: '^(?!koschei).*', field: 'owner'],
+                                             [expectedValue: null, field: 'request']
+                                     ],
+                                     providerName: 'fedora-fedmsg',
+                                     selector: 'topic = "org.fedoraproject.prod.buildsys.build.state.change" OR topic = "org.fedoraproject.prod.buildsys.task.state.change"']
+                            ]
                     )
             ]
     )
