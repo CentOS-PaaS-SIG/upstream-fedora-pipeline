@@ -200,7 +200,7 @@ spec:
                                     messageFields = packagepipelineUtils.setMessageFields("container.test.functional.running", artifact)
 
                                     // Send message org.centos.prod.ci.pipeline.allpackages.container.test.functional.running on fedmsg
-                                    pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                                    pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
                                     // Prepare to send stage.complete message on failure
                                     env.messageStage = 'container.test.functional.complete'
@@ -223,7 +223,7 @@ spec:
                                     messageFields = packagepipelineUtils.setMessageFields("container.test.functional.complete", artifact)
 
                                     // Send message org.centos.prod.ci.pipeline.allpackages.container.test.functional.complete on fedmsg
-                                    pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                                    pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
                                 }
                             }
@@ -238,7 +238,7 @@ spec:
 
                         // Send message org.centos.prod.ci.pipeline.allpackages.<stage>.complete on fedmsg if stage failed
                         messageFields = packagepipelineUtils.setMessageFields(messageStage, artifact)
-                        pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                        pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
                         // Report the exception
                         echo "Error: Exception from " + currentStage + ":"
@@ -259,7 +259,7 @@ spec:
                         messageFields = packagepipelineUtils.setMessageFields("complete", artifact)
 
                         // Send message org.centos.prod.ci.pipeline.allpackages.complete on fedmsg
-                        pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                        pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
                     }
                 }
