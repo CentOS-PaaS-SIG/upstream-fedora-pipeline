@@ -91,7 +91,7 @@ timestamps {
 
                     if (validMessage && testsExist && commentTrigger) {
                         messageFields = packagepipelineUtils.setMessageFields('package.queued', 'pr')
-                        pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                        pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
 
                         stepName = 'schedule build'
                         stage(stepName) {
@@ -116,7 +116,7 @@ timestamps {
                     } else {
                         echo "CI_MESSAGE was invalid. Skipping..."
                         messageFields = packagepipelineUtils.setMessageFields('package.ignored', 'pr')
-                        pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                        pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
                         currentBuild.description = "*Build Skipped*"
                     }
 
