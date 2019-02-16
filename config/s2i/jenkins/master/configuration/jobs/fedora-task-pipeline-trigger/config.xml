@@ -49,7 +49,7 @@
                    <providerData class="com.redhat.jenkins.plugins.ci.provider.data.FedMsgSubscriberProviderData">
                       <name>fedora-fedmsg</name>
                       <overrides>
-                         <topic>org.fedoraproject.prod.buildsys.build.state.change</topic>
+                         <topic>org.fedoraproject.prod.buildsys.task.state.change</topic>
                       </overrides>
                       <checks>
                          <com.redhat.jenkins.plugins.ci.messaging.checks.MsgCheck>
