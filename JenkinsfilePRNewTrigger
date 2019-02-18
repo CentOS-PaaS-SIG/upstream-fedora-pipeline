@@ -83,6 +83,9 @@ timestamps {
                     if (validMessage && testsExist && commentTrigger) {
                         messageFields = packagepipelineUtils.setMessageFields('package.queued', 'pr')
                         pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                        // Send message org.centos.prod.ci.dist-git-pr.test.queued on fedmsg
+                        messageFields = packagepipelineUtils.setTestMessageFields("queued", "dist-git-pr")
+                        pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                         stepName = 'schedule build'
                         stage(stepName) {

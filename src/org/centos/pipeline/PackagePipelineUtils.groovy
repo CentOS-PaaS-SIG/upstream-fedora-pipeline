@@ -132,7 +132,7 @@ def setTestMessageFields(String messageType, String artifact) {
         myScratch = env.isScratch.toBoolean()
         myNvr = env.nvr ?: 'N/A'
         myArtifactContent = msgBusArtifactContent(type: artifact, id: myId, component: myConponent, issuer: myIssuer, nvr: myNvr, scratch: myScratch, source: env.RPM_REQUEST_SOURCE ?: "UNKNOWN")
-        myTestContent = (messageType == "complete") ? msgBusTestContent(category: category ?: "functional", namespace: myNamespace, type: "tier0", result: myResult) : msgBusTestContent(category: category ?: "functional", namespace: myNamespace, type: "tier0")
+        myTestContent = (messageType == "complete") ? msgBusTestContent(category: "functional", namespace: myNamespace, type: "tier0", result: myResult) : msgBusTestContent(category: "functional", namespace: myNamespace, type: "tier0")
     }
     if (artifact == "dist-git-pr") {
         myId = env.fed_pr_id
@@ -140,7 +140,7 @@ def setTestMessageFields(String messageType, String artifact) {
         myCommitHash = env.fed_last_commit_hash ?: 'N/A'
         myCommentId = env.fed_lastcid ? env.fed_lastcid.toInteger() : 0
         myArtifactContent = msgBusArtifactContent(type: artifact, id: myId, issuer: myIssuer, source: env.RPM_REQUEST_SOURCE ?: "UNKNOWN", repository: myRepository, commit_hash: myCommitHash, comment_id: myCommentId, uid: myUid)
-        myTestContent = (messageType == "complete") ? msgBusTestContent(category: category ?: "static-analysis", namespace: myNamespace, type: "build", result: myResult) : msgBusTestContent(category: category ?: "static-analysis", namespace: myNamespace, type: "build")
+        myTestContent = (messageType == "complete") ? msgBusTestContent(category: "static-analysis", namespace: myNamespace, type: "build", result: myResult) : msgBusTestContent(category: "static-analysis", namespace: myNamespace, type: "build")
     }
 
     // Create type specific content and construct messages
