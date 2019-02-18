@@ -34,7 +34,6 @@ timestamps {
     def libraries = ['cico-pipeline'           : ['master', 'https://github.com/CentOS/cico-pipeline-library.git'],
                      'ci-pipeline'             : ['master', 'https://github.com/CentOS-PaaS-SIG/ci-pipeline.git'],
                      'contra-lib'              : ['master', 'https://github.com/openshift/contra-lib.git']]
-     // The goal is to get away from the ci-pipeline shared lib and have everything be in contra-lib if possible over time
 
     libraries.each { name, repo ->
         library identifier: "${name}@${repo[0]}",

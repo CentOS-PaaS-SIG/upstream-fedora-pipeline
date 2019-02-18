@@ -96,46 +96,78 @@ def setMessageFields(String messageType, String artifact) {
  */
 // Plan is to rename to setMessageFields and remove function above once everything seems fine and stable
 def setTestMessageFields(String messageType, String artifact) {
+    // See https://pagure.io/fedora-ci/messages or
+    // https://github.com/openshift/contra-lib/tree/master/resources
+    myTopic = "${MAIN_TOPIC}.ci.${artifact}.test.${messageType}"
+    print("Topic is " + myTopic)
     // Set values that go in multiple closures
-   myTopic = "${MAIN_TOPIC}.ci.${artifact}.test.${messageType}"
     myType = (artifact == 'koji-build') ? 'tier0' : 'build'
     myComponent = env.fed_repo
+    myRepository = env.fed_repo ? "rpms/" + env.fed_repo : 'N/A'
     myIssuer = env.fed_owner ?: fed_username
-    // PR builds are scratch so defaulting to scratch = true
-    myScratch = env.isScratch ? env.isScratch.toBoolean() : true
-    taskid = env.fed_task_id ?: env.fed_id
-    myId = (artifact == 'koji-build') ? taskid : env.fed_rev
-    myNvr = env.nvr ?: ""
-    myCategory = (artifact == 'koji-build') ? 'functional' : 'static-analysis'
-    myNamespace = "fedora-ci"
+    myNamespace = "fedora-ci." + artifact
+    myResult = currentBuild.currentResult
+    // convert some build Result to valid spec result
+    switch (myResult) {
+        case 'SUCCESS':
+            myResult = 'PASSED'
+            break
+        case 'UNSTABLE':
+            myResult = 'NEEDS_INSPECTION'
+            break
+        case 'FAILURE':
+            myResult = 'FAILED'
+            break
+    }
+    myResult = myResult.toLowerCase()
 
     // Create common message body content
     myContactContent = msgBusContactContent(name: "fedora-ci", team: "fedora-ci", irc: "#fedora-ci", email: "ci@lists.fedoraproject.org")
-    // Create artifact closure
-    if (artifact == 'koji-build') {
-        myArtifactContent = msgBusArtifactContent(type: myType, id: myId, component: myComponent, issuer: myIssuer, nvr: myNvr, scratch: myScratch, dependencies: env.BUILD_DEPS ? env.BUILD_DEPS.split() : [])
-    } else if (artifact == 'dist-git-pr') {
-        myArtifactContent = msgBusArtifactContent(type: myType, id: myId, component: myComponent, issuer: myIssuer, nvr: myNvr, scratch: myScratch, repository: env.fed_repo, commit_hash: fed_last_commit_hash, uid: fed_uid, comment_id: env.fed_lastcid, dependencies: env.BUILD_DEPS ? env.BUILD_DEPS.split() : [])
-    } else {
-        throw new Exception("Artifact type error - ${artifact} is neither koji-build nor dist-git-pr")
+    myStageContent = msgBusStageContent(name: env.currentStage)
+    myPipelineContent = msgBusPipelineContent(id: env.pipelineId, stage: myStageContent())
+    // The run array is filled in properly with its defaults
+
+    if (artifact == "koji-build") {
+        myId = env.fed_task_id ?: env.fed_id
+        myScratch = env.isScratch.toBoolean()
+        myNvr = env.nvr ?: 'N/A'
+        myArtifactContent = msgBusArtifactContent(type: artifact, id: myId, component: myConponent, issuer: myIssuer, nvr: myNvr, scratch: myScratch, source: env.RPM_REQUEST_SOURCE ?: "UNKNOWN")
+        myTestContent = (messageType == "complete") ? msgBusTestContent(category: category ?: "functional", namespace: myNamespace, type: "tier0", result: myResult) : msgBusTestContent(category: category ?: "functional", namespace: myNamespace, type: "tier0")
+    }
+    if (artifact == "dist-git-pr") {
+        myId = env.fed_pr_id
+        myUid = env.fed_pr_uid
+        myCommitHash = env.fed_last_commit_hash ?: 'N/A'
+        myCommentId = env.fed_lastcid ? env.fed_lastcid.toInteger() : 0
+        myArtifactContent = msgBusArtifactContent(type: artifact, id: myId, issuer: myIssuer, source: env.RPM_REQUEST_SOURCE ?: "UNKNOWN", repository: myRepository, commit_hash: myCommitHash, comment_id: myCommentId, uid: myUid)
+        myTestContent = (messageType == "complete") ? msgBusTestContent(category: category ?: "static-analysis", namespace: myNamespace, type: "build", result: myResult) : msgBusTestContent(category: category ?: "static-analysis", namespace: myNamespace, type: "build")
     }
 
     // Create type specific content and construct messages
     switch (messageType) {
-        case 'queued':
-            myConstructedMessage = msgBusTestQueued(type: myType, category: myCategory, namespace: myNamespace, contact: myContactContent(), artifact: myArtifactContent())
-            break
-        case 'running':
-            myConstructedMessage = msgBusTestRunning(type: myType, category: myCategory, namespace: myNamespace, contact: myContactContent(), artifact: myArtifactContent())
+        // Queued and running messages have the same spec for now
+        case ['queued', 'running']:
+            myConstructedMessage = msgBusTestQueued(ci: myCIContent(), artifact: myArtifactContent(), pipeline: myPipelineContent(), test: myTestContent())
             break
         case 'complete':
-            myPipelineContent = msgBusPipelineContent(id: env.executionID)
+            if (artifact == "koji-build") {
+                myArtifactContent = msgBusArtifactContent(type: artifact, id: myId, component: myComponent, issuer: myIssuer, nvr: myNvr, scratch: myScratch, source: env.RPM_REQUEST_SOURCE ?: "UNKNOWN", dependencies: env.BUILD_DEPS ? env.BUILD_DEPS.split() : [])
+            }
+            if (artifact == "dist-git-pr") {
+                myArtifactContent = msgBusArtifactContent(type: artifact, id: myId, issuer: myIssuer, source: env.RPM_REQUEST_SOURCE ?: "UNKNOWN", repository: myRepository, commit_hash: myCommitHash, comment_id: myCommentId, uid: myUid, dependencies: env.BUILD_DEPS ? env.BUILD_DEPS.split() : [])
+            }
             mySystemContent = msgBusSystemContent(label: "upstream-fedora-pipeline", os: env.fed_branch, provider: "CentOS CI", architecture: "x86_64", variant: "Cloud")
-            myStageContent = msgBusStageContent(name: env.currentStage)
             myConstructedMessage = msgBusTestComplete(type: myType, category: myCategory, namespace: myNamespace, contact: myContactContent(), artifact: myArtifactContent(), pipeline: myPipelineContent(), system: mySystemContent(), stage: myStageContent())
             break
         case 'error':
-            myConstructedMessage = msgBusTestError(type: myType, category: myCategory, namespace: myNamespace, contact: myContactContent(), artifact: myArtifactContent())
+            if (artifact == "koji-build") {
+                myArtifactContent = msgBusArtifactContent(type: artifact, id: myId, component: myComponent, issuer: myIssuer, nvr: myNvr, scratch: myScratch, source: env.RPM_REQUEST_SOURCE ?: "UNKNOWN", dependencies: env.BUILD_DEPS ? env.BUILD_DEPS.split() : [])
+            }
+            if (artifact == "dist-git-pr") {
+                myArtifactContent = msgBusArtifactContent(type: artifact, id: myId, issuer: myIssuer, source: env.RPM_REQUEST_SOURCE ?: "UNKNOWN", repository: myRepository, commit_hash: myCommitHash, comment_id: myCommentId, uid: myUid, dependencies: env.BUILD_DEPS ? env.BUILD_DEPS.split() : [])
+            }
+            // Unknown execution error is the default reason. If a new one is desired, it'd be reason: 'some reason'
+            myConstructedMessage = msgBusTestError(ci: myCIContent(), artifact: myArtifactContent(), pipeline: myPipelineContent(), test: myTestContent())
             break
     }
 
