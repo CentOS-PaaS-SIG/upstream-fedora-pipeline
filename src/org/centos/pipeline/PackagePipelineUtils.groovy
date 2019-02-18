@@ -161,7 +161,8 @@ def setStageEnvVars(String stage){
                      package                  : env.fed_repo,
                      namespace                : env.fed_namespace,
                      branch                   : env.branch,
-                     fed_branch               : env.fed_branch
+                     fed_branch               : env.fed_branch,
+                     DIST_BRANCH              : env.DIST_BRANCH
 
              ],
              "nvr-verify"                                     : [
