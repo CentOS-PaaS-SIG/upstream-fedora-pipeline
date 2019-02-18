@@ -216,6 +216,8 @@ timestamps {
 
 
                                 packagepipelineUtils.setDefaultEnvVars()
+                                // Find rawhide's major release number
+                                packagepipelineUtils.setDistBranch()
 
                                 // Prepare Credentials (keys, passwords, etc)
                                 packagepipelineUtils.prepareCredentials('fedora-keytab')
@@ -253,9 +255,6 @@ timestamps {
                                     pipelineUtils.executeInContainer(currentStage, "rpmbuild", "/tmp/pull_old_task.sh")
 
                                 } else {
-                                    // Get DistBranch value to find rpm NVR
-                                    packagepipelineUtils.setDistBranch()
-
                                     // For tests namespace there is no package to build
                                     if (env.fed_namespace != "tests" ) {
                                         // Build rpms
