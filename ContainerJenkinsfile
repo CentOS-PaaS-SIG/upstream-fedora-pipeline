@@ -26,6 +26,7 @@ timestamps {
     def podName = 'fedcontainer-' + executionID
 
     def libraries = ['cico-pipeline'           : ['master', 'https://github.com/CentOS/cico-pipeline-library.git'],
+                     'contra-lib'              : ['master', 'https://github.com/openshift/contra-lib.git'],
                      'ci-pipeline'             : ['master', 'https://github.com/CentOS-PaaS-SIG/ci-pipeline.git']]
 
     libraries.each { name, repo ->
@@ -179,9 +180,7 @@ spec:
                                 packagepipelineUtils.setDefaultEnvVars()
 
                                 // Gather some info about the node we are running on for diagnostics
-                                pipelineUtils.verifyPod(OPENSHIFT_NAMESPACE, env.NODE_NAME)
-                                // create audit message file
-                                pipelineUtils.initializeAuditFile(msgAuditFile)
+                                packagepipelineUtils.verifyPod(OPENSHIFT_NAMESPACE, env.NODE_NAME)
 
                             }
                         }
@@ -189,8 +188,8 @@ spec:
                         currentStage = "container-tests"
                         stage(currentStage) {
                             // Only run this stage if tests exist
-                            if (!pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'container', (env.fed_id ?: null), 'container')) {
-                                pipelineUtils.skip(currentStage)
+                            if (!packagepipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'container', (env.fed_id ?: null), 'container')) {
+                                packagepipelineUtils.skip(currentStage)
                             } else {
                                 packagepipelineUtils.handlePipelineStep(stepName: currentStage, debug: true) {
                                     // Set stage specific vars
@@ -200,7 +199,7 @@ spec:
                                     messageFields = packagepipelineUtils.setMessageFields("container.test.functional.running", artifact)
 
                                     // Send message org.centos.prod.ci.pipeline.allpackages.container.test.functional.running on fedmsg
-                                    pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                                    sendMessageWithAudit(msgTopic: messageFields['topic'], msgProps: messageFields['properties'], msgContent: messageFields['content'], msgRetryCount: fedmsgRetryCount)
 
                                     // Prepare to send stage.complete message on failure
                                     env.messageStage = 'container.test.functional.complete'
@@ -209,7 +208,7 @@ spec:
                                     try {
                                         pipelineUtils.executeInContainer(currentStage, "str-container-test", "/home/container-test.sh")
                                     } catch(e) {
-                                        if (pipelineUtils.fileExists("${WORKSPACE}/${currentStage}/logs/test.log")) {
+                                        if (fileExists("${WORKSPACE}/${currentStage}/logs/test.log")) {
                                             buildResult = 'UNSTABLE'
                                             // set currentBuild.result to update the message status
                                             currentBuild.result = buildResult
@@ -240,7 +239,7 @@ spec:
                                     messageFields = packagepipelineUtils.setMessageFields("container.test.functional.complete", artifact)
 
                                     // Send message org.centos.prod.ci.pipeline.allpackages.container.test.functional.complete on fedmsg
-                                    pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                                    sendMessageWithAudit(msgTopic: messageFields['topic'], msgProps: messageFields['properties'], msgContent: messageFields['content'], msgRetryCount: fedmsgRetryCount)
 
                                 }
                             }
@@ -255,7 +254,7 @@ spec:
 
                         // Send message org.centos.prod.ci.pipeline.allpackages.<stage>.complete on fedmsg if stage failed
                         messageFields = packagepipelineUtils.setMessageFields(messageStage, artifact)
-                        pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                        sendMessageWithAudit(msgTopic: messageFields['topic'], msgProps: messageFields['properties'], msgContent: messageFields['content'], msgRetryCount: fedmsgRetryCount)
 
                         // Report the exception
                         echo "Error: Exception from " + currentStage + ":"
@@ -266,7 +265,7 @@ spec:
 
                     } finally {
                         currentBuild.result = buildResult
-                        pipelineUtils.getContainerLogsFromPod(OPENSHIFT_NAMESPACE, env.NODE_NAME)
+                        packagepipelineUtils.getContainerLogsFromPod(OPENSHIFT_NAMESPACE, env.NODE_NAME)
 
                         // Archive our artifacts
                         step([$class: 'ArtifactArchiver', allowEmptyArchive: true, artifacts: '**/logs/**,*.txt,*.groovy,**/job.*,**/*.groovy,**/inventory.*', excludes: '**/*.example', fingerprint: true])
@@ -276,7 +275,7 @@ spec:
                         messageFields = packagepipelineUtils.setMessageFields("complete", artifact)
 
                         // Send message org.centos.prod.ci.pipeline.allpackages.complete on fedmsg
-                        pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                        sendMessageWithAudit(msgTopic: messageFields['topic'], msgProps: messageFields['properties'], msgContent: messageFields['content'], msgRetryCount: fedmsgRetryCount)
 
                     }
                 }

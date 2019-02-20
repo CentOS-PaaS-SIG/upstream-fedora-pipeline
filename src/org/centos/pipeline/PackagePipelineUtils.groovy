@@ -7,16 +7,17 @@ import groovy.json.JsonOutput
 /**
  * Library to check the dist branch to as rawhide should map to a release number
  * This value will begin with 'fc'
+ * @param String branch - the branch value from the CI_MESSAGE
  * @return
  */
-def setDistBranch() {
-    echo "Currently in setDistBranch for ${env.branch}"
+def setDistBranch(String branch) {
+    echo "Currently in setDistBranch for ${branch}"
 
-    if (env.branch != 'rawhide') {
-        if (env.branch[0] == 'f') {
-            env.DIST_BRANCH = 'fc' + env.branch.substring(1)
+    if (branch != 'rawhide') {
+        if (branch[0] == 'f') {
+            return = 'fc' + branch.substring(1)
         } else {
-            throw new Exception("Invalid Branch Name ${env.branch}")
+            throw new Exception("Invalid Branch Name ${branch}")
         }
     } else {
         def dist_branch = sh (returnStdout: true, script: '''
@@ -26,11 +27,11 @@ def setDistBranch() {
             assert dist_branch.isNumber()
         }
         catch (AssertionError e) {
-            echo "There was a fatal error finding the proper mapping for ${env.branch}"
+            echo "There was a fatal error finding the proper mapping for ${branch}"
             echo "We will not continue without a proper DIST_BRANCH value. Throwing exception..."
             throw new Exception('Rsync branch identifier failed!')
         }
-        env.DIST_BRANCH = 'fc' + dist_branch
+        return 'fc' + dist_branch
     }
 }
 
@@ -38,9 +39,10 @@ def setDistBranch() {
  * Library to set message fields to be published
  * @param messageType: ${MAIN_TOPIC}.ci.pipeline.allpackages.<defined-in-README>
  * @param artifact ${MAIN_TOPIC}.ci.pipeline.allpackages-${artifact}.<defined-in-README>
+ * @param parsedMsg: The parsed fedmsg
  * @return
  */
-def setMessageFields(String messageType, String artifact) {
+def setMessageFields(String messageType, String artifact, Map parsedMsg) {
     topic = "${MAIN_TOPIC}.ci.pipeline.allpackages-${artifact}.${messageType}"
     print("Topic is " + topic)
 
@@ -49,10 +51,23 @@ def setMessageFields(String messageType, String artifact) {
     // If something is applicable to only some subset of messages,
     // add it below per the existing examples.
 
-    taskid = env.fed_task_id ?: env.fed_id
+    if (parsedMsg.has('pullrequest') {
+        myBranch = parsedMsg['pullrequest']['branch']
+        myRepo = parsedMsg['pullrequest']['project']['name']
+        myRev = parsedMsg['pullrequest']['id']
+        myCommentId = parsedMsg['pullrequest']['comments'].last()['id']
+        myOwner = parsedMsg['pullrequest']['user']['name'].toString().split('\n')[0].replaceAll('"', '\'')
+    } else {
+        myBranch = env.fed_branch
+        myRepo = env.fed_repo
+        taskid = parsedMsg.has('task_id') ? parsedMsg['task_id'] ?: parsedMsg['info']['id']
+        myRev = 'kojitask-' + taskid
+        myCommentId = ''
+        myOwner = parsedMsg['owner']
+    }
 
     def messageContent = [
-            branch           : env.fed_branch,
+            branch           : myBranch,
             build_id         : env.BUILD_ID,
             build_url        : env.JENKINS_URL + 'blue/organizations/jenkins/' + env.JOB_NAME + '/detail/' + env.JOB_NAME + '/' + env.BUILD_NUMBER + '/pipeline/',
             namespace        : env.fed_namespace,
@@ -61,12 +76,12 @@ def setMessageFields(String messageType, String artifact) {
             ci_topic         : topic,
             ref              : env.basearch,
             scratch          : env.isScratch ? env.isScratch.toBoolean() : "",
-            repo             : env.fed_repo,
-            rev              : (artifact == 'build') ? "kojitask-" + taskid : env.fed_rev,
+            repo             : myRepo,
+            rev              : myRev,
             status           : currentBuild.currentResult,
             test_guidance    : "''",
-            comment_id       : env.fed_lastcid,
-            username         : env.fed_owner,
+            comment_id       : myCommentId,
+            username         : myOwner,
     ]
 
     if (artifact == 'pr') {
@@ -412,18 +427,19 @@ def timedMeasurement() {
 }
 
 /**
- * Function to check if fed_branch is master or fXX, XX > 19
+ * Function to check if branch is master or fXX, XX > 19
+ * @param branch - The branch to check
  * @return bool
  */
-def checkBranch() {
+def checkBranch(String branch) {
     def result = false
 
-    if (env.fed_branch ==~ /f[2-9][0-9]/) {
+    if (branch ==~ /f[2-9][0-9]/) {
         result = true
-    } else if (env.fed_branch == 'master') {
+    } else if (branch == 'master') {
         result = true
     } else {
-        println "Branch ${env.fed_branch} is not being checked at this time."
+        println "Branch ${branch} is not being checked at this time."
     }
 
     return result

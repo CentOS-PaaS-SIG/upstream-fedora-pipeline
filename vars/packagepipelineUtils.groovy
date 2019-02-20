@@ -1,6 +1,7 @@
 import org.centos.pipeline.PackagePipelineUtils
 import org.centos.contra.pipeline.Utils
 import org.centos.Utils
+import org.jenkinsci.plugins.pipeline.modeldefinition.Utils
 
 /**
  * A class of methods used in the Jenkinsfile pipeline.
@@ -17,20 +18,22 @@ class packagepipelineUtils implements Serializable {
 
     /**
      * Method to to find DIST_BRANCH to use for rpm NVRs
+     * @param String branch - the branch value from the CI_MESSAGE
      * @return
      */
-    def setDistBranch() {
-        return packagePipelineUtils.setDistBranch()
+    def setDistBranch(String branch) {
+        return packagePipelineUtils.setDistBranch(branch)
     }
 
     /**
      * Method to set message fields to be published
      * @param messageType ${MAIN_TOPIC}.ci.pipeline.<defined-in-README>
      * @param artifact ${MAIN_TOPIC}.ci.pipeline.allpackages-${artifact}.<defined-in-README>
+     * @param parsedMsg: The parsed fedmsg
      * @return
      */
-    def setMessageFields(String messageType, String artifact) {
-        packagePipelineUtils.setMessageFields(messageType, artifact)
+    def setMessageFields(String messageType, String artifact, Map parsedMsg) {
+        packagePipelineUtils.setMessageFields(messageType, artifact, parsedMsg)
     }
 
     /**
@@ -101,11 +104,12 @@ class packagepipelineUtils implements Serializable {
     }
 
     /**
-     * Function to check if fed_branch is master or fXX, XX > 19
+     * Function to check if branch is master or fXX, XX > 19
+     * @param branch - The branch to check
      * @return bool
      */
-    def checkBranch() {
-        return packagePipelineUtils.checkBranch()
+    def checkBranch(String branch) {
+        return packagePipelineUtils.checkBranch(branch)
     }
 
     def influxDBPrefix() {
@@ -114,14 +118,16 @@ class packagepipelineUtils implements Serializable {
 
     /**
      * Test if $tag tests exist for $mypackage on $mybranch in fedora dist-git
-     * For mybranch, use fXX or master, or PR number (digits only)
+     * For mybranch, use fXX or master and pr_id is PR number (digits only)
      * @param mypackage
-     * @param mybranch - Fedora branch or PR number
+     * @param mybranch - Fedora branch
      * @param tag
+     * @param pr_id    - PR number
+     * @param namespace - rpms (default) or container
      * @return
      */
-    def checkTests(String mypackage, String mybranch, String tag) {
-        contraUtils.checkTests(mypackage, mybranch, tag)
+    def checkTests(String mypackage, String mybranch, String tag, String pr_id=null, String namespace='rpms') {
+        contraUtils.checkTests(mypackage, mybranch, tag, pr_id, namespace)
     }
 
     /**
@@ -149,7 +155,68 @@ class packagepipelineUtils implements Serializable {
      * @return
      */
     def setBuildBranch(String tag) {
-        contraUtils.setBuildBranch(tag)
+        return contraUtils.setBuildBranch(tag)
+    }
+
+    /**
+     * @param openshiftProject name of openshift namespace/project.
+     * @param nodeName podName we are going to get container logs from.
+     * @return
+     */
+    def getContainerLogsFromPod(String openshiftProject, String nodeName=env.NODE_NAME) {
+        contraUtils.getContainerLogsFromPod(openshiftProject, nodeName)
+    }
+
+    /**
+     * Mark stage stageName as skipped
+     * @param stageName
+     * @return
+     */
+    def skip(String stageName) {
+        org.jenkinsci.plugins.pipeline.modeldefinition.Utils.markStageSkippedForConditional(stageName)
+    }
+
+    /**
+     * Method to prepend 'env.' to the keys in source file and write them in a format of env.key=value in the destination file.
+     * @param sourceFile The file to read from
+     * @param destinationFile The file to write to
+     */
+     def convertProps(String sourceFile, String destinationFile) {
+         centosUtils.convertProps(sourceFile, destinationFile)
+     }
+
+    /**
+     * Library to parse Pagure PR CI_MESSAGE and check if
+     * it is for a new commit added, the comment contains
+     * some keyword, or if the PR was rebased
+     * If notification = true, commit was added or it was rebased
+     * @param message - The CI_MESSAGE
+     * @param keyword - The keyword we care about
+     * @return bool
+     */
+    def checkUpdatedPR(String message, String keyword) {
+        return contraUtils.checkUpdatedPR(message, keyword)
+    }
+
+    /**
+     * Using the currentBuild, get a string representation
+     * of the changelog.
+     * @return String of changelog
+     */
+    def getChangeLogFromCurrentBuild() {
+        return contraUtils.getChangeLogFromCurrentBuild()
+    }
+
+    /**
+     *
+     * @param nick nickname to connect to IRC with
+     * @param channel channel to connect to
+     * @param message message to send
+     * @param ircServer optional IRC server defaults to irc.freenode.net:6697
+     * @return
+     */
+    def sendIRCNotification(String nick, String channel, String message, String ircServer="irc.freenode.net:6697") {
+        contraUtils.sendIRCNotification(nick, channel, message, ircServer)
     }
 
 }

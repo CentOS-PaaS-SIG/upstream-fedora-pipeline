@@ -3,6 +3,7 @@
 
 timestamps {
     def libraries = ['ci-pipeline'             : ['master', 'https://github.com/CentOS-PaaS-SIG/ci-pipeline.git'],
+                     'contra-lib'              : ['master', 'https://github.com/openshift/contra-lib.git'],
                      'upstream-fedora-pipeline': ['master', 'https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline.git']]
 
     libraries.each { name, repo ->
@@ -88,14 +89,13 @@ timestamps {
                         }
                         if (targetBranch) {
                             pipelineUtils.repoFromRequest(env.fed_request_0, 'fed')
-                            testsExist = pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'container', (env.fed_id ?: null), 'container')
+                            testsExist = packagepipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'container', (env.fed_id ?: null), 'container')
                             // Ensure message is from primary koji instance
                             primaryKoji = fed_instance == "primary"
                             pipelineUtils.setBuildDisplayAndDescription()
                         } else {
                             currentBuild.displayName = "Build#: ${env.BUILD_NUMBER} - Branch: ${env.branch} - Skipped"
                         }
-                        pipelineUtils.initializeAuditFile(msgAuditFile)
 
                     }
 
@@ -105,7 +105,7 @@ timestamps {
                     // Since pipeline is only functional test stage,
                     // send the message for that stage
                     messageFields = packagepipelineUtils.setMessageFields('container.test.functional.queued', 'build')
-                    //pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                    //sendMessageWithAudit(msgTopic: messageFields['topic'], msgProps: messageFields['properties'], msgContent: messageFields['content'], msgRetryCount: fedmsgRetryCount)
                     stepName = 'schedule build'
                     stage(stepName) {
 
@@ -125,7 +125,7 @@ timestamps {
                 } else {
                     echo "CI_MESSAGE was invalid. Skipping..."
                     messageFields = packagepipelineUtils.setMessageFields('container.ignored', 'build')
-                    //pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                    //sendMessageWithAudit(msgTopic: messageFields['topic'], msgProps: messageFields['properties'], msgContent: messageFields['content'], msgRetryCount: fedmsgRetryCount)
                     currentBuild.description = "*Build Skipped*"
                 }
 
