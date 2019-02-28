@@ -58,6 +58,7 @@ def setMessageFields(String messageType, String artifact) {
             namespace        : env.fed_namespace,
             nvr              : env.nvr,
             original_spec_nvr: env.original_spec_nvr,
+            ci_topic         : topic,
             ref              : env.basearch,
             scratch          : env.isScratch ? env.isScratch.toBoolean() : "",
             repo             : env.fed_repo,
