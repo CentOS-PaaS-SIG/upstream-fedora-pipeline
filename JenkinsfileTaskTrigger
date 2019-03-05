@@ -66,15 +66,7 @@ timestamps {
                         print "CI_MESSAGE"
                         print CI_MESSAGE
                         parsedMsg = kojiMessage(message: env.CI_MESSAGE, ignoreErrors: true)
-                        if (parsedMsg.has('info')) {
-                            env.isScratch = true
-                            env.request_0 = parsedMsg['info']['request'][0]
-                            env.request_1 = parsedMsg['info']['request'][1]
-                        } else {
-                            env.isScratch = false
-                            env.request_0 = parsedMsg['request'][0]
-                            env.request_1 = parsedMsg['request'][1]
-                        }
+                        packagepipelineUtils.setScratchVars(parsedMsg)
                         packagepipelineUtils.setDefaultEnvVars()
                         targetBranch = false
                         if (env.fed_request_1) {

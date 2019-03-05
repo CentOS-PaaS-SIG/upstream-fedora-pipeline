@@ -219,4 +219,14 @@ class packagepipelineUtils implements Serializable {
         contraUtils.sendIRCNotification(nick, channel, message, ircServer)
     }
 
+    /**
+     * Function to set env.isScratch, env.request_0, and
+     * env.request_1 based on the parsedMsg key structure
+     * @param parsedMsg - The parsed fedmsg
+     * @return
+     */
+    def setScratchVars(Map parsedMsg) {
+        packagePipelineUtils.setScratchVars(parsedMsg)
+    }
+
 }

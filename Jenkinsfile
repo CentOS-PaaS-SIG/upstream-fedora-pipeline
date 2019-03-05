@@ -223,15 +223,7 @@ timestamps {
                                 } else {
                                     env.artifact = 'build'
                                     // Scratch build messages store things in info
-                                    if (parsedMsg.has('info')) {
-                                        env.isScratch = true
-                                        env.request_0 = parsedMsg['info']['request'][0]
-                                        env.request_1 = parsedMsg['info']['request'][1]
-                                    } else {
-                                        env.isScratch = false
-                                        env.request_0 = parsedMsg['request'][0]
-                                        env.request_1 = parsedMsg['request'][1]
-                                    }
+                                    packagepipelineUtils.setScratchVars(parsedMsg)
                                     env.fed_repo = packagepipelineUtils.repoFromRequest(env.request_0)
                                     env.branch, env.fed_branch = packagepipelineUtils.setBuildBranch(env.request_1)
                                     env.fed_namespace = 'rpms'

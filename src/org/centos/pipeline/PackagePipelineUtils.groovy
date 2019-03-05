@@ -444,3 +444,21 @@ def checkBranch(String branch) {
 
     return result
 }
+
+/**
+ * Function to set env.isScratch, env.request_0, and
+ * env.request_1 based on the parsedMsg key structure
+ * @param parsedMsg - The parsed fedmsg
+ * @return
+ */
+def setScratchVars(Map parsedMsg) {
+    if (parsedMsg.has('info')) {
+        env.isScratch = true
+        env.request_0 = parsedMsg['info']['request'][0]
+        env.request_1 = parsedMsg['info']['request'][1]
+    } else {
+        env.isScratch = false
+        env.request_0 = parsedMsg['request'][0]
+        env.request_1 = parsedMsg['request'][1]
+    }
+}
