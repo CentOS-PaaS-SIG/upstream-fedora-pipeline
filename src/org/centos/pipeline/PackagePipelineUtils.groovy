@@ -147,7 +147,7 @@ def setTestMessageFields(String messageType, String artifact) {
     switch (messageType) {
         // Queued and running messages have the same spec for now
         case ['queued', 'running']:
-            myConstructedMessage = msgBusTestQueued(ci: myCIContent(), artifact: myArtifactContent(), pipeline: myPipelineContent(), test: myTestContent())
+            myConstructedMessage = msgBusTestQueued(contact: myContactContent(), artifact: myArtifactContent(), pipeline: myPipelineContent(), test: myTestContent())
             break
         case 'complete':
             if (artifact == "koji-build") {
@@ -157,7 +157,7 @@ def setTestMessageFields(String messageType, String artifact) {
                 myArtifactContent = msgBusArtifactContent(type: artifact, id: myId, issuer: myIssuer, source: env.RPM_REQUEST_SOURCE ?: "UNKNOWN", repository: myRepository, commit_hash: myCommitHash, comment_id: myCommentId, uid: myUid, dependencies: env.BUILD_DEPS ? env.BUILD_DEPS.split() : [])
             }
             mySystemContent = msgBusSystemContent(label: "upstream-fedora-pipeline", os: env.fed_branch, provider: "CentOS CI", architecture: "x86_64", variant: "Cloud")
-            myConstructedMessage = msgBusTestComplete(type: myType, category: myCategory, namespace: myNamespace, contact: myContactContent(), artifact: myArtifactContent(), pipeline: myPipelineContent(), system: mySystemContent(), stage: myStageContent())
+            myConstructedMessage = msgBusTestComplete(contact: myContactContent(), artifact: myArtifactContent(), pipeline: myPipelineContent(), test: myTestContent(), system: [mySystemContent()])
             break
         case 'error':
             if (artifact == "koji-build") {
@@ -166,8 +166,8 @@ def setTestMessageFields(String messageType, String artifact) {
             if (artifact == "dist-git-pr") {
                 myArtifactContent = msgBusArtifactContent(type: artifact, id: myId, issuer: myIssuer, source: env.RPM_REQUEST_SOURCE ?: "UNKNOWN", repository: myRepository, commit_hash: myCommitHash, comment_id: myCommentId, uid: myUid, dependencies: env.BUILD_DEPS ? env.BUILD_DEPS.split() : [])
             }
-            // Unknown execution error is the default reason. If a new one is desired, it'd be reason: 'some reason'
-            myConstructedMessage = msgBusTestError(ci: myCIContent(), artifact: myArtifactContent(), pipeline: myPipelineContent(), test: myTestContent())
+            // Unknown execution error is added in an error closure by default
+            myConstructedMessage = msgBusTestError(contact: myContactContent(), artifact: myArtifactContent(), pipeline: myPipelineContent(), test: myTestContent())
             break
     }
 
