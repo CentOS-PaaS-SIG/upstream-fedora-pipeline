@@ -32,8 +32,8 @@ properties(
                 ),
                 parameters(
                         [
-                                string(defaultvalue: "", description: 'CI_MESSAGE', name: 'CI_MESSAGE'),
-                                string(defaultvalue: "", description: 'MESSAGE_HEADERS', name: 'MESSAGE_HEADERS')
+                                string(defaultValue: "", description: 'CI_MESSAGE', name: 'CI_MESSAGE'),
+                                string(defaultValue: "", description: 'MESSAGE_HEADERS', name: 'MESSAGE_HEADERS')
                         ]
                 )
         ]
