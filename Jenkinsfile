@@ -276,7 +276,7 @@ timestamps {
 
                             if (env.PROVIDED_KOJI_TASKID?.trim()) {
                                 // Check if to add scratch tag to build name
-                                String scratchTag = env.isScratch ? ":S" : ""
+                                String scratchTag = env.isScratch.toBoolean() ? ":S" : ""
                                 // Decorate our build to not be null now
                                 String buildName = "${env.koji_task_id}${scratchTag}:${env.nvr}"
                                 pipelineUtils.setCustomBuildNameAndDescription(buildName, buildName)
