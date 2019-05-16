@@ -242,7 +242,7 @@ timestamps {
                                 messageFields = packagepipelineUtils.setMessageFields("package.running", artifact)
 
                                 // Send message org.centos.prod.ci.pipeline.allpackages.package.running on fedmsg
-                                pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                                pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                                 // Prepare to send stage.complete message on failure
                                 env.messageStage = 'package.complete'
@@ -286,13 +286,13 @@ timestamps {
                             messageFields = packagepipelineUtils.setMessageFields("package.complete", artifact)
 
                             // Send message org.centos.prod.ci.pipeline.allpackages.package.complete on fedmsg
-                            pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                            pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                             // Set our message topic, properties, and content
                             messageFields = packagepipelineUtils.setMessageFields("image.queued", artifact)
 
                             // Send message org.centos.prod.ci.pipeline.allpackages.image.queued on fedmsg
-                            pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                            pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
                         }
 
                         currentStage = "cloud-image-compose"
@@ -304,7 +304,7 @@ timestamps {
                                 messageFields = packagepipelineUtils.setMessageFields("image.running", artifact)
 
                                 // Send message org.centos.prod.ci.pipeline.allpackages.image.running on fedmsg
-                                pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                                pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                                 // Set stage specific vars
                                 packagepipelineUtils.setStageEnvVars(currentStage)
@@ -319,7 +319,7 @@ timestamps {
                                 messageFields = packagepipelineUtils.setMessageFields("image.complete", artifact)
 
                                 // Send message org.centos.prod.ci.pipeline.allpackages.image.complete on fedmsg
-                                pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                                pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                             }
                         }
@@ -354,7 +354,7 @@ timestamps {
                                     messageFields = packagepipelineUtils.setMessageFields("package.test.functional.queued", artifact)
 
                                     // Send message org.centos.prod.ci.pipeline.allpackages.package.test.functional.queued on fedmsg
-                                    pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                                    pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                                     // Set stage specific vars
                                     packagepipelineUtils.setStageEnvVars(currentStage)
@@ -363,7 +363,7 @@ timestamps {
                                     messageFields = packagepipelineUtils.setMessageFields("package.test.functional.running", artifact)
 
                                     // Send message org.centos.prod.ci.pipeline.allpackages.package.test.functional.running on fedmsg
-                                    pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                                    pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                                     // This can't be in setStageEnvVars because it depends on env.WORKSPACE
                                     env.TEST_SUBJECTS = "${env.WORKSPACE}/images/test_subject.qcow2"
@@ -389,7 +389,7 @@ timestamps {
                                     messageFields = packagepipelineUtils.setMessageFields("package.test.functional.complete", artifact)
 
                                     // Send message org.centos.prod.ci.pipeline.allpackages.package.test.functional.complete on fedmsg
-                                    pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                                    pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                                 }
                             }
@@ -404,7 +404,7 @@ timestamps {
 
                         // Send message org.centos.prod.ci.pipeline.allpackages.<stage>.complete on fedmsg if stage failed
                         messageFields = packagepipelineUtils.setMessageFields(messageStage, artifact)
-                        pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                        pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                         // Report the exception
                         echo "Error: Exception from " + currentStage + ":"
@@ -428,7 +428,7 @@ timestamps {
                         messageFields = packagepipelineUtils.setMessageFields("complete", artifact)
 
                         // Send message org.centos.prod.ci.pipeline.allpackages.complete on fedmsg
-                        pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                        pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                         // set the metrics we want
                         def packageMeasurement = "${ciMetrics.prefix}_${env.fed_repo}"
