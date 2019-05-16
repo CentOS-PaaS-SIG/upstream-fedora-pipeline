@@ -385,6 +385,23 @@ timestamps {
                                         }
                                     }
 
+                                    if (pipelineUtils.fileExists("${WORKSPACE}/${currentStage}/logs/results.yml")) {
+                                        def test_results = readYaml file: "${WORKSPACE}/${currentStage}/logs/results.yml"
+                                        def test_failed = false
+                                        test_results['results'].each { result ->
+                                            // some test case exited with error
+                                            if (result.result == "error") {
+                                                 throw new Exception("FAIL: test ${result.test} exited with error")
+                                            }
+                                            if (result.result == "fail") {
+                                                test_failed = true
+                                            }
+                                        }
+                                        if (test_failed) {
+                                            currentBuild.result = 'UNSTABLE'
+                                        }
+                                    }
+
                                     // Set our message topic, properties, and content
                                     messageFields = packagepipelineUtils.setMessageFields("package.test.functional.complete", artifact)
 
