@@ -69,6 +69,10 @@ def setMessageFields(String messageType, String artifact) {
             username         : env.fed_owner,
     ]
 
+    if (artifact == 'pr') {
+        messageContent.commit_hash = env.fed_last_commit_hash
+    }
+
     // Add image type to appropriate message types
     if (messageType in ['image.queued', 'image.running', 'image.complete', 'image.test.smoke.queued', 'image.test.smoke.running', 'image.test.smoke.complete'
     ]) {
