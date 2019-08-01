@@ -124,14 +124,21 @@ def setDefaultEnvVars(Map envMap=null){
 
     if (!env.MSG_PROVIDER || env.MSG_PROVIDER == '') {
         if (env.ghprbActualCommit != null && (env.ghprbActualCommit != "master" || env.ghprbPullId != "")) {
-            env.MAIN_TOPIC = env.MAIN_TOPIC ?: 'org.centos.stage'
-            env.dataGrepperUrl = 'https://apps.stg.fedoraproject.org/datagrepper'
             env.MSG_PROVIDER = "fedora-fedmsg-stage"
         } else {
-            env.MAIN_TOPIC = env.MAIN_TOPIC ?: 'org.centos.prod'
-            env.dataGrepperUrl = 'https://apps.fedoraproject.org/datagrepper'
             env.MSG_PROVIDER = "fedora-fedmsg"
         }
+    }
+    if (env.MSG_PROVIDER == "fedora-fedmsg-stage" ){
+        env.MAIN_TOPIC = env.MAIN_TOPIC ?: 'org.centos.stage'
+        env.dataGrepperUrl = 'https://apps.stg.fedoraproject.org/datagrepper'
+        env.MSG_PROVIDER = "fedora-fedmsg-stage"
+    } else if (env.MSG_PROVIDER == "fedora-fedmsg" ){
+        env.MAIN_TOPIC = env.MAIN_TOPIC ?: 'org.centos.prod'
+        env.dataGrepperUrl = 'https://apps.fedoraproject.org/datagrepper'
+        env.MSG_PROVIDER = "fedora-fedmsg"
+    } else {
+        throw new Exception("Unsupported MSG_PROVIDER: ${env.MSG_PROVIDER}")
     }
 
     env.basearch = env.basearch ?: 'x86_64'
