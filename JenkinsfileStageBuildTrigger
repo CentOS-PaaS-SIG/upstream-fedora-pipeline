@@ -1,0 +1,198 @@
+#!groovy
+
+
+timestamps {
+    def libraries = ['ci-pipeline'             : ['master', 'https://github.com/CentOS-PaaS-SIG/ci-pipeline.git'],
+                     'upstream-fedora-pipeline': ['master', 'https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline.git']]
+
+    libraries.each { name, repo ->
+        library identifier: "${name}@${repo[0]}",
+                retriever: modernSCM([$class: 'GitSCMSource',
+                                      remote: repo[1]])
+
+    }
+
+    env.ghprbActualCommit = env.ghprbActualCommit ?: 'master'
+
+    // Audit file for all messages sent.
+    msgAuditFile = "messages/message-audit.json"
+
+    // Number of times to keep retrying to make sure message is ingested
+    // by datagrepper
+    fedmsgRetryCount = 120
+
+    properties(
+            [
+                    buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '500', daysToKeepStr: '', numToKeepStr: '500')),
+                    parameters(
+                            [
+                                    string(description: 'fedora-fedmsg', defaultValue: '{}', name: 'CI_MESSAGE'),
+                                    string(name: 'MSG_PROVIDER',
+                                           defaultValue: 'fedora-fedmsg-stage',
+                                           description: 'Main provider to send messages on'),
+                                    string(name: 'KOJI_SERVER',
+                                           defaultValue: 'https://koji.stg.fedoraproject.org/kojihub',
+                                           description: 'Overwrites the default koji server to download build'),
+                                    string(name: 'ghprbActualCommit',
+                                           defaultValue: 'master',
+                                           description: 'The GitHub pull request commit'),
+                                    string(name: 'ghprbGhRepository',
+                                           defaultValue: '',
+                                           description: 'The repo the PR is against'),
+                                    string(name: 'sha1',
+                                           defaultValue: '',
+                                           description: ''),
+                                    string(name: 'ghprbPullId',
+                                           defaultValue: '',
+                                           description: 'Pull Request Number'),
+                                    string(name: 'ghprbPullAuthorLogin',
+                                           defaultValue: '',
+                                           description: 'Pull Request Author username'),
+                                    string(name: 'SLAVE_TAG',
+                                           defaultValue: 'stable',
+                                           description: 'Tag for slave image'),
+                                    string(name: 'RPMBUILD_TAG',
+                                           defaultValue: 'stable',
+                                           description: 'Tag for rpmbuild image'),
+                                    string(name: 'CLOUD_IMAGE_COMPOSE_TAG',
+                                           defaultValue: 'stable',
+                                           description: 'Tag for cloud-image-compose image'),
+                                    string(name: 'SINGLEHOST_TEST_TAG',
+                                           defaultValue: 'stable',
+                                           description: 'Tag for singlehost test image'),
+
+                            ]
+                    ),
+                    pipelineTriggers(
+                            [[$class: 'CIBuildTrigger',
+                              noSquash: true,
+                              providerData: [
+                                  $class: 'FedMsgSubscriberProviderData',
+                                  name: 'fedora-fedmsg-stage',
+                                  overrides: [
+                                      topic: 'org.fedoraproject.stg.buildsys.build.state.change'
+                                  ],
+                                  checks: [
+                                      [field: 'new', expectedValue: '1|CLOSED'],
+                                      [field: 'request[1]', expectedValue: 'rawhide'],
+                                      [field: 'owner', expectedValue: '^(?!koschei).*']
+                                  ]
+                              ]
+                            ]]
+                    )
+            ]
+    )
+
+    def TRIGGER_RETRY_COUNT = 3
+    def stepName = null
+
+    node('master') {
+
+        // pull in ciMetrics from ci-pipeline
+        ciMetrics.prefix = packagepipelineUtils.influxDBPrefix()
+        packagepipelineUtils.cimetrics = ciMetrics
+        def jobMeasurement = packagepipelineUtils.timedMeasurement()
+
+        packagepipelineUtils.ciPipeline {
+            try {
+                stepName = 'upstream-fedora-pipeline-build-trigger'
+                stage(stepName) {
+
+                    packagepipelineUtils.timedPipelineStep(stepName: stepName, debug: true) {
+
+                        print "CI_MESSAGE"
+                        print CI_MESSAGE
+                        pipelineUtils.flattenJSON('fed', env.CI_MESSAGE)
+                        // Get request vars from scratch messages
+                        env.fed_request_0 = env.fed_request_0 ?: env.fed_info_request_0
+                        env.fed_request_1 = env.fed_request_1 ?: env.fed_info_request_1
+                        // Determine if scratch build
+                        env.isScratch = false
+                        if (env.fed_info_request_0) {
+                            env.isScratch = true
+                        }
+                        packagepipelineUtils.setDefaultEnvVars()
+                        targetBranch = false
+                        if (env.fed_request_1) {
+                            pipelineUtils.setBuildBranch(env.fed_request_1, "fed")
+                            targetBranch = packagepipelineUtils.checkBranch()
+                        }
+                        // If the PR pipeline submit the build, let's just set targetBranch to false so we don't run
+                        if (env.fed_owner == "bpeck/jenkins-continuous-infra.apps.ci.centos.org" || env.fed_owner == "koschei") {
+                            print("This build is for a scratch build from the PR pipeline. Not triggering.")
+                            targetBranch = false
+                        }
+                        if (targetBranch) {
+                            pipelineUtils.repoFromRequest(env.fed_request_0, 'fed')
+                            testsExist = pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')
+                            // Ensure message is from primary koji instance
+                            primaryKoji = fed_instance == "primary"
+                            pipelineUtils.setBuildDisplayAndDescription()
+                        } else {
+                            currentBuild.displayName = "Build#: ${env.BUILD_NUMBER} - Branch: ${env.branch} - Skipped"
+                        }
+                        pipelineUtils.initializeAuditFile(msgAuditFile)
+
+                    }
+
+                }
+
+                if (targetBranch && testsExist && primaryKoji) {
+                    messageFields = packagepipelineUtils.setMessageFields('package.queued', 'build')
+                    pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                    stepName = 'schedule build'
+                    stage(stepName) {
+
+                        retry(TRIGGER_RETRY_COUNT) {
+                            packagepipelineUtils.timedPipelineStep(stepName: stepName, debug: true) {
+
+                                build job: "fedora-rawhide-stage-build-pipeline",
+                                        // Scratch messages from task.state.changed call it id, not task_id
+                                        parameters: [string(name: 'PROVIDED_KOJI_TASKID', value: env.fed_task_id ?: env.fed_id),
+                                                     string(name: 'MSG_PROVIDER', value: env.MSG_PROVIDER),
+                                                     string(name: 'KOJI_SERVER', value: env.KOJI_SERVER),
+                                                     string(name: 'ghprbActualCommit',
+                                                         value: "${env.ghprbActualCommit}"),
+                                                     string(name: 'ghprbGhRepository',
+                                                         value: "${env.ghprbGhRepository}"),
+                                                     string(name: 'ghprbPullAuthorLogin',
+                                                         value: "${env.ghprbPullAuthorLogin}"),
+                                                     string(name: 'sha1',
+                                                         value: "${env.sha1}"),
+                                                     string(name: 'ghprbPullId',
+                                                         value: "${env.ghprbPullId}"),
+                                                     string(name: 'SLAVE_TAG',
+                                                         value: env.SLAVE_TAG),
+                                                     string(name: 'RPMBUILD_TAG',
+                                                         value: env.RPMBUILD_TAG),
+                                                     string(name: 'CLOUD_IMAGE_COMPOSE_TAG',
+                                                         value: env.CLOUD_IMAGE_COMPOSE_TAG),
+                                                     string(name: 'SINGLEHOST_TEST_TAG',
+                                                         value: env.SINGLEHOST_TEST_TAG),
+                                                     string(name: 'CI_MESSAGE', value: env.CI_MESSAGE)],
+                                        wait: false
+                            }
+                        }
+                    }
+
+                } else {
+                    echo "CI_MESSAGE was invalid. Skipping..."
+                    messageFields = packagepipelineUtils.setMessageFields('package.ignored', 'build')
+                    pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                    currentBuild.description = "*Build Skipped*"
+                }
+
+                currentBuild.result = 'SUCCESS'
+
+            } catch (e) {
+                currentBuild.result = 'FAILURE'
+                throw e
+            } finally {
+                // set the metrics we want
+                ciMetrics.setMetricTag(jobMeasurement, 'package_name', env.fed_repo)
+                ciMetrics.setMetricTag(jobMeasurement, 'build_result', currentBuild.result)
+                ciMetrics.setMetricField(jobMeasurement, 'build_time', currentBuild.getDuration())
+            }
+        }
+    }
+}

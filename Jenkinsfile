@@ -99,6 +99,12 @@ timestamps {
                                     string(name: 'OPENSHIFT_SERVICE_ACCOUNT',
                                            defaultValue: 'jenkins',
                                            description: 'Service Account for Openshift operations'),
+                                    string(name: 'MSG_PROVIDER',
+                                           defaultValue: '',
+                                           description: 'Main provider to send messages on'),
+                                    string(name: 'KOJI_SERVER',
+                                           defaultValue: '',
+                                           description: 'Overwrites the default koji server to download build'),
                                     string(name: 'CI_MESSAGE',
                                            defaultValue: CANNED_CI_MESSAGE,
                                            description: 'CI_MESSAGE')

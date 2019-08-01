@@ -122,14 +122,16 @@ def setDefaultEnvVars(Map envMap=null){
     // We also set dataGrepperUrl which is needed for message tracking
     // and the correct jms-messaging message provider
 
-    if (env.ghprbActualCommit != null && (env.ghprbActualCommit != "master" || env.ghprbPullId != "")) {
-        env.MAIN_TOPIC = env.MAIN_TOPIC ?: 'org.centos.stage'
-        env.dataGrepperUrl = 'https://apps.stg.fedoraproject.org/datagrepper'
-        env.MSG_PROVIDER = "fedora-fedmsg-stage"
-    } else {
-        env.MAIN_TOPIC = env.MAIN_TOPIC ?: 'org.centos.prod'
-        env.dataGrepperUrl = 'https://apps.fedoraproject.org/datagrepper'
-        env.MSG_PROVIDER = "fedora-fedmsg"
+    if (!env.MSG_PROVIDER || env.MSG_PROVIDER == '') {
+        if (env.ghprbActualCommit != null && (env.ghprbActualCommit != "master" || env.ghprbPullId != "")) {
+            env.MAIN_TOPIC = env.MAIN_TOPIC ?: 'org.centos.stage'
+            env.dataGrepperUrl = 'https://apps.stg.fedoraproject.org/datagrepper'
+            env.MSG_PROVIDER = "fedora-fedmsg-stage"
+        } else {
+            env.MAIN_TOPIC = env.MAIN_TOPIC ?: 'org.centos.prod'
+            env.dataGrepperUrl = 'https://apps.fedoraproject.org/datagrepper'
+            env.MSG_PROVIDER = "fedora-fedmsg"
+        }
     }
 
     env.basearch = env.basearch ?: 'x86_64'
@@ -160,6 +162,7 @@ def setStageEnvVars(String stage){
                     fed_repo                  : env.fed_repo,
                     fed_rev                   : env.fed_rev,
                     rpm_repo                  : env.WORKSPACE + "/" + env.fed_repo + "_repo",
+                    KOJI_SERVER               : env.KOJI_SERVER ?: ''
             ],
              "cloud-image-compose"                            : [
                      rpm_repo                 : env.WORKSPACE + "/" + env.fed_repo + "_repo",
