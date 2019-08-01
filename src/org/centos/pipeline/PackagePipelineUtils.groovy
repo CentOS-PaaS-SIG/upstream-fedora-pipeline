@@ -162,6 +162,7 @@ def setStageEnvVars(String stage){
                     fed_repo                  : env.fed_repo,
                     fed_rev                   : env.fed_rev,
                     rpm_repo                  : env.WORKSPACE + "/" + env.fed_repo + "_repo",
+                    KOJI_SERVER               : env.KOJI_SERVER ?: ''
             ],
              "cloud-image-compose"                            : [
                      rpm_repo                 : env.WORKSPACE + "/" + env.fed_repo + "_repo",
