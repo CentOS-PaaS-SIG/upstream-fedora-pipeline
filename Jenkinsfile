@@ -433,9 +433,6 @@ timestamps {
                         echo "Error: Exception from " + currentStage + ":"
                         echo e.getMessage()
 
-                        // Throw the error
-                        throw e
-
                     } finally {
                         currentBuild.result = buildResult
                         pipelineUtils.getContainerLogsFromPod(OPENSHIFT_NAMESPACE, env.NODE_NAME)
