@@ -34,6 +34,9 @@ timestamps {
     // Pod name to use
     def podName = 'fedora-cloud-' + executionID + '-allpkgs'
 
+    // Number of CPU cores for the singlehost-test container
+    runnerCpuLimit = '1'
+
     def libraries = ['cico-pipeline'           : ['master', 'https://github.com/CentOS/cico-pipeline-library.git'],
                      'ci-pipeline'             : ['master', 'https://github.com/CentOS-PaaS-SIG/ci-pipeline.git']]
 
@@ -150,13 +153,16 @@ timestamps {
                             image: DOCKER_REPO_URL + '/' + OPENSHIFT_NAMESPACE + '/singlehost-test:' + SINGLEHOST_TEST_TAG,
                             ttyEnabled: true,
                             command: 'cat',
+                            envVars: [
+                                envVar(key: 'STR_CPU_LIMIT', value: runnerCpuLimit)
+                            ],
                             // Request - minimum required, Limit - maximum possible (hard quota)
                             // https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-cpu
                             // https://blog.openshift.com/managing-compute-resources-openshiftkubernetes/
                             resourceRequestCpu: '500m',
-                            resourceLimitCpu: '1',
-                            resourceRequestMemory: '2Gi',
-                            resourceLimitMemory: '4Gi',
+                            resourceLimitCpu: runnerCpuLimit,
+                            resourceRequestMemory: '4Gi',
+                            resourceLimitMemory: '6Gi',
                             privileged: true,
                             workingDir: '/workDir')
             ],
