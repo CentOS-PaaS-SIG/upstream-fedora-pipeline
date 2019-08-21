@@ -38,7 +38,8 @@ timestamps {
                                   topic: 'org.fedoraproject.prod.pagure.pull-request.comment.added'
                               ],
                               checks: [
-                                  [field: '$.pullrequest.project.namespace', expectedValue: 'rpms|tests']
+                                  [field: '$.pullrequest.project.namespace', expectedValue: 'rpms|tests'],
+                                  [field: '$.pullrequest.status', expectedValue: 'Open']
                               ]
                           ]
                         ]]
