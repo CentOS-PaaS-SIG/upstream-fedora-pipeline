@@ -79,6 +79,11 @@ timestamps {
                         if (env.fed_request_1) {
                             pipelineUtils.setBuildBranch(env.fed_request_1, "fed")
                             targetBranch = packagepipelineUtils.checkBranch()
+                            def tagMatcher = env.fed_request_1 =~ /f([0-9]+)-candidate/
+                            if (!tagMatcher && env.fed_request_1 != 'rawhide') {
+                                print("Don't trigger test for build with Build Target tag: ${env.fed_request_1}")
+                                targetBranch = false
+                            }
                         }
                         // If the PR pipeline submit the build, let's just set targetBranch to false so we don't run
                         if (env.fed_owner == "bpeck/jenkins-continuous-infra.apps.ci.centos.org" || env.fed_owner == "koschei") {
