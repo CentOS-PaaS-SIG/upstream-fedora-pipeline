@@ -53,16 +53,16 @@ timestamps {
     node('master') {
 
         // pull in ciMetrics from ci-pipeline
-        ciMetrics.prefix = packagepipelineUtils.influxDBPrefix()
-        packagepipelineUtils.cimetrics = ciMetrics
-        def jobMeasurement = packagepipelineUtils.timedMeasurement()
+        // ciMetrics.prefix = packagepipelineUtils.influxDBPrefix()
+        // packagepipelineUtils.cimetrics = ciMetrics
+        // def jobMeasurement = packagepipelineUtils.timedMeasurement()
 
         packagepipelineUtils.ciPipeline {
             try {
                 stepName = 'fedora-container-build-trigger'
                 stage(stepName) {
 
-                    packagepipelineUtils.timedPipelineStep(stepName: stepName, debug: true) {
+                    packagepipelineUtils.handlePipelineStep(stepName: stepName, debug: true) {
 
                         print "CI_MESSAGE"
                         print CI_MESSAGE
@@ -110,7 +110,7 @@ timestamps {
                     stage(stepName) {
 
                         retry(TRIGGER_RETRY_COUNT) {
-                            packagepipelineUtils.timedPipelineStep(stepName: stepName, debug: true) {
+                            packagepipelineUtils.handlePipelineStep(stepName: stepName, debug: true) {
 
                                 build job: "fedcontainer-${env.branch}-build-pipeline",
                                         // Scratch messages from task.state.changed call it id, not task_id
