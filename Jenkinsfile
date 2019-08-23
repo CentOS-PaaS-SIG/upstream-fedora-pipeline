@@ -17,18 +17,16 @@ timestamps {
 
     // Needed for podTemplate()
     env.SLAVE_TAG = env.SLAVE_TAG ?: 'stable'
-    env.RPMBUILD_TAG = env.RPMBUILD_TAG ?: 'stable'
-    env.CLOUD_IMAGE_COMPOSE_TAG = env.CLOUD_IMAGE_COMPOSE_TAG ?: 'stable'
-    env.SINGLEHOST_TEST_TAG = env.SINGLEHOST_TEST_TAG ?: 'stable'
+    env.FEDORACI_RUNNER_TAG = env.FEDORACI_RUNNER_TAG ?: 'stable'
 
     // Execution ID for this run of the pipeline
     def executionID = UUID.randomUUID().toString()
     env.pipelineId = env.pipelineId ?: executionID
 
     // Pod name to use
-    def podName = 'fedora-cloud-' + executionID + '-allpkgs'
+    def podName = 'fedora-cloud-' + env.pipelineId + '-allpkgs'
 
-    // Number of CPU cores for the singlehost-test container
+    // Number of CPU cores for the fedoraci-runner container
     runnerCpuLimit = '1'
 
     def libraries = ['cico-pipeline'           : ['master', 'https://github.com/CentOS/cico-pipeline-library.git'],
@@ -78,15 +76,9 @@ timestamps {
                                     string(name: 'SLAVE_TAG',
                                            defaultValue: 'stable',
                                            description: 'Tag for slave image'),
-                                    string(name: 'RPMBUILD_TAG',
+                                    string(name: 'FEDORACI_RUNNER_TAG',
                                            defaultValue: 'stable',
-                                           description: 'Tag for rpmbuild image'),
-                                    string(name: 'CLOUD_IMAGE_COMPOSE_TAG',
-                                           defaultValue: 'stable',
-                                           description: 'Tag for cloud-image-compose image'),
-                                    string(name: 'SINGLEHOST_TEST_TAG',
-                                           defaultValue: 'stable',
-                                           description: 'Tag for singlehost test image'),
+                                           description: 'Tag for fedoraci-runner image'),
                                     string(name: 'DOCKER_REPO_URL',
                                            defaultValue: '172.30.254.79:5000',
                                            description: 'Docker repo url for Openshift instance'),
@@ -128,26 +120,10 @@ timestamps {
                             args: '${computer.jnlpmac} ${computer.name}',
                             command: '',
                             workingDir: '/workDir'),
-                    // This adds the rpmbuild container to the pod.
-                    containerTemplate(name: 'rpmbuild',
+                    // This adds the fedoraci-runner container to the pod.
+                    containerTemplate(name: 'fedoraci-runner',
                             alwaysPullImage: true,
-                            image: DOCKER_REPO_URL + '/' + OPENSHIFT_NAMESPACE + '/rpmbuild:' + RPMBUILD_TAG,
-                            ttyEnabled: true,
-                            command: 'cat',
-                            privileged: true,
-                            workingDir: '/workDir'),
-                    // This adds the cloud-image-compose test container to the pod.
-                    containerTemplate(name: 'cloud-image-compose',
-                            alwaysPullImage: true,
-                            image: DOCKER_REPO_URL + '/' + OPENSHIFT_NAMESPACE + '/cloud-image-compose:' + CLOUD_IMAGE_COMPOSE_TAG,
-                            ttyEnabled: true,
-                            command: 'cat',
-                            privileged: true,
-                            workingDir: '/workDir'),
-                    // This adds the singlehost test container to the pod.
-                    containerTemplate(name: 'singlehost-test',
-                            alwaysPullImage: true,
-                            image: DOCKER_REPO_URL + '/' + OPENSHIFT_NAMESPACE + '/singlehost-test:' + SINGLEHOST_TEST_TAG,
+                            image: DOCKER_REPO_URL + '/' + OPENSHIFT_NAMESPACE + '/fedoraci-runner:' + FEDORACI_RUNNER_TAG,
                             ttyEnabled: true,
                             command: 'cat',
                             envVars: [
@@ -156,7 +132,7 @@ timestamps {
                             // Request - minimum required, Limit - maximum possible (hard quota)
                             // https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-cpu
                             // https://blog.openshift.com/managing-compute-resources-openshiftkubernetes/
-                            resourceRequestCpu: '500m',
+                            resourceRequestCpu: '1',
                             resourceLimitCpu: runnerCpuLimit,
                             resourceRequestMemory: '4Gi',
                             resourceLimitMemory: '6Gi',
@@ -275,18 +251,17 @@ timestamps {
                                     stageVars['PROVIDED_KOJI_TASKID'] = env.PROVIDED_KOJI_TASKID
                                     // Run script that simply downloads artifacts
                                     // and stores them in jenkins workspace
-                                    executeInContainer(containerName: "rpmbuild",
+                                    executeInContainer(containerName: "fedoraci-runner",
                                                        containerScript: "/tmp/pull_old_task.sh",
                                                        stageVars: stageVars,
                                                        stageName: env.currentStage)
-
                                 } else {
                                     // For tests namespace there is no package to build
                                     if (env.fed_namespace != "tests" ) {
                                         // koji_build_pr relies on fed_uid var
                                         stageVars['fed_uid'] = parsedMsg['pullrequest']['uid']
                                         // Build rpms
-                                        executeInContainer(containerName: "rpmbuild",
+                                        executeInContainer(containerName: "fedoraci-runner",
                                                            containerScript: "/tmp/koji_build_pr.sh",
                                                            stageVars: stageVars,
                                                            stageName: env.currentStage)
@@ -301,7 +276,7 @@ timestamps {
                                      load(job_props_groovy)
 
                                     // Make sure we generated a good repo
-                                    executeInContainer(containerName: "rpmbuild",
+                                    executeInContainer(containerName: "fedoraci-runner",
                                                        containerScript: "/tmp/repoquery.sh",
                                                        stageVars: stageVars,
                                                        stageName: env.currentStage)
@@ -348,7 +323,7 @@ timestamps {
                                 env.messageStage = 'image.complete'
 
                                 // Compose image
-                                executeInContainer(containerName: "cloud-image-compose",
+                                executeInContainer(containerName: "fedoraci-runner",
                                                    containerScript: "/tmp/virt-customize.sh",
                                                    stageVars: stageVars,
                                                    stageName: env.currentStage)
@@ -376,7 +351,7 @@ timestamps {
                                 // tests namespace does not install any package, so do no need to verify rpm
                                 if (env.fed_namespace != "tests" ) {
                                     // Run nvr verification
-                                    executeInContainer(containerName: "singlehost-test",
+                                    executeInContainer(containerName: "fedoraci-runner",
                                                        containerScript: "/tmp/verify-rpm.sh",
                                                        stageVars: stageVars,
                                                        stageName: env.currentStage)
@@ -414,7 +389,7 @@ timestamps {
 
                                     // Run functional tests
                                     try {
-                                        executeInContainer(containerName: "singlehost-test",
+                                        executeInContainer(containerName: "fedoraci-runner",
                                                            containerScript: "/tmp/package-test.sh",
                                                            stageVars: stageVars,
                                                            stageName: env.currentStage)
