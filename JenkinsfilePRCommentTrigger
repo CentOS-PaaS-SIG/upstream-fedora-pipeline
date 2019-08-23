@@ -60,9 +60,9 @@ timestamps {
     node('master') {
 
         // pull in ciMetrics from ci-pipeline
-        ciMetrics.prefix = packagepipelineUtils.influxDBPrefix()
-        packagepipelineUtils.cimetrics = ciMetrics
-        def jobMeasurement = packagepipelineUtils.timedMeasurement()
+        // ciMetrics.prefix = packagepipelineUtils.influxDBPrefix()
+        // packagepipelineUtils.cimetrics = ciMetrics
+        // def jobMeasurement = packagepipelineUtils.timedMeasurement()
 
 
         timeout(time: 30, unit: 'MINUTES') {
@@ -72,7 +72,7 @@ timestamps {
                     stepName = 'fedora-pr-pipeline-trigger'
                     stage(stepName) {
 
-                        packagepipelineUtils.timedPipelineStep(stepName: stepName, debug: true) {
+                        packagepipelineUtils.handlePipelineStep(stepName: stepName, debug: true) {
 
                             print "CI_MESSAGE"
                             print CI_MESSAGE
@@ -99,7 +99,7 @@ timestamps {
 
                             try {
                                 retry(TRIGGER_RETRY_COUNT) {
-                                    packagepipelineUtils.timedPipelineStep(stepName: stepName, debug: true) {
+                                    packagepipelineUtils.handlePipelineStep(stepName: stepName, debug: true) {
 
                                         build job: "fedora-${env.branch}-pr-pipeline",
                                                 parameters: [string(name: 'CI_MESSAGE', value: env.CI_MESSAGE)],
@@ -127,12 +127,12 @@ timestamps {
                     currentBuild.result = 'FAILURE'
                     throw err
 
-                } finally {
+                } // finally {
                     // set the metrics we want
-                    ciMetrics.setMetricTag(jobMeasurement, 'package_name', env.fed_repo)
-                    ciMetrics.setMetricTag(jobMeasurement, 'build_result', currentBuild.result)
-                    ciMetrics.setMetricField(jobMeasurement, 'build_time', currentBuild.getDuration())
-                }
+                    // ciMetrics.setMetricTag(jobMeasurement, 'package_name', env.fed_repo)
+                    // ciMetrics.setMetricTag(jobMeasurement, 'build_result', currentBuild.result)
+                    // ciMetrics.setMetricField(jobMeasurement, 'build_time', currentBuild.getDuration())
+                // }
             }
         }
     }

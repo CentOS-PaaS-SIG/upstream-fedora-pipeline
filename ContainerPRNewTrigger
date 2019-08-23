@@ -55,9 +55,9 @@ timestamps {
     node('master') {
 
         // pull in ciMetrics from ci-pipeline
-        ciMetrics.prefix = packagepipelineUtils.influxDBPrefix()
-        packagepipelineUtils.cimetrics = ciMetrics
-        def jobMeasurement = packagepipelineUtils.timedMeasurement()
+        // ciMetrics.prefix = packagepipelineUtils.influxDBPrefix()
+        // packagepipelineUtils.cimetrics = ciMetrics
+        // def jobMeasurement = packagepipelineUtils.timedMeasurement()
 
 
         timeout(time: 30, unit: 'MINUTES') {
@@ -67,7 +67,7 @@ timestamps {
                     stepName = 'fedora-container-pr-trigger'
                     stage(stepName) {
 
-                        packagepipelineUtils.timedPipelineStep(stepName: stepName, debug: true) {
+                        packagepipelineUtils.handlePipelineStep(stepName: stepName, debug: true) {
 
                             print "CI_MESSAGE"
                             print CI_MESSAGE
@@ -96,7 +96,7 @@ timestamps {
 
                             try {
                                 retry(TRIGGER_RETRY_COUNT) {
-                                    packagepipelineUtils.timedPipelineStep(stepName: stepName, debug: true) {
+                                    packagepipelineUtils.handlePipelineStep(stepName: stepName, debug: true) {
 
                                         build job: "fedcontainer-${env.branch}-pr-pipeline",
                                                 parameters: [string(name: 'CI_MESSAGE', value: env.CI_MESSAGE)],

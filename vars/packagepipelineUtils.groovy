@@ -10,7 +10,7 @@ class packagepipelineUtils implements Serializable {
     def packagePipelineUtils = new PackagePipelineUtils()
 
     // pass in from the jenkinsfile
-    def cimetrics
+    // def cimetrics
 
     /**
      * Method to to find DIST_BRANCH to use for rpm NVRs
@@ -66,21 +66,21 @@ class packagepipelineUtils implements Serializable {
             packagePipelineUtils.ciPipeline(body)
         } catch(e) {
             throw e
-        } finally {
-            cimetrics.writeToInflux()
-        }
+        } // finally {
+          //  cimetrics.writeToInflux()
+        // }
     }
 
     def handlePipelineStep(Map config, Closure body) {
         packagePipelineUtils.handlePipelineStep(config, body)
     }
 
-    def timedPipelineStep(Map config, Closure body) {
-        def measurement = timedMeasurement()
-        cimetrics.timed measurement, config.stepName, {
-            packagePipelineUtils.handlePipelineStep(config, body)
-        }
-    }
+    // def timedPipelineStep(Map config, Closure body) {
+    //    def measurement = timedMeasurement()
+    //    cimetrics.timed measurement, config.stepName, {
+    //        packagePipelineUtils.handlePipelineStep(config, body)
+    //    }
+    // }
 
     def timedMeasurement() {
         return "${influxDBPrefix()}_${packagePipelineUtils.timedMeasurement()}"

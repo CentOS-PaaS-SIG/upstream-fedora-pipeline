@@ -171,8 +171,8 @@ timestamps {
         node(podName) {
 
             // pull in ciMetrics from ci-pipeline
-            ciMetrics.prefix = packagepipelineUtils.influxDBPrefix()
-            packagepipelineUtils.cimetrics = ciMetrics
+            // ciMetrics.prefix = packagepipelineUtils.influxDBPrefix()
+            // packagepipelineUtils.cimetrics = ciMetrics
             def jobMeasurement = packagepipelineUtils.timedMeasurement()
 
             def buildResult = null
@@ -200,7 +200,7 @@ timestamps {
                         currentStage = "prepare-environment"
                         stage(currentStage) {
 
-                            packagepipelineUtils.timedPipelineStep('stepName': currentStage, 'debug': true) {
+                            packagepipelineUtils.handlePipelineStep('stepName': currentStage, 'debug': true) {
 
                                 deleteDir()
 
@@ -247,7 +247,7 @@ timestamps {
                         stage(currentStage) {
 
                             // Set stage specific vars
-                            packagepipelineUtils.timedPipelineStep('stepName': currentStage, 'debug': true) {
+                            packagepipelineUtils.handlePipelineStep('stepName': currentStage, 'debug': true) {
                                 packagepipelineUtils.setStageEnvVars(currentStage)
 
                                 // Return a map (messageFields) of our message topic, properties, and content
@@ -310,7 +310,7 @@ timestamps {
                         currentStage = "cloud-image-compose"
                         stage(currentStage) {
 
-                            packagepipelineUtils.timedPipelineStep(stepName: currentStage, debug: true) {
+                            packagepipelineUtils.handlePipelineStep(stepName: currentStage, debug: true) {
 
                                 // Set our message topic, properties, and content
                                 messageFields = packagepipelineUtils.setMessageFields("image.running", artifact)
@@ -339,7 +339,7 @@ timestamps {
                         currentStage = "nvr-verify"
                         stage(currentStage) {
 
-                            packagepipelineUtils.timedPipelineStep(stepName: currentStage, debug: true) {
+                            packagepipelineUtils.handlePipelineStep(stepName: currentStage, debug: true) {
                                 // Set stage specific vars
                                 packagepipelineUtils.setStageEnvVars(currentStage)
 
@@ -361,7 +361,7 @@ timestamps {
                             if (!pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic', (env.artifact == 'pr' ? env.fed_id : null), env.fed_namespace)) {
                                 pipelineUtils.skip(currentStage)
                             } else {
-                                packagepipelineUtils.timedPipelineStep(stepName: currentStage, debug: true) {
+                                packagepipelineUtils.handlePipelineStep(stepName: currentStage, debug: true) {
                                     // Set our message topic, properties, and content
                                     messageFields = packagepipelineUtils.setMessageFields("package.test.functional.queued", artifact)
 
@@ -457,12 +457,12 @@ timestamps {
                         pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                         // set the metrics we want
-                        def packageMeasurement = "${ciMetrics.prefix}_${env.fed_repo}"
-                        ciMetrics.setMetricTag(jobMeasurement, 'package_name', env.fed_repo)
-                        ciMetrics.setMetricTag(jobMeasurement, 'build_result', currentBuild.result)
-                        ciMetrics.setMetricField(jobMeasurement, 'build_time', currentBuild.getDuration())
-                        ciMetrics.setMetricField(packageMeasurement, 'build_time', currentBuild.getDuration())
-                        ciMetrics.setMetricTag(packageMeasurement, 'package_name', env.fed_repo)
+                        // def packageMeasurement = "${ciMetrics.prefix}_${env.fed_repo}"
+                        // ciMetrics.setMetricTag(jobMeasurement, 'package_name', env.fed_repo)
+                        // ciMetrics.setMetricTag(jobMeasurement, 'build_result', currentBuild.result)
+                        // ciMetrics.setMetricField(jobMeasurement, 'build_time', currentBuild.getDuration())
+                        // ciMetrics.setMetricField(packageMeasurement, 'build_time', currentBuild.getDuration())
+                        // ciMetrics.setMetricTag(packageMeasurement, 'package_name', env.fed_repo)
 
                     }
                 }

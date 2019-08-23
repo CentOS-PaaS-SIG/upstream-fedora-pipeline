@@ -135,9 +135,9 @@ spec:
         node(podName) {
 
             // pull in ciMetrics from ci-pipeline
-            ciMetrics.prefix = packagepipelineUtils.influxDBPrefix()
-            packagepipelineUtils.cimetrics = ciMetrics
-            def jobMeasurement = packagepipelineUtils.timedMeasurement()
+            // ciMetrics.prefix = packagepipelineUtils.influxDBPrefix()
+            // packagepipelineUtils.cimetrics = ciMetrics
+            // def jobMeasurement = packagepipelineUtils.timedMeasurement()
 
             def buildResult = null
 
@@ -162,7 +162,7 @@ spec:
                         currentStage = "prepare-environment"
                         stage(currentStage) {
 
-                            packagepipelineUtils.timedPipelineStep('stepName': currentStage, 'debug': true) {
+                            packagepipelineUtils.handlePipelineStep('stepName': currentStage, 'debug': true) {
 
                                 deleteDir()
 
@@ -192,7 +192,7 @@ spec:
                             if (!pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'container', (env.fed_id ?: null), 'container')) {
                                 pipelineUtils.skip(currentStage)
                             } else {
-                                packagepipelineUtils.timedPipelineStep(stepName: currentStage, debug: true) {
+                                packagepipelineUtils.handlePipelineStep(stepName: currentStage, debug: true) {
                                     // Set stage specific vars
                                     packagepipelineUtils.setStageEnvVars(currentStage)
 
