@@ -88,6 +88,93 @@ def setMessageFields(String messageType, String artifact) {
 }
 
 /**
+ * Method that uses contra-lib shared library
+ * to create the ci.artifact.test.messageType messages
+ * @param messageType: queued, running, complete, error
+ * @param artifact: dist-git-pr, koji-build
+ * @return
+ */
+// Plan is to rename to setMessageFields and remove function above once everything seems fine and stable
+def setTestMessageFields(String messageType, String artifact) {
+    // See https://pagure.io/fedora-ci/messages or
+    // https://github.com/openshift/contra-lib/tree/master/resources
+    myTopic = "${MAIN_TOPIC}.ci.${artifact}.test.${messageType}"
+    print("Topic is " + myTopic)
+    // Set values that go in multiple closures
+    myType = (artifact == 'koji-build') ? 'tier0' : 'build'
+    myComponent = env.fed_repo
+    myRepository = env.fed_repo ? "https://src.fedoraproject.org/rpms/" + env.fed_repo : 'N/A'
+    myIssuer = env.fed_owner ?: fed_username
+    myNamespace = "fedora-ci." + artifact
+    myResult = currentBuild.currentResult
+    // convert some build Result to valid spec result
+    switch (myResult) {
+        case 'SUCCESS':
+            myResult = 'PASSED'
+            break
+        case 'UNSTABLE':
+            myResult = 'NEEDS_INSPECTION'
+            break
+        case 'FAILURE':
+            myResult = 'FAILED'
+            break
+    }
+    myResult = myResult.toLowerCase()
+
+    // Create common message body content
+    myContactContent = msgBusContactContent(name: "fedora-ci", team: "fedora-ci", irc: "#fedora-ci", email: "ci@lists.fedoraproject.org", docs: 'https://pagure.io/standard-test-roles')
+    myStageContent = msgBusStageContent(name: env.currentStage)
+    myPipelineContent = msgBusPipelineContent(id: env.pipelineId, stage: myStageContent())
+    // The run array is filled in properly with its defaults
+
+    if (artifact == "koji-build") {
+        myId = env.fed_task_id ?: env.fed_id
+        myScratch = env.isScratch.toBoolean()
+        myNvr = env.nvr ?: 'N/A'
+        myArtifactContent = msgBusArtifactContent(type: 'rpm-build', id: myId, component: myComponent, issuer: myIssuer, nvr: myNvr, scratch: myScratch, source: env.RPM_REQUEST_SOURCE ?: "UNKNOWN")
+        myTestContent = (messageType == "complete") ? msgBusTestContent(category: "functional", namespace: myNamespace, type: "tier0", result: myResult) : msgBusTestContent(category: "functional", namespace: myNamespace, type: "tier0")
+    }
+    if (artifact == "dist-git-pr") {
+        myId = env.fed_pr_id
+        myUid = env.fed_pr_uid
+        myCommitHash = env.fed_last_commit_hash ?: 'N/A'
+        myCommentId = env.fed_lastcid ? env.fed_lastcid.toInteger() : 0
+        myArtifactContent = msgBusArtifactContent(type: 'pull-request', id: myId, issuer: myIssuer, repository: myRepository, commit_hash: myCommitHash, comment_id: myCommentId, uid: myUid)
+        myTestContent = (messageType == "complete") ? msgBusTestContent(category: "static-analysis", namespace: myNamespace, type: "build", result: myResult) : msgBusTestContent(category: "static-analysis", namespace: myNamespace, type: "build")
+    }
+
+    // Create type specific content and construct messages
+    switch (messageType) {
+        // Queued and running messages have the same spec for now
+        case ['queued', 'running']:
+            myConstructedMessage = msgBusTestQueued(contact: myContactContent(), artifact: myArtifactContent(), pipeline: myPipelineContent(), test: myTestContent())
+            break
+        case 'complete':
+            if (artifact == "koji-build") {
+                myArtifactContent = msgBusArtifactContent(type: 'rpm-build', id: myId, component: myComponent, issuer: myIssuer, nvr: myNvr, scratch: myScratch, source: env.RPM_REQUEST_SOURCE ?: "UNKNOWN", dependencies: env.BUILD_DEPS ? env.BUILD_DEPS.split() : [])
+            }
+            if (artifact == "dist-git-pr") {
+                myArtifactContent = msgBusArtifactContent(type: 'pull-request', id: myId, issuer: myIssuer, repository: myRepository, commit_hash: myCommitHash, comment_id: myCommentId, uid: myUid)
+            }
+            mySystemContent = msgBusSystemContent(label: "upstream-fedora-pipeline", os: env.fed_branch, provider: "CentOS CI", architecture: "x86_64", variant: "Cloud")
+            myConstructedMessage = msgBusTestComplete(contact: myContactContent(), artifact: myArtifactContent(), pipeline: myPipelineContent(), test: myTestContent(), system: [mySystemContent()])
+            break
+        case 'error':
+            if (artifact == "koji-build") {
+                myArtifactContent = msgBusArtifactContent(type: 'rpm-build', id: myId, component: myComponent, issuer: myIssuer, nvr: myNvr, scratch: myScratch, source: env.RPM_REQUEST_SOURCE ?: "UNKNOWN", dependencies: env.BUILD_DEPS ? env.BUILD_DEPS.split() : [])
+            }
+            if (artifact == "dist-git-pr") {
+                myArtifactContent = msgBusArtifactContent(type: 'pull-request', id: myId, issuer: myIssuer, repository: myRepository, commit_hash: myCommitHash, comment_id: myCommentId, uid: myUid)
+            }
+            // Unknown execution error is added in an error closure by default
+            myConstructedMessage = msgBusTestError(contact: myContactContent(), artifact: myArtifactContent(), pipeline: myPipelineContent(), test: myTestContent())
+            break
+    }
+
+    return [ 'topic': myTopic, 'properties': '', 'content': myConstructedMessage() ] 
+}
+
+/**
  * Library to prepare credentials
  * @return
  */

@@ -3,7 +3,8 @@
 
 timestamps {
     def libraries = ['ci-pipeline'             : ['master', 'https://github.com/CentOS-PaaS-SIG/ci-pipeline.git'],
-                     'upstream-fedora-pipeline': ['master', 'https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline.git']]
+                     'upstream-fedora-pipeline': ['master', 'https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline.git'],
+                     'contra-lib'              : ['master', 'https://github.com/openshift/contra-lib.git']]
 
     libraries.each { name, repo ->
         library identifier: "${name}@${repo[0]}",
@@ -11,13 +12,6 @@ timestamps {
                                       remote: repo[1]])
 
     }
-
-    // Audit file for all messages sent.
-    msgAuditFile = "messages/message-audit.json"
-
-    // Number of times to keep retrying to make sure message is ingested
-    // by datagrepper
-    fedmsgRetryCount = 120
 
     properties(
             [
@@ -99,7 +93,6 @@ timestamps {
                         } else {
                             currentBuild.displayName = "Build#: ${env.BUILD_NUMBER} - Branch: ${env.branch} - Skipped"
                         }
-                        pipelineUtils.initializeAuditFile(msgAuditFile)
 
                     }
 
@@ -107,6 +100,9 @@ timestamps {
 
                 if (targetBranch && testsExist && primaryKoji) {
                     messageFields = packagepipelineUtils.setMessageFields('package.queued', 'build')
+                    pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                    // Send message org.centos.prod.ci.koji-build.test.queued on fedmsg
+                    messageFields = packagepipelineUtils.setTestMessageFields("queued", "koji-build")
                     pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
                     stepName = 'schedule build'
                     stage(stepName) {
@@ -117,7 +113,8 @@ timestamps {
                                 build job: "fedora-${env.branch}-build-pipeline",
                                         // Scratch messages from task.state.changed call it id, not task_id
                                         parameters: [string(name: 'PROVIDED_KOJI_TASKID', value: env.fed_task_id ?: env.fed_id),
-                                                     string(name: 'CI_MESSAGE', value: env.CI_MESSAGE)],
+                                                     string(name: 'CI_MESSAGE', value: env.CI_MESSAGE),
+                                                     string(name: 'pipelineId', value: UUID.randomUUID().toString())],
                                         wait: false
                             }
                         }

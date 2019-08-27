@@ -112,7 +112,9 @@ pipeline {
                                 string(name: 'CLOUD_IMAGE_COMPOSE_TAG',
                                        value: STABLE_LABEL),
                                 string(name: 'SINGLEHOST_TEST_TAG',
-                                       value: STABLE_LABEL)
+                                       value: STABLE_LABEL),
+                                string(name: 'pipelineId',
+                                       value: UUID.randomUUID().toString())
                         ],
                         wait: true
             }
