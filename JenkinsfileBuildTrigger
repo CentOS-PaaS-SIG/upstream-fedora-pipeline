@@ -32,7 +32,7 @@ timestamps {
                                   ],
                                   checks: [
                                       [field: 'new', expectedValue: '1|CLOSED'],
-                                      [field: 'owner', expectedValue: '^(?!koschei).*']
+                                      [field: 'owner', expectedValue: '^(?!koschei&!mbs\\/mbs\\.fedoraproject\\.org).*']
                                   ]
                               ]
                             ]]
@@ -79,11 +79,18 @@ timestamps {
                                 targetBranch = false
                             }
                         }
+
+                        if (env.fed_owner == "mbs/mbs.fedoraproject.org" || env.fed_owner == "koschei") {
+                            print("Not triggering for modules or koschei builds")
+                            targetBranch = false
+                        }
+
                         // If the PR pipeline submit the build, let's just set targetBranch to false so we don't run
-                        if (env.fed_owner == "bpeck/jenkins-continuous-infra.apps.ci.centos.org" || env.fed_owner == "koschei") {
+                        if (env.fed_owner == "bpeck/jenkins-continuous-infra.apps.ci.centos.org") {
                             print("This build is for a scratch build from the PR pipeline. Not triggering.")
                             targetBranch = false
                         }
+
                         if (targetBranch) {
                             pipelineUtils.repoFromRequest(env.fed_request_0, 'fed')
                             testsExist = pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')
