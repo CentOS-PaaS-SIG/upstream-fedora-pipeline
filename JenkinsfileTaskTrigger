@@ -71,7 +71,7 @@ timestamps {
                         targetBranch = false
                         if (env.fed_request_1) {
                             env.branch, env.fed_branch = packagepipelineUtils.setBuildBranch(env.request_1)
-                            targetBranch = packagepipelineUtils.checkBranch(parsedMsg['pullrequest']['branch'])
+                            targetBranch = packagepipelineUtils.checkBranch(env.fed_branch)
                         }
                         // If the PR pipeline submit the build, let's just set targetBranch to false so we don't run
                         if (parsedMsg['owner'] == "bpeck/jenkins-continuous-infra.apps.ci.centos.org" || parsedMsg['owner'] == "koschei") {
@@ -80,6 +80,7 @@ timestamps {
                         }
                         if (targetBranch) {
                             env.fed_repo = packagepipelineUtils.repoFromRequest(env.request_0)
+                            env.fed_namespace = 'rpms' // Used in setMessageFields
                             testsExist = packagepipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')
                             // Ensure message is from primary koji instance
                             primaryKoji = parsedMsg['instance'] == "primary"
@@ -94,10 +95,10 @@ timestamps {
 
                 if (targetBranch && testsExist && primaryKoji) {
                     messageFields = packagepipelineUtils.setMessageFields('package.queued', 'build', parsedMsg)
-                    sendMessageWithAudit(msgTopic: messageFields['topic'], msgProps: messageFields['properties'], msgContent: messageFields['content'], msgRetryCount: fedmsgRetryCount)
+                    packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
                     // Send message org.centos.prod.ci.koji-build.test.queued on fedmsg
-                    messageFields = packagepipelineUtils.setTestMessageFields("queued", "koji-build")
-                    sendMessageWithAudit(msgTopic: messageFields['topic'], msgProps: messageFields['properties'], msgContent: messageFields['content'], msgRetryCount: fedmsgRetryCount)
+                    messageFields = packagepipelineUtils.setTestMessageFields("queued", "koji-build", parsedMsg)
+                    packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
                     stepName = 'schedule build'
                     stage(stepName) {
 
@@ -116,7 +117,7 @@ timestamps {
                 } else {
                     echo "CI_MESSAGE was invalid. Skipping..."
                     messageFields = packagepipelineUtils.setMessageFields('package.ignored', 'build', parsedMsg)
-                    sendMessageWithAudit(msgTopic: messageFields['topic'], msgProps: messageFields['properties'], msgContent: messageFields['content'], msgRetryCount: fedmsgRetryCount)
+                    packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
                     currentBuild.description = "*Build Skipped*"
                 }
 

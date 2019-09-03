@@ -64,7 +64,7 @@ timestamps {
                         targetBranch = false
                         if (env.fed_request_1) {
                             env.branch, env.fed_branch = packagepipelineUtils.setBuildBranch(env.request_1)
-                            targetBranch = packagepipelineUtils.checkBranch(parsedMsg['pullrequest']['branch'])
+                            targetBranch = packagepipelineUtils.checkBranch(env.fed_branch)
                             def tagMatcher = env.fed_request_1 =~ /f([0-9]+)-candidate/
                             if (!tagMatcher && env.fed_request_1 != 'rawhide') {
                                 print("Don't trigger test for build with Build Target tag: ${env.fed_request_1}")
@@ -72,20 +72,20 @@ timestamps {
                             }
                         }
 
-                        if (env.fed_owner == "mbs/mbs.fedoraproject.org" || env.fed_owner == "koschei") {
+                        if (parsedMsg['owner'] == "mbs/mbs.fedoraproject.org" || parsedMsg['owner'] == "koschei") {
                             print("Not triggering for modules or koschei builds")
                             targetBranch = false
                         }
 
                         // If the PR pipeline submit the build, let's just set targetBranch to false so we don't run
-                        if (parsedMsg['owner'] == "bpeck/jenkins-continuous-infra.apps.ci.centos.org" || parsedMsg['owner'] == "koschei") {
->>>>>>> Removing ci-pipeline functions
+                        if (parsedMsg['owner'] == "bpeck/jenkins-continuous-infra.apps.ci.centos.org") {
                             print("This build is for a scratch build from the PR pipeline. Not triggering.")
                             targetBranch = false
                         }
 
                         if (targetBranch) {
                             env.fed_repo = packagepipelineUtils.repoFromRequest(env.request_0)
+                            env.fed_namespace = 'rpms' // used in setMessageFields
                             testsExist = packagepipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')
                             // Ensure message is from primary koji instance
                             primaryKoji = parsedMsg['instance'] == "primary"
@@ -102,7 +102,7 @@ timestamps {
                     messageFields = packagepipelineUtils.setMessageFields('package.queued', 'build', parsedMsg)
                     packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
                     // Send message org.centos.prod.ci.koji-build.test.queued on fedmsg
-                    messageFields = packagepipelineUtils.setTestMessageFields("queued", "koji-build")
+                    messageFields = packagepipelineUtils.setTestMessageFields("queued", "koji-build", parsedMsg)
                     packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                     stepName = 'schedule build'

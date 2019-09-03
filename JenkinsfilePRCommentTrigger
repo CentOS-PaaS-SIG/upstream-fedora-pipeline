@@ -74,10 +74,7 @@ timestamps {
                             parsedMsg = kojiMessage(message: env.CI_MESSAGE, ignoreErrors: true)
                             currentBuild.displayName = "BUILD#: ${env.BUILD_NUMBER} - Branch: ${parsedMsg['pullrequest']['branch']} - Package: ${parsedMsg['pullrequest']['project']['name']}"
                             validMessage = packagepipelineUtils.checkBranch(parsedMsg['pullrequest']['branch'])
-                            // Set env vars required for setMessageFields
-                            env.fed_namespace = parsedMsg['pullrequest']['project']['namespace']
-                            env.branch = (parsedMsg['pullrequest']['branch'] == 'master') ? 'rawhide' : parsedMsg['pullrequest']['branch']
-                            testsExist = packagepipelineUtils.checkTests(parsedMsg['pullrequest']['project']['name'], parsedMsg['pullrequest']['branch'], 'classic', parsedMsg['pullrequest']['id'], env.fed_namespace)
+                            testsExist = packagepipelineUtils.checkTests(parsedMsg['pullrequest']['project']['name'], parsedMsg['pullrequest']['branch'], 'classic', parsedMsg['pullrequest']['id'], parsedMsg['pullrequest']['project']['namespace'])
                             // Function only returns false if comments exist,
                             // but the latest was uninteresting
                             commentTrigger = packagepipelineUtils.checkUpdatedPR(env.CI_MESSAGE, '[citest]')
@@ -89,12 +86,8 @@ timestamps {
                         packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                         // Send message org.centos.prod.ci.dist-git-pr.test.queued on fedmsg
-                        messageFields = packagepipelineUtils.setTestMessageFields("queued", "dist-git-pr")
+                        messageFields = packagepipelineUtils.setTestMessageFields("queued", "dist-git-pr", parsedMsg)
                         packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
-
-                        // Send message org.centos.prod.ci.dist-git-pr.test.queued on fedmsg
-                        messageFields = packagepipelineUtils.setTestMessageFields("queued", "dist-git-pr")
-                        sendMessageWithAudit(msgTopic: messageFields['topic'], msgProps: messageFields['properties'], msgContent: messageFields['content'], msgRetryCount: fedmsgRetryCount)
 
                         stepName = 'schedule build'
                         stage(stepName) {
@@ -102,7 +95,8 @@ timestamps {
                             try {
                                 retry(TRIGGER_RETRY_COUNT) {
                                     packagepipelineUtils.handlePipelineStep(stepName: stepName, debug: true) {
-                                        build job: "fedora-${env.branch}-pr-pipeline",
+                                        branch = (parsedMsg['pullrequest']['branch'] == 'master') ? 'rawhide' : parsedMsg['pullrequest']['branch']
+                                        build job: "fedora-${branch}-pr-pipeline",
                                                 parameters: [string(name: 'CI_MESSAGE', value: env.CI_MESSAGE),
                                                              string(name: 'pipelineId', value: UUID.randomUUID().toString())],
                                                 wait: false

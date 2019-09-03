@@ -55,6 +55,7 @@ def setMessageFields(String messageType, String artifact, Map parsedMsg) {
         myBranch = parsedMsg['pullrequest']['branch']
         myRepo = parsedMsg['pullrequest']['project']['name']
         myRev = parsedMsg['pullrequest']['id']
+        myNamespace = parsedMsg['pullrequest']['project']['namespace']
         myCommentId = parsedMsg['pullrequest']['comments'].last()['id']
         myOwner = parsedMsg['pullrequest']['user']['name'].toString().split('\n')[0].replaceAll('"', '\'')
     } else {
@@ -62,6 +63,7 @@ def setMessageFields(String messageType, String artifact, Map parsedMsg) {
         myRepo = env.fed_repo
         taskid = parsedMsg.has('task_id') ? parsedMsg['task_id'] ?: parsedMsg['info']['id']
         myRev = 'kojitask-' + taskid
+        myNamespace = env.fed_namespace
         myCommentId = ''
         myOwner = parsedMsg['owner']
     }
@@ -70,7 +72,7 @@ def setMessageFields(String messageType, String artifact, Map parsedMsg) {
             branch           : myBranch,
             build_id         : env.BUILD_ID,
             build_url        : env.JENKINS_URL + 'blue/organizations/jenkins/' + env.JOB_NAME + '/detail/' + env.JOB_NAME + '/' + env.BUILD_NUMBER + '/pipeline/',
-            namespace        : env.fed_namespace,
+            namespace        : myNamespace,
             nvr              : env.nvr,
             original_spec_nvr: env.original_spec_nvr,
             ci_topic         : topic,
@@ -107,19 +109,15 @@ def setMessageFields(String messageType, String artifact, Map parsedMsg) {
  * to create the ci.artifact.test.messageType messages
  * @param messageType: queued, running, complete, error
  * @param artifact: dist-git-pr, koji-build
+ * @param parsedMsg: The parsed fedmsg
  * @return
  */
 // Plan is to rename to setMessageFields and remove function above once everything seems fine and stable
-def setTestMessageFields(String messageType, String artifact) {
+def setTestMessageFields(String messageType, String artifact, Map parsedMsg) {
     // See https://pagure.io/fedora-ci/messages or
     // https://github.com/openshift/contra-lib/tree/master/resources
     myTopic = "${MAIN_TOPIC}.ci.${artifact}.test.${messageType}"
     print("Topic is " + myTopic)
-    // Set values that go in multiple closures
-    myType = (artifact == 'koji-build') ? 'tier0' : 'build'
-    myComponent = env.fed_repo
-    myRepository = env.fed_repo ? "https://src.fedoraproject.org/rpms/" + env.fed_repo : 'N/A'
-    myIssuer = env.fed_owner ?: fed_username
     myNamespace = "fedora-ci." + artifact
     myResult = currentBuild.currentResult
     // convert some build Result to valid spec result
@@ -143,17 +141,29 @@ def setTestMessageFields(String messageType, String artifact) {
     // The run array is filled in properly with its defaults
 
     if (artifact == "koji-build") {
-        myId = env.fed_task_id ?: env.fed_id
+        // Set variables that go in multiple closures
+        myId = parsedMsg.has('task_id') ? parsedMsg['task_id'] ?: parsedMsg['info']['id']
         myScratch = env.isScratch.toBoolean()
         myNvr = env.nvr ?: 'N/A'
+        myComponent = env.fed_repo
+        myRepository = myComponent ? "https://src.fedoraproject.org/rpms/" + myComponent : 'N/A'
+        myType = 'tier0'
+        myIssuer =  parsedMsg['owner']
+        myBranch = env.fed_branch
+
         myArtifactContent = msgBusArtifactContent(type: 'rpm-build', id: myId, component: myComponent, issuer: myIssuer, nvr: myNvr, scratch: myScratch, source: env.RPM_REQUEST_SOURCE ?: "UNKNOWN")
         myTestContent = (messageType == "complete") ? msgBusTestContent(category: "functional", namespace: myNamespace, type: "tier0", result: myResult) : msgBusTestContent(category: "functional", namespace: myNamespace, type: "tier0")
     }
     if (artifact == "dist-git-pr") {
-        myId = env.fed_pr_id
-        myUid = env.fed_pr_uid
-        myCommitHash = env.fed_last_commit_hash ?: 'N/A'
-        myCommentId = env.fed_lastcid ? env.fed_lastcid.toInteger() : 0
+        // Set variables that go in multiple closures
+        myId = parsedMsg['pullrequest']['id']
+        myUid = parsedMsg['pullrequest']['uid']
+        myCommitHash = parsedMsg['pullrequest'].has('commit_stop') ? parsedMsg['pullrequest']['commit_stop'] : 'N/A'
+        myCommentId = parsedMsg['pullrequest'].has('comments') ? parsedMsg['pullrequest']['comments'].last()['id'].toInteger() : 0
+        myType = 'build'
+        myIssuer =  parsedMsg['pullrequest']['user']['name'].toString().split('\n')[0].replaceAll('"', '\'')
+        myBranch = parsedMsg['pullrequest']['branch']
+
         myArtifactContent = msgBusArtifactContent(type: 'pull-request', id: myId, issuer: myIssuer, repository: myRepository, commit_hash: myCommitHash, comment_id: myCommentId, uid: myUid)
         myTestContent = (messageType == "complete") ? msgBusTestContent(category: "static-analysis", namespace: myNamespace, type: "build", result: myResult) : msgBusTestContent(category: "static-analysis", namespace: myNamespace, type: "build")
     }
@@ -171,7 +181,7 @@ def setTestMessageFields(String messageType, String artifact) {
             if (artifact == "dist-git-pr") {
                 myArtifactContent = msgBusArtifactContent(type: 'pull-request', id: myId, issuer: myIssuer, repository: myRepository, commit_hash: myCommitHash, comment_id: myCommentId, uid: myUid)
             }
-            mySystemContent = msgBusSystemContent(label: "upstream-fedora-pipeline", os: env.fed_branch, provider: "CentOS CI", architecture: "x86_64", variant: "Cloud")
+            mySystemContent = msgBusSystemContent(label: "upstream-fedora-pipeline", os: myBranch, provider: "CentOS CI", architecture: "x86_64", variant: "Cloud")
             myConstructedMessage = msgBusTestComplete(contact: myContactContent(), artifact: myArtifactContent(), pipeline: myPipelineContent(), test: myTestContent(), system: [mySystemContent()])
             break
         case 'error':

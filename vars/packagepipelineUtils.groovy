@@ -41,10 +41,11 @@ class packagepipelineUtils implements Serializable {
      * to create the ci.artifact.test.messageType messages
      * @param messageType: queued, running, complete, error
      * @param artifact: dist-git-pr, koji-build
+     * @param parsedMsg: The parsed fedmsg
      * @return
      */
-    def setTestMessageFields(String messageType, String artifact) {
-        packagePipelineUtils.setTestMessageFields(messageType, artifact)
+    def setTestMessageFields(String messageType, String artifact, Map parsedMsg) {
+        packagePipelineUtils.setTestMessageFields(messageType, artifact, parsedMsg)
     }
 
     /**
