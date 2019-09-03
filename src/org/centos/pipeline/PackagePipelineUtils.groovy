@@ -15,7 +15,7 @@ def setDistBranch(String branch) {
 
     if (branch != 'rawhide') {
         if (branch[0] == 'f') {
-            return = 'fc' + branch.substring(1)
+            return 'fc' + branch.substring(1)
         } else {
             throw new Exception("Invalid Branch Name ${branch}")
         }
@@ -51,7 +51,7 @@ def setMessageFields(String messageType, String artifact, Map parsedMsg) {
     // If something is applicable to only some subset of messages,
     // add it below per the existing examples.
 
-    if (parsedMsg.has('pullrequest') {
+    if (parsedMsg.has('pullrequest')) {
         myBranch = parsedMsg['pullrequest']['branch']
         myRepo = parsedMsg['pullrequest']['project']['name']
         myRev = parsedMsg['pullrequest']['id']
@@ -61,7 +61,7 @@ def setMessageFields(String messageType, String artifact, Map parsedMsg) {
     } else {
         myBranch = env.fed_branch
         myRepo = env.fed_repo
-        taskid = parsedMsg.has('task_id') ? parsedMsg['task_id'] ?: parsedMsg['info']['id']
+        taskid = parsedMsg.has('task_id') ? parsedMsg['task_id'] : parsedMsg['info']['id']
         myRev = 'kojitask-' + taskid
         myNamespace = env.fed_namespace
         myCommentId = ''
@@ -142,7 +142,7 @@ def setTestMessageFields(String messageType, String artifact, Map parsedMsg) {
 
     if (artifact == "koji-build") {
         // Set variables that go in multiple closures
-        myId = parsedMsg.has('task_id') ? parsedMsg['task_id'] ?: parsedMsg['info']['id']
+        myId = parsedMsg.has('task_id') ? parsedMsg['task_id'] : parsedMsg['info']['id']
         myScratch = env.isScratch.toBoolean()
         myNvr = env.nvr ?: 'N/A'
         myComponent = env.fed_repo

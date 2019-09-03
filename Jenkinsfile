@@ -227,7 +227,9 @@ timestamps {
                                     // Scratch build messages store things in info
                                     packagepipelineUtils.setScratchVars(parsedMsg)
                                     env.fed_repo = packagepipelineUtils.repoFromRequest(env.request_0)
-                                    env.branch, env.fed_branch = packagepipelineUtils.setBuildBranch(env.request_1)
+                                    branches = packagepipelineUtils.setBuildBranch(env.request_1)
+                                    env.branch = branches[0]
+                                    env.fed_branch = branches[1]
                                     env.fed_namespace = 'rpms'
                                 }
 

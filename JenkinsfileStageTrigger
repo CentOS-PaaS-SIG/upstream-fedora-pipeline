@@ -27,12 +27,22 @@ CANNED_CI_MESSAGES['f27'] = '{"pullrequest":{"status":"Merged","last_updated":"1
 CANNED_CI_MESSAGES['rawhide'] = '{"pullrequest":{"last_updated":"1557907130","uid":"b08cc62005f643a39fa66f7c4891dac4","initial_comment":null,"commit_stop":"1c474a3f55b792c378c6f1a0a8075335d87eff03","remote_git":null,"closed_at":null,"id":6,"title":"just dummy PR to use the patch on stage Fedora CI pipeline","comments":[],"branch":"master","status":"Open","tags":[],"user":{"fullname":"Bruno Goncalves","name":"bgoncalv"},"date_created":"1557907130","closed_by":null,"branch_from":"dummy-test","assignee":null,"commit_start":"1c474a3f55b792c378c6f1a0a8075335d87eff03","project":{"custom_keys":[],"description":"The ksh rpms","parent":null,"date_modified":"1507637032","access_users":{"admin":["mhlavink"],"commit":["kdudka"],"ticket":[],"owner":["svashisht"]},"namespace":"rpms","priorities":{},"id":7896,"access_groups":{"admin":[],"commit":[],"ticket":[]},"milestones":{},"user":{"fullname":"Siteshwar Vashisht","name":"svashisht"},"date_created":"1501870087","fullname":"rpms/ksh","url_path":"rpms/ksh","close_status":[],"tags":[],"name":"ksh"},"repo_from":{"custom_keys":[],"description":"The ksh rpms","parent":{"custom_keys":[],"description":"The ksh rpms","parent":null,"date_modified":"1507637032","access_users":{"admin":["mhlavink"],"commit":["kdudka"],"ticket":[],"owner":["svashisht"]},"namespace":"rpms","priorities":{},"id":7896,"access_groups":{"admin":[],"commit":[],"ticket":[]},"milestones":{},"user":{"fullname":"Siteshwar Vashisht","name":"svashisht"},"date_created":"1501870087","fullname":"rpms/ksh","url_path":"rpms/ksh","close_status":[],"tags":[],"name":"ksh"},"date_modified":"1557906960","access_users":{"admin":[],"commit":[],"ticket":[],"owner":["bgoncalv"]},"namespace":"rpms","priorities":{},"id":36015,"access_groups":{"admin":[],"commit":[],"ticket":[]},"milestones":{},"user":{"fullname":"Bruno Goncalves","name":"bgoncalv"},"date_created":"1557906960","fullname":"forks/bgoncalv/rpms/ksh","url_path":"fork/bgoncalv/rpms/ksh","close_status":[],"tags":[],"name":"ksh"},"cached_merge_status":"unknown","updated_on":"1557907130","threshold_reached":null},"agent":"bgoncalv"}'
 
 def libraries = ['cico-pipeline'           : ['master', 'https://github.com/CentOS/cico-pipeline-library.git'],
-                 'ci-pipeline'             : ['master', 'https://github.com/CentOS-PaaS-SIG/ci-pipeline.git']]
+                 'contra-lib'              : ['master', 'https://github.com/openshift/contra-lib']]
 
 libraries.each { name, repo ->
     library identifier: "${name}@${repo[0]}",
             retriever: modernSCM([$class: 'GitSCMSource',
                                   remote: repo[1]])
+
+// Check out PR's version of library
+library identifier: "upstream-fedora-pipeline@${env.ghprbActualCommit}",
+        retriever: modernSCM([$class: 'GitSCMSource',
+                              remote: "https://github.com/${env.ghprbGhRepository}",
+                              traits: [[$class: 'jenkins.plugins.git.traits.BranchDiscoveryTrait'],
+                                       [$class: 'RefSpecsSCMSourceTrait',
+                                        templates: [[value: '+refs/heads/*:refs/remotes/@{remote}/*'],
+                                                    [value: '+refs/pull/*:refs/remotes/origin/pr/*']]]]])
+
 properties([
   buildDiscarder(logRotator(artifactNumToKeepStr: '20', numToKeepStr: '20')),
   [$class: 'GithubProjectProperty', displayName: '', projectUrlStr: 'https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline/'],
