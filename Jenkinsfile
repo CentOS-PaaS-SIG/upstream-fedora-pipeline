@@ -283,6 +283,8 @@ timestamps {
                                 } else {
                                     // For tests namespace there is no package to build
                                     if (env.fed_namespace != "tests" ) {
+                                        // koji_build_pr relies on fed_uid var
+                                        stageVars['fed_uid'] = parsedMsg['pullrequest']['uid']
                                         // Build rpms
                                         executeInContainer(containerName: "rpmbuild",
                                                            containerScript: "/tmp/koji_build_pr.sh",
@@ -427,7 +429,7 @@ timestamps {
                                         }
                                     }
 
-                                    if (pipelineUtils.fileExists("${WORKSPACE}/${currentStage}/logs/results.yml")) {
+                                    if (fileExists("${WORKSPACE}/${currentStage}/logs/results.yml")) {
                                         def test_results = readYaml file: "${WORKSPACE}/${currentStage}/logs/results.yml"
                                         def test_failed = false
                                         test_results['results'].each { result ->

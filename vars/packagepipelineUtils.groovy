@@ -221,6 +221,18 @@ class packagepipelineUtils implements Serializable {
     }
 
     /**
+     * Library to send message
+     * @param msgTopic - The topic to send the message on
+     * @param msgProps - The message properties in key=value form, one key/value per line ending in '\n'
+     * @param msgContent - Message content
+     * @param provider - Provider to send message on. If not passed, will default to env.MSG_PROVIDER
+     * @return
+     */
+    def sendMessage(String msgTopic, String msgProps, String msgContent, def provider=null) {
+        contraUtils.sendMessage(msgTopic, msgProps, msgContent, provider)
+    }
+
+    /**
      * Function to set env.isScratch, env.request_0, and
      * env.request_1 based on the parsedMsg key structure
      * @param parsedMsg - The parsed fedmsg

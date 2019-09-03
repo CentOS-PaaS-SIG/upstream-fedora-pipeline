@@ -56,7 +56,7 @@ def setMessageFields(String messageType, String artifact, Map parsedMsg) {
         myRepo = parsedMsg['pullrequest']['project']['name']
         myRev = parsedMsg['pullrequest']['id']
         myNamespace = parsedMsg['pullrequest']['project']['namespace']
-        myCommentId = parsedMsg['pullrequest']['comments'].last()['id']
+        myCommentId = parsedMsg['pullrequest']['comments'].isEmpty() ? 0 : parsedMsg['pullrequest']['comments'].last()['id'].toInteger()
         myOwner = parsedMsg['pullrequest']['user']['name'].toString().split('\n')[0].replaceAll('"', '\'')
     } else {
         myBranch = env.fed_branch
@@ -87,7 +87,7 @@ def setMessageFields(String messageType, String artifact, Map parsedMsg) {
     ]
 
     if (artifact == 'pr') {
-        messageContent.commit_hash = env.fed_last_commit_hash
+        messageContent.commit_hash = parsedMsg['pullrequest'].has('commit_stop') ? parsedMsg['pullrequest']['commit_stop'] : 'N/A'
     }
 
     // Add image type to appropriate message types
@@ -159,10 +159,11 @@ def setTestMessageFields(String messageType, String artifact, Map parsedMsg) {
         myId = parsedMsg['pullrequest']['id']
         myUid = parsedMsg['pullrequest']['uid']
         myCommitHash = parsedMsg['pullrequest'].has('commit_stop') ? parsedMsg['pullrequest']['commit_stop'] : 'N/A'
-        myCommentId = parsedMsg['pullrequest'].has('comments') ? parsedMsg['pullrequest']['comments'].last()['id'].toInteger() : 0
+        myCommentId = parsedMsg['pullrequest']['comments'].isEmpty() ? 0 : parsedMsg['pullrequest']['comments'].last()['id'].toInteger()
         myType = 'build'
         myIssuer =  parsedMsg['pullrequest']['user']['name'].toString().split('\n')[0].replaceAll('"', '\'')
         myBranch = parsedMsg['pullrequest']['branch']
+        myRepository = "https://src.fedoraproject.org/" + parsedMsg['pullrequest']['project']['fullname']
 
         myArtifactContent = msgBusArtifactContent(type: 'pull-request', id: myId, issuer: myIssuer, repository: myRepository, commit_hash: myCommitHash, comment_id: myCommentId, uid: myUid)
         myTestContent = (messageType == "complete") ? msgBusTestContent(category: "static-analysis", namespace: myNamespace, type: "build", result: myResult) : msgBusTestContent(category: "static-analysis", namespace: myNamespace, type: "build")
