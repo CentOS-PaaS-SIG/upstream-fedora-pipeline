@@ -14,13 +14,6 @@ timestamps {
 
     env.ghprbActualCommit = env.ghprbActualCommit ?: 'master'
 
-    // Audit file for all messages sent.
-    msgAuditFile = "messages/message-audit.json"
-
-    // Number of times to keep retrying to make sure message is ingested
-    // by datagrepper
-    fedmsgRetryCount = 120
-
     properties(
             [
                     buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '500', daysToKeepStr: '', numToKeepStr: '500')),
@@ -102,37 +95,37 @@ timestamps {
 
                         print "CI_MESSAGE"
                         print CI_MESSAGE
-                        pipelineUtils.flattenJSON('fed', env.CI_MESSAGE)
+                        parsedMsg = kojiMessage(message: env.CI_MESSAGE, ignoreErrors: true)
                         // Get request vars from scratch messages
                         packagepipelineUtils.setScratchVars(parsedMsg)
                         packagepipelineUtils.setDefaultEnvVars()
                         targetBranch = false
-                        pipelineUtils.setBuildBranch(env.request_1, "fed")
-                        targetBranch = packagepipelineUtils.checkBranch()
+                        branches = packagepipelineUtils.setBuildBranch(env.request_1)
+                        env.branch = branches[0]
+                        env.fed_branch = branches[1]
+                        targetBranch = packagepipelineUtils.checkBranch(env.fed_branch)
                         env.task_id = parsedMsg.has('task_id') ? parsedMsg['task_id'] : parsedMsg['info']['id']
                         // If the PR pipeline submit the build, let's just set targetBranch to false so we don't run
-                        if (env.fed_owner == "bpeck/jenkins-continuous-infra.apps.ci.centos.org" || env.fed_owner == "koschei") {
+                        if (parsedMsg['owner'] == "bpeck/jenkins-continuous-infra.apps.ci.centos.org" || parsedMsg['owner'] == "koschei") {
                             print("This build is for a scratch build from the PR pipeline. Not triggering.")
                             targetBranch = false
                         }
                         if (targetBranch) {
-                            pipelineUtils.repoFromRequest(env.request_0, 'fed')
-                            testsExist = pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')
+                            env.fed_repo = packagepipelineUtils.repoFromRequest(env.request_0)
+                            testsExist = packagepipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')
                             // Ensure message is from primary koji instance
-                            primaryKoji = fed_instance == "primary"
+                            primaryKoji = parsedMsg['instance'] == "primary"
                             pipelineUtils.setBuildDisplayAndDescription()
                         } else {
                             currentBuild.displayName = "Build#: ${env.BUILD_NUMBER} - Branch: ${env.fed_branch} - Skipped"
                         }
-                        pipelineUtils.initializeAuditFile(msgAuditFile)
-
                     }
 
                 }
 
                 if (targetBranch && testsExist && primaryKoji) {
                     messageFields = packagepipelineUtils.setMessageFields('package.queued', 'build')
-                    pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                    packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
                     stepName = 'schedule build'
                     stage(stepName) {
 
@@ -171,7 +164,7 @@ timestamps {
                 } else {
                     echo "CI_MESSAGE was invalid. Skipping..."
                     messageFields = packagepipelineUtils.setMessageFields('package.ignored', 'build')
-                    pipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                    packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
                     currentBuild.description = "*Build Skipped*"
                 }
 
