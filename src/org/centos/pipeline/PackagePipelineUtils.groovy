@@ -300,7 +300,8 @@ def setStageEnvVars(String stage){
                      TAG                      : "classic",
                      branch                   : env.fed_branch,
                      nvr                      : env.nvr,
-                     build_pr_id              : (env.fed_pr_id) ?: ''
+                     build_pr_id              : (env.fed_pr_id) ?: '',
+                     TEST_LOCATION            : "https://src.fedoraproject.org/${env.fed_namespace}/${env.fed_repo}"
              ],
              "container-tests"                                   : [
                      container                : env.fed_repo,
