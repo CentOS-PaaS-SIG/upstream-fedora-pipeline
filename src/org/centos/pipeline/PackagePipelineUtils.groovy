@@ -54,7 +54,7 @@ def setMessageFields(String messageType, String artifact, Map parsedMsg) {
     if (parsedMsg.has('pullrequest')) {
         myBranch = parsedMsg['pullrequest']['branch']
         myRepo = parsedMsg['pullrequest']['project']['name']
-        myRev = parsedMsg['pullrequest']['id']
+        myRev = 'PR-' + parsedMsg['pullrequest']['id']
         myNamespace = parsedMsg['pullrequest']['project']['namespace']
         myCommentId = parsedMsg['pullrequest']['comments'].isEmpty() ? 0 : parsedMsg['pullrequest']['comments'].last()['id'].toInteger()
         myOwner = parsedMsg['pullrequest']['user']['name'].toString().split('\n')[0].replaceAll('"', '\'')
@@ -197,7 +197,7 @@ def setTestMessageFields(String messageType, String artifact, Map parsedMsg) {
             break
     }
 
-    return [ 'topic': myTopic, 'properties': '', 'content': myConstructedMessage() ] 
+    return [ 'topic': myTopic, 'properties': '', 'content': myConstructedMessage() ]
 }
 
 /**
