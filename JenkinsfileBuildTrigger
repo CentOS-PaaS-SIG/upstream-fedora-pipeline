@@ -64,14 +64,14 @@ timestamps {
                         env.fed_repo = packagepipelineUtils.repoFromRequest(env.request_0)
                         env.fed_namespace = 'rpms' // used in setMessageFields
                         targetBranch = false
-                        if (env.fed_request_1) {
+                        if (!env.isScratch.toBoolean()) {
                             branches = packagepipelineUtils.setBuildBranch(env.request_1)
                             env.branch = branches[0]
                             env.fed_branch = branches[1]
                             targetBranch = packagepipelineUtils.checkBranch(env.fed_branch)
-                            def tagMatcher = env.fed_request_1 =~ /f([0-9]+)-candidate/
-                            if (!tagMatcher && env.fed_request_1 != 'rawhide') {
-                                print("Don't trigger test for build with Build Target tag: ${env.fed_request_1}")
+                            def tagMatcher = env.request_1 =~ /f([0-9]+)-candidate/
+                            if (!tagMatcher && env.request_1 != 'rawhide') {
+                                print("Don't trigger test for build with Build Target tag: ${env.request_1}")
                                 targetBranch = false
                             }
                         }
