@@ -178,7 +178,7 @@ timestamps {
             // and tests can take up to 4 hours to run.
             timeout(time: 8, unit: 'HOURS') {
 
-                def currentStage = ""
+                env.currentStage = ""
 
                 packagepipelineUtils.ciPipeline {
                         // We need to set env.HOME because the openshift slave image
@@ -194,8 +194,8 @@ timestamps {
                         //
                     try {
                             // Prepare our environment
-                        currentStage = "prepare-environment"
-                        stage(currentStage) {
+                        env.currentStage = "prepare-environment"
+                        stage(env.currentStage) {
 
                             packagepipelineUtils.handlePipelineStep('stepName': env.currentStage, 'debug': true) {
 
@@ -249,12 +249,12 @@ timestamps {
                         }
 
                         // Set our current stage value
-                        currentStage = "koji-build"
-                        stage(currentStage) {
+                        env.currentStage = "koji-build"
+                        stage(env.currentStage) {
 
                             // Set stage specific vars
                             packagepipelineUtils.handlePipelineStep('stepName': env.currentStage, 'debug': true) {
-                                stageVars = packagepipelineUtils.setStageEnvVars(currentStage)
+                                stageVars = packagepipelineUtils.setStageEnvVars(env.currentStage)
 
                                 // Return a map (messageFields) of our message topic, properties, and content
                                 messageFields = packagepipelineUtils.setMessageFields("package.running", artifactOld, parsedMsg)
@@ -278,7 +278,7 @@ timestamps {
                                     executeInContainer(containerName: "rpmbuild",
                                                        containerScript: "/tmp/pull_old_task.sh",
                                                        stageVars: stageVars,
-                                                       stageName: currentStage)
+                                                       stageName: env.currentStage)
 
                                 } else {
                                     // For tests namespace there is no package to build
@@ -289,12 +289,12 @@ timestamps {
                                         executeInContainer(containerName: "rpmbuild",
                                                            containerScript: "/tmp/koji_build_pr.sh",
                                                            stageVars: stageVars,
-                                                           stageName: currentStage)
+                                                           stageName: env.currentStage)
                                     }
                                 }
 
                                 // Inject variables
-                                def job_props = "${env.WORKSPACE}/" + currentStage + "/logs/job.props"
+                                def job_props = "${env.WORKSPACE}/" + env.currentStage + "/logs/job.props"
                                 if (fileExists(job_props)) {
                                      def job_props_groovy = "${env.WORKSPACE}/job.props.groovy"
                                      packagepipelineUtils.convertProps(job_props, job_props_groovy)
@@ -304,7 +304,7 @@ timestamps {
                                     executeInContainer(containerName: "rpmbuild",
                                                        containerScript: "/tmp/repoquery.sh",
                                                        stageVars: stageVars,
-                                                       stageName: currentStage)
+                                                       stageName: env.currentStage)
                                 }
                             }
 
@@ -330,8 +330,8 @@ timestamps {
                             packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
                         }
 
-                        currentStage = "cloud-image-compose"
-                        stage(currentStage) {
+                        env.currentStage = "cloud-image-compose"
+                        stage(env.currentStage) {
 
                             packagepipelineUtils.handlePipelineStep(stepName: env.currentStage, debug: true) {
 
@@ -342,7 +342,7 @@ timestamps {
                                 packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                                 // Set stage specific vars
-                                stageVars = packagepipelineUtils.setStageEnvVars(currentStage)
+                                stageVars = packagepipelineUtils.setStageEnvVars(env.currentStage)
 
                                 // Prepare to send stage.complete message on failure
                                 env.messageStage = 'image.complete'
@@ -351,7 +351,7 @@ timestamps {
                                 executeInContainer(containerName: "cloud-image-compose",
                                                    containerScript: "/tmp/virt-customize.sh",
                                                    stageVars: stageVars,
-                                                   stageName: currentStage)
+                                                   stageName: env.currentStage)
 
                                 // Set our message topic, properties, and content
                                 messageFields = packagepipelineUtils.setMessageFields("image.complete", artifactOld, parsedMsg)
@@ -362,8 +362,8 @@ timestamps {
                             }
                         }
 
-                        currentStage = "nvr-verify"
-                        stage(currentStage) {
+                        env.currentStage = "nvr-verify"
+                        stage(env.currentStage) {
 
                             packagepipelineUtils.handlePipelineStep(stepName: env.currentStage, debug: true) {
                                 // Set stage specific vars
@@ -379,16 +379,16 @@ timestamps {
                                     executeInContainer(containerName: "singlehost-test",
                                                        containerScript: "/tmp/verify-rpm.sh",
                                                        stageVars: stageVars,
-                                                       stageName: currentStage)
+                                                       stageName: env.currentStage)
                                 }
                             }
                         }
 
-                        currentStage = "package-tests"
-                        stage(currentStage) {
+                        env.currentStage = "package-tests"
+                        stage(env.currentStage) {
                             // Only run this stage if tests exist
                             if (!packagepipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic', (artifact == 'pr' ? env.fed_id : null), env.fed_namespace)) {
-                                packagepipelineUtils.skip(currentStage)
+                                packagepipelineUtils.skip(env.currentStage)
                             } else {
                                 packagepipelineUtils.handlePipelineStep(stepName: env.currentStage, debug: true) {
                                     // Set our message topic, properties, and content
@@ -398,7 +398,7 @@ timestamps {
                                     packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                                     // Set stage specific vars
-                                    stageVars = packagepipelineUtils.setStageEnvVars(currentStage)
+                                    stageVars = packagepipelineUtils.setStageEnvVars(env.currentStage)
 
                                     // Set our message topic, properties, and content
                                     messageFields = packagepipelineUtils.setMessageFields("package.test.functional.running", artifactOld, parsedMsg)
@@ -417,9 +417,9 @@ timestamps {
                                         executeInContainer(containerName: "singlehost-test",
                                                            containerScript: "/tmp/package-test.sh",
                                                            stageVars: stageVars,
-                                                           stageName: currentStage)
+                                                           stageName: env.currentStage)
                                     } catch(e) {
-                                        if (fileExists("${WORKSPACE}/${currentStage}/logs/test.log")) {
+                                        if (fileExists("${WORKSPACE}/${env.currentStage}/logs/test.log")) {
                                             buildResult = 'UNSTABLE'
                                             // set currentBuild.result to update the message status
                                             currentBuild.result = buildResult
@@ -477,7 +477,7 @@ timestamps {
                         packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                         // Report the exception
-                        echo "Error: Exception from " + currentStage + ":"
+                        echo "Error: Exception from " + env.currentStage + ":"
                         echo e.getMessage()
 
                     } finally {
