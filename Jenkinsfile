@@ -429,7 +429,7 @@ timestamps {
                                         }
                                     }
 
-                                    if (pipelineUtils.fileExists("${WORKSPACE}/${env.currentStage}/logs/results.yml")) {
+                                    if (fileExists("${WORKSPACE}/${env.currentStage}/logs/results.yml")) {
                                         def test_results = readYaml file: "${WORKSPACE}/${env.currentStage}/logs/results.yml"
                                         def test_failed = false
                                         test_results['results'].each { result ->
