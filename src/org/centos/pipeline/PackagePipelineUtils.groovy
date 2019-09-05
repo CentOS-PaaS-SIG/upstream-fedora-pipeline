@@ -7,16 +7,17 @@ import groovy.json.JsonOutput
 /**
  * Library to check the dist branch to as rawhide should map to a release number
  * This value will begin with 'fc'
+ * @param String branch - the branch value from the CI_MESSAGE
  * @return
  */
-def setDistBranch() {
-    echo "Currently in setDistBranch for ${env.branch}"
+def setDistBranch(String branch) {
+    echo "Currently in setDistBranch for ${branch}"
 
-    if (env.branch != 'rawhide') {
-        if (env.branch[0] == 'f') {
-            env.DIST_BRANCH = 'fc' + env.branch.substring(1)
+    if (branch != 'rawhide') {
+        if (branch[0] == 'f') {
+            return 'fc' + branch.substring(1)
         } else {
-            throw new Exception("Invalid Branch Name ${env.branch}")
+            throw new Exception("Invalid Branch Name ${branch}")
         }
     } else {
         def dist_branch = sh (returnStdout: true, script: '''
@@ -26,11 +27,11 @@ def setDistBranch() {
             assert dist_branch.isNumber()
         }
         catch (AssertionError e) {
-            echo "There was a fatal error finding the proper mapping for ${env.branch}"
+            echo "There was a fatal error finding the proper mapping for ${branch}"
             echo "We will not continue without a proper DIST_BRANCH value. Throwing exception..."
             throw new Exception('Rsync branch identifier failed!')
         }
-        env.DIST_BRANCH = 'fc' + dist_branch
+        return 'fc' + dist_branch
     }
 }
 
@@ -38,9 +39,10 @@ def setDistBranch() {
  * Library to set message fields to be published
  * @param messageType: ${MAIN_TOPIC}.ci.pipeline.allpackages.<defined-in-README>
  * @param artifact ${MAIN_TOPIC}.ci.pipeline.allpackages-${artifact}.<defined-in-README>
+ * @param parsedMsg: The parsed fedmsg
  * @return
  */
-def setMessageFields(String messageType, String artifact) {
+def setMessageFields(String messageType, String artifact, Map parsedMsg) {
     topic = "${MAIN_TOPIC}.ci.pipeline.allpackages-${artifact}.${messageType}"
     print("Topic is " + topic)
 
@@ -49,28 +51,43 @@ def setMessageFields(String messageType, String artifact) {
     // If something is applicable to only some subset of messages,
     // add it below per the existing examples.
 
-    taskid = env.fed_task_id ?: env.fed_id
+    if (parsedMsg.has('pullrequest')) {
+        myBranch = parsedMsg['pullrequest']['branch']
+        myRepo = parsedMsg['pullrequest']['project']['name']
+        myRev = parsedMsg['pullrequest']['id']
+        myNamespace = parsedMsg['pullrequest']['project']['namespace']
+        myCommentId = parsedMsg['pullrequest']['comments'].isEmpty() ? 0 : parsedMsg['pullrequest']['comments'].last()['id'].toInteger()
+        myOwner = parsedMsg['pullrequest']['user']['name'].toString().split('\n')[0].replaceAll('"', '\'')
+    } else {
+        myBranch = env.fed_branch
+        myRepo = env.fed_repo
+        taskid = parsedMsg.has('task_id') ? parsedMsg['task_id'] : parsedMsg['info']['id']
+        myRev = 'kojitask-' + taskid
+        myNamespace = env.fed_namespace
+        myCommentId = ''
+        myOwner = parsedMsg['owner']
+    }
 
     def messageContent = [
-            branch           : env.fed_branch,
+            branch           : myBranch,
             build_id         : env.BUILD_ID,
             build_url        : env.JENKINS_URL + 'blue/organizations/jenkins/' + env.JOB_NAME + '/detail/' + env.JOB_NAME + '/' + env.BUILD_NUMBER + '/pipeline/',
-            namespace        : env.fed_namespace,
+            namespace        : myNamespace,
             nvr              : env.nvr,
             original_spec_nvr: env.original_spec_nvr,
             ci_topic         : topic,
             ref              : env.basearch,
             scratch          : env.isScratch ? env.isScratch.toBoolean() : "",
-            repo             : env.fed_repo,
-            rev              : (artifact == 'build') ? "kojitask-" + taskid : env.fed_rev,
+            repo             : myRepo,
+            rev              : myRev,
             status           : currentBuild.currentResult,
             test_guidance    : "''",
-            comment_id       : env.fed_lastcid,
-            username         : env.fed_owner,
+            comment_id       : myCommentId,
+            username         : myOwner,
     ]
 
     if (artifact == 'pr') {
-        messageContent.commit_hash = env.fed_last_commit_hash
+        messageContent.commit_hash = parsedMsg['pullrequest'].has('commit_stop') ? parsedMsg['pullrequest']['commit_stop'] : 'N/A'
     }
 
     // Add image type to appropriate message types
@@ -92,19 +109,15 @@ def setMessageFields(String messageType, String artifact) {
  * to create the ci.artifact.test.messageType messages
  * @param messageType: queued, running, complete, error
  * @param artifact: dist-git-pr, koji-build
+ * @param parsedMsg: The parsed fedmsg
  * @return
  */
 // Plan is to rename to setMessageFields and remove function above once everything seems fine and stable
-def setTestMessageFields(String messageType, String artifact) {
+def setTestMessageFields(String messageType, String artifact, Map parsedMsg) {
     // See https://pagure.io/fedora-ci/messages or
     // https://github.com/openshift/contra-lib/tree/master/resources
     myTopic = "${MAIN_TOPIC}.ci.${artifact}.test.${messageType}"
     print("Topic is " + myTopic)
-    // Set values that go in multiple closures
-    myType = (artifact == 'koji-build') ? 'tier0' : 'build'
-    myComponent = env.fed_repo
-    myRepository = env.fed_repo ? "https://src.fedoraproject.org/rpms/" + env.fed_repo : 'N/A'
-    myIssuer = env.fed_owner ?: fed_username
     myNamespace = "fedora-ci." + artifact
     myResult = currentBuild.currentResult
     // convert some build Result to valid spec result
@@ -128,17 +141,30 @@ def setTestMessageFields(String messageType, String artifact) {
     // The run array is filled in properly with its defaults
 
     if (artifact == "koji-build") {
-        myId = env.fed_task_id ?: env.fed_id
+        // Set variables that go in multiple closures
+        myId = parsedMsg.has('task_id') ? parsedMsg['task_id'] : parsedMsg['info']['id']
         myScratch = env.isScratch.toBoolean()
         myNvr = env.nvr ?: 'N/A'
+        myComponent = env.fed_repo
+        myRepository = myComponent ? "https://src.fedoraproject.org/rpms/" + myComponent : 'N/A'
+        myType = 'tier0'
+        myIssuer =  parsedMsg['owner']
+        myBranch = env.fed_branch
+
         myArtifactContent = msgBusArtifactContent(type: 'rpm-build', id: myId, component: myComponent, issuer: myIssuer, nvr: myNvr, scratch: myScratch, source: env.RPM_REQUEST_SOURCE ?: "UNKNOWN")
         myTestContent = (messageType == "complete") ? msgBusTestContent(category: "functional", namespace: myNamespace, type: "tier0", result: myResult) : msgBusTestContent(category: "functional", namespace: myNamespace, type: "tier0")
     }
     if (artifact == "dist-git-pr") {
-        myId = env.fed_pr_id
-        myUid = env.fed_pr_uid
-        myCommitHash = env.fed_last_commit_hash ?: 'N/A'
-        myCommentId = env.fed_lastcid ? env.fed_lastcid.toInteger() : 0
+        // Set variables that go in multiple closures
+        myId = parsedMsg['pullrequest']['id']
+        myUid = parsedMsg['pullrequest']['uid']
+        myCommitHash = parsedMsg['pullrequest'].has('commit_stop') ? parsedMsg['pullrequest']['commit_stop'] : 'N/A'
+        myCommentId = parsedMsg['pullrequest']['comments'].isEmpty() ? 0 : parsedMsg['pullrequest']['comments'].last()['id'].toInteger()
+        myType = 'build'
+        myIssuer =  parsedMsg['pullrequest']['user']['name'].toString().split('\n')[0].replaceAll('"', '\'')
+        myBranch = parsedMsg['pullrequest']['branch']
+        myRepository = "https://src.fedoraproject.org/" + parsedMsg['pullrequest']['project']['fullname']
+
         myArtifactContent = msgBusArtifactContent(type: 'pull-request', id: myId, issuer: myIssuer, repository: myRepository, commit_hash: myCommitHash, comment_id: myCommentId, uid: myUid)
         myTestContent = (messageType == "complete") ? msgBusTestContent(category: "static-analysis", namespace: myNamespace, type: "build", result: myResult) : msgBusTestContent(category: "static-analysis", namespace: myNamespace, type: "build")
     }
@@ -156,7 +182,7 @@ def setTestMessageFields(String messageType, String artifact) {
             if (artifact == "dist-git-pr") {
                 myArtifactContent = msgBusArtifactContent(type: 'pull-request', id: myId, issuer: myIssuer, repository: myRepository, commit_hash: myCommitHash, comment_id: myCommentId, uid: myUid)
             }
-            mySystemContent = msgBusSystemContent(label: "upstream-fedora-pipeline", os: env.fed_branch, provider: "CentOS CI", architecture: "x86_64", variant: "Cloud")
+            mySystemContent = msgBusSystemContent(label: "upstream-fedora-pipeline", os: myBranch, provider: "CentOS CI", architecture: "x86_64", variant: "Cloud")
             myConstructedMessage = msgBusTestComplete(contact: myContactContent(), artifact: myArtifactContent(), pipeline: myPipelineContent(), test: myTestContent(), system: [mySystemContent()])
             break
         case 'error':
@@ -245,7 +271,7 @@ def setDefaultEnvVars(Map envMap=null){
 /**
  * Library to set stage specific environmental variables.
  * @param stage - Current stage
- * @return
+ * @return map of vars
  */
 def setStageEnvVars(String stage){
     def stages =
@@ -289,7 +315,10 @@ def setStageEnvVars(String stage){
         stages.get(stage).each { key, value ->
             env."${key}" = value
         }
+        // Return map to pass to executeInContainer
+        return stages.get(stage)
     }
+    return null
 }
 
 /**
@@ -409,19 +438,38 @@ def timedMeasurement() {
 }
 
 /**
- * Function to check if fed_branch is master or fXX, XX > 19
+ * Function to check if branch is master or fXX, XX > 19
+ * @param branch - The branch to check
  * @return bool
  */
-def checkBranch() {
+def checkBranch(String branch) {
     def result = false
 
-    if (env.fed_branch ==~ /f[2-9][0-9]/) {
+    if (branch ==~ /f[2-9][0-9]/) {
         result = true
-    } else if (env.fed_branch == 'master') {
+    } else if (branch == 'master') {
         result = true
     } else {
-        println "Branch ${env.fed_branch} is not being checked at this time."
+        println "Branch ${branch} is not being checked at this time."
     }
 
     return result
+}
+
+/**
+ * Function to set env.isScratch, env.request_0, and
+ * env.request_1 based on the parsedMsg key structure
+ * @param parsedMsg - The parsed fedmsg
+ * @return
+ */
+def setScratchVars(Map parsedMsg) {
+    if (parsedMsg.has('info')) {
+        env.isScratch = true
+        env.request_0 = parsedMsg['info']['request'][0]
+        env.request_1 = parsedMsg['info']['request'][1]
+    } else {
+        env.isScratch = false
+        env.request_0 = parsedMsg['request'][0]
+        env.request_1 = parsedMsg['request'][1]
+    }
 }

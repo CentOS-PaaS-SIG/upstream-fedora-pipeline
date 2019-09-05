@@ -8,6 +8,8 @@
     <string>staticMethod org.codehaus.groovy.runtime.DefaultGroovyMethods contains java.lang.Object[] java.lang.Object</string>
     <string>method groovy.json.JsonSlurperClassic parseText java.lang.String</string>
     <string>method java.lang.Class isInstance</string>
+    <string>method net.sf.json.JSONObject has java.lang.String</string>
+    <string>method net.sf.json.JSON isEmpty</string>
     <string>java.lang.Object</string>
     <string>new groovy.json.JsonSlurperClassic</string>
     <string>staticMethod java.lang.Class forName java.lang.String</string>

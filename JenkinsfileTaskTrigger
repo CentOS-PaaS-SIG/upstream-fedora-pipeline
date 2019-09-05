@@ -2,9 +2,8 @@
 
 
 timestamps {
-    def libraries = ['ci-pipeline'             : ['master', 'https://github.com/CentOS-PaaS-SIG/ci-pipeline.git'],
-                     'contra-lib'              : ['master', 'https://github.com/openshift/contra-lib.git'],
-                     'upstream-fedora-pipeline': ['master', 'https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline.git']]
+    def libraries = ['upstream-fedora-pipeline': ['master', 'https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline.git'],
+                     'contra-lib'              : ['master', 'https://github.com/openshift/contra-lib.git']]
 
     libraries.each { name, repo ->
         library identifier: "${name}@${repo[0]}",
@@ -66,44 +65,42 @@ timestamps {
 
                         print "CI_MESSAGE"
                         print CI_MESSAGE
-                        pipelineUtils.flattenJSON('fed', env.CI_MESSAGE)
-                        // Get request vars from scratch messages
-                        env.fed_request_0 = env.fed_request_0 ?: env.fed_info_request_0
-                        env.fed_request_1 = env.fed_request_1 ?: env.fed_info_request_1
-                        // Determine if scratch build
-                        env.isScratch = false
-                        if (env.fed_info_request_0) {
-                            env.isScratch = true
-                        }
+                        parsedMsg = kojiMessage(message: env.CI_MESSAGE, ignoreErrors: true)
+                        packagepipelineUtils.setScratchVars(parsedMsg)
                         packagepipelineUtils.setDefaultEnvVars()
                         targetBranch = false
                         if (env.fed_request_1) {
-                            pipelineUtils.setBuildBranch(env.fed_request_1, "fed")
-                            targetBranch = packagepipelineUtils.checkBranch()
+                            branches = packagepipelineUtils.setBuildBranch(env.request_1)
+                            env.branch = branches[0]
+                            env.fed_branch = branches[1]
+                            targetBranch = packagepipelineUtils.checkBranch(env.fed_branch)
                         }
                         // If the PR pipeline submit the build, let's just set targetBranch to false so we don't run
-                        if (env.fed_owner == "bpeck/jenkins-continuous-infra.apps.ci.centos.org" || env.fed_owner == "koschei") {
+                        if (parsedMsg['owner'] == "bpeck/jenkins-continuous-infra.apps.ci.centos.org" || parsedMsg['owner'] == "koschei") {
                             print("This build is for a scratch build from the PR pipeline. Not triggering.")
                             targetBranch = false
                         }
                         if (targetBranch) {
-                            pipelineUtils.repoFromRequest(env.fed_request_0, 'fed')
-                            testsExist = pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')
+                            env.fed_repo = packagepipelineUtils.repoFromRequest(env.request_0)
+                            env.fed_namespace = 'rpms' // Used in setMessageFields
+                            testsExist = packagepipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')
                             // Ensure message is from primary koji instance
-                            primaryKoji = fed_instance == "primary"
-                            pipelineUtils.setBuildDisplayAndDescription()
+                            primaryKoji = parsedMsg['instance'] == "primary"
+                            currentBuild.displayName = "BUILD#: ${env.BUILD_NUMBER} - Branch: ${env.fed_branch} - Package: ${env.fed_repo}"
                         } else {
                             currentBuild.displayName = "Build#: ${env.BUILD_NUMBER} - Branch: ${env.branch} - Skipped"
                         }
-                        pipelineUtils.initializeAuditFile(msgAuditFile)
 
                     }
 
                 }
 
                 if (targetBranch && testsExist && primaryKoji) {
-                    messageFields = packagepipelineUtils.setMessageFields('package.queued', 'build')
-                    pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                    messageFields = packagepipelineUtils.setMessageFields('package.queued', 'build', parsedMsg)
+                    packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                    // Send message org.centos.prod.ci.koji-build.test.queued on fedmsg
+                    messageFields = packagepipelineUtils.setTestMessageFields("queued", "koji-build", parsedMsg)
+                    packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
                     stepName = 'schedule build'
                     stage(stepName) {
 
@@ -121,8 +118,8 @@ timestamps {
 
                 } else {
                     echo "CI_MESSAGE was invalid. Skipping..."
-                    messageFields = packagepipelineUtils.setMessageFields('package.ignored', 'build')
-                    pipelineUtils.sendMessageWithAudit(messageFields['topic'], messageFields['properties'], messageFields['content'], msgAuditFile, fedmsgRetryCount)
+                    messageFields = packagepipelineUtils.setMessageFields('package.ignored', 'build', parsedMsg)
+                    packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
                     currentBuild.description = "*Build Skipped*"
                 }
 
