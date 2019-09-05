@@ -73,7 +73,7 @@ timestamps {
                             parsedMsg = kojiMessage(message: env.CI_MESSAGE, ignoreErrors: true)
                             currentBuild.displayName = "BUILD#: ${env.BUILD_NUMBER} - Branch: ${parsedMsg['pullrequest']['branch']} - Package: ${parsedMsg['pullrequest']['project']['name']}"
                             validMessage = packagepipelineUtils.checkBranch(parsedMsg['pullrequest']['branch'])
-                            testsExist = packagepipelineUtils.checkTests(parsedMsg['pullrequest']['project']['name'], parsedMsg['pullrequest']['branch'], 'classic', parsedMsg['pullrequest']['id'], parsedMsg['pullrequest']['project']['namespace'])
+                            testsExist = packagepipelineUtils.checkTests(parsedMsg['pullrequest']['project']['name'], parsedMsg['pullrequest']['branch'], 'classic', parsedMsg['pullrequest']['id'].toString(), parsedMsg['pullrequest']['project']['namespace'])
                         }
                     }
 
