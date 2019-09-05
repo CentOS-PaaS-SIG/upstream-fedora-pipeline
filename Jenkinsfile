@@ -211,14 +211,14 @@ timestamps {
                                     env.fed_namespace = parsedMsg['pullrequest']['project']['namespace']
                                     env.fed_repo = parsedMsg['pullrequest']['project']['name']
                                     env.fed_branch = parsedMsg['pullrequest']['branch']
-                                    env.fed_id = parsedMsg['pullrequest']['id']
+                                    env.fed_pr_id = parsedMsg['pullrequest']['id']
                                     env.branch = (env.fed_branch == 'master') ? 'rawhide' : env.fed_branch
 
                                     // Decorate our build
-                                    String buildName = "PR-${env.fed_namespace}:${env.fed_id}:${env.fed_repo}:${env.fed_branch}"
+                                    String buildName = "PR-${env.fed_namespace}:${env.fed_pr_id}:${env.fed_repo}:${env.fed_branch}"
                                     // Once we have stage job running lets make build description
                                     // a hyperlink to PR like
-                                    // <a href="https://src.fedoraproject.org/rpms/${env.fed_repo}/pull-request/${env.fed_id}"> PR #${env.fed_id} ${env.fed_repo}</a>
+                                    // <a href="https://src.fedoraproject.org/rpms/${env.fed_repo}/pull-request/${env.fed_pr_id}"> PR #${env.fed_pr_id} ${env.fed_repo}</a>
                                     currentBuild.displayName = buildName
                                     currentBuild.description = buildName
                                 } else {
@@ -387,7 +387,7 @@ timestamps {
                         env.currentStage = "package-tests"
                         stage(env.currentStage) {
                             // Only run this stage if tests exist
-                            if (!packagepipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic', (artifact == 'dist-git-pr' ? env.fed_id : null), env.fed_namespace)) {
+                            if (!packagepipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic', (artifact == 'dist-git-pr' ? env.fed_pr_id : null), env.fed_namespace)) {
                                 packagepipelineUtils.skip(env.currentStage)
                             } else {
                                 packagepipelineUtils.handlePipelineStep(stepName: env.currentStage, debug: true) {
