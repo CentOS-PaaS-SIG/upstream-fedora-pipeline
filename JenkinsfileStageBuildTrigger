@@ -104,32 +104,24 @@ timestamps {
                         print CI_MESSAGE
                         pipelineUtils.flattenJSON('fed', env.CI_MESSAGE)
                         // Get request vars from scratch messages
-                        env.fed_request_0 = env.fed_request_0 ?: env.fed_info_request_0
-                        env.fed_request_1 = env.fed_request_1 ?: env.fed_info_request_1
-                        // Determine if scratch build
-                        env.isScratch = false
-                        if (env.fed_info_request_0) {
-                            env.isScratch = true
-                        }
+                        packagepipelineUtils.setScratchVars(parsedMsg)
                         packagepipelineUtils.setDefaultEnvVars()
                         targetBranch = false
-                        if (env.fed_request_1) {
-                            pipelineUtils.setBuildBranch(env.fed_request_1, "fed")
-                            targetBranch = packagepipelineUtils.checkBranch()
-                        }
+                        pipelineUtils.setBuildBranch(env.request_1, "fed")
+                        targetBranch = packagepipelineUtils.checkBranch()
                         // If the PR pipeline submit the build, let's just set targetBranch to false so we don't run
                         if (env.fed_owner == "bpeck/jenkins-continuous-infra.apps.ci.centos.org" || env.fed_owner == "koschei") {
                             print("This build is for a scratch build from the PR pipeline. Not triggering.")
                             targetBranch = false
                         }
                         if (targetBranch) {
-                            pipelineUtils.repoFromRequest(env.fed_request_0, 'fed')
+                            pipelineUtils.repoFromRequest(env.request_0, 'fed')
                             testsExist = pipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')
                             // Ensure message is from primary koji instance
                             primaryKoji = fed_instance == "primary"
                             pipelineUtils.setBuildDisplayAndDescription()
                         } else {
-                            currentBuild.displayName = "Build#: ${env.BUILD_NUMBER} - Branch: ${env.branch} - Skipped"
+                            currentBuild.displayName = "Build#: ${env.BUILD_NUMBER} - Branch: ${env.fed_branch} - Skipped"
                         }
                         pipelineUtils.initializeAuditFile(msgAuditFile)
 

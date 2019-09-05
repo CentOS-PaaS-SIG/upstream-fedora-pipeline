@@ -71,7 +71,7 @@ timestamps {
                         env.fed_repo = packagepipelineUtils.repoFromRequest(env.request_0)
                         env.fed_namespace = 'rpms' // Used in setMessageFields
                         targetBranch = false
-                        if (env.fed_request_1) {
+                        if (env.isScratch.toBoolean()) {
                             branches = packagepipelineUtils.setBuildBranch(env.request_1)
                             env.branch = branches[0]
                             env.fed_branch = branches[1]
@@ -88,7 +88,7 @@ timestamps {
                             primaryKoji = parsedMsg['instance'] == "primary"
                             currentBuild.displayName = "BUILD#: ${env.BUILD_NUMBER} - Branch: ${env.fed_branch} - Package: ${env.fed_repo}"
                         } else {
-                            currentBuild.displayName = "Build#: ${env.BUILD_NUMBER} - Branch: ${env.branch} - Skipped"
+                            currentBuild.displayName = "Build#: ${env.BUILD_NUMBER} - Branch: ${env.fed_branch} - Skipped"
                         }
 
                     }
