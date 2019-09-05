@@ -68,6 +68,8 @@ timestamps {
                         parsedMsg = kojiMessage(message: env.CI_MESSAGE, ignoreErrors: true)
                         packagepipelineUtils.setScratchVars(parsedMsg)
                         packagepipelineUtils.setDefaultEnvVars()
+                        env.fed_repo = packagepipelineUtils.repoFromRequest(env.request_0)
+                        env.fed_namespace = 'rpms' // Used in setMessageFields
                         targetBranch = false
                         if (env.fed_request_1) {
                             branches = packagepipelineUtils.setBuildBranch(env.request_1)
@@ -81,8 +83,6 @@ timestamps {
                             targetBranch = false
                         }
                         if (targetBranch) {
-                            env.fed_repo = packagepipelineUtils.repoFromRequest(env.request_0)
-                            env.fed_namespace = 'rpms' // Used in setMessageFields
                             testsExist = packagepipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')
                             // Ensure message is from primary koji instance
                             primaryKoji = parsedMsg['instance'] == "primary"
