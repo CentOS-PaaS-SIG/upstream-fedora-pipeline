@@ -222,7 +222,7 @@ timestamps {
                                     currentBuild.displayName = buildName
                                     currentBuild.description = buildName
                                 } else {
-                                    env.artifact = 'koij-build'
+                                    env.artifact = 'koji-build'
                                     env.artifactOld = 'build'
                                     // Scratch build messages store things in info
                                     packagepipelineUtils.setScratchVars(parsedMsg)
@@ -387,7 +387,7 @@ timestamps {
                         env.currentStage = "package-tests"
                         stage(env.currentStage) {
                             // Only run this stage if tests exist
-                            if (!packagepipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic', (artifact == 'pr' ? env.fed_id : null), env.fed_namespace)) {
+                            if (!packagepipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic', (artifact == 'dist-git-pr' ? env.fed_id : null), env.fed_namespace)) {
                                 packagepipelineUtils.skip(env.currentStage)
                             } else {
                                 packagepipelineUtils.handlePipelineStep(stepName: env.currentStage, debug: true) {
