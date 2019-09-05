@@ -56,7 +56,7 @@ def setMessageFields(String messageType, String artifact, Map parsedMsg) {
         myRepo = parsedMsg['pullrequest']['project']['name']
         myRev = 'PR-' + parsedMsg['pullrequest']['id']
         myNamespace = parsedMsg['pullrequest']['project']['namespace']
-        myCommentId = parsedMsg['pullrequest']['comments'].isEmpty() ? 0 : parsedMsg['pullrequest']['comments'].last()['id'].toInteger()
+        myCommentId = parsedMsg['pullrequest']['comments'].isEmpty() ? 0 : parsedMsg['pullrequest']['comments'].last()['id']
         myOwner = parsedMsg['pullrequest']['user']['name'].toString().split('\n')[0].replaceAll('"', '\'')
     } else {
         myBranch = env.fed_branch
@@ -159,7 +159,7 @@ def setTestMessageFields(String messageType, String artifact, Map parsedMsg) {
         myId = parsedMsg['pullrequest']['id']
         myUid = parsedMsg['pullrequest']['uid']
         myCommitHash = parsedMsg['pullrequest'].has('commit_stop') ? parsedMsg['pullrequest']['commit_stop'] : 'N/A'
-        myCommentId = parsedMsg['pullrequest']['comments'].isEmpty() ? 0 : parsedMsg['pullrequest']['comments'].last()['id'].toInteger()
+        myCommentId = parsedMsg['pullrequest']['comments'].isEmpty() ? 0 : parsedMsg['pullrequest']['comments'].last()['id']
         myType = 'build'
         myIssuer =  parsedMsg['pullrequest']['user']['name'].toString().split('\n')[0].replaceAll('"', '\'')
         myBranch = parsedMsg['pullrequest']['branch']
@@ -300,7 +300,8 @@ def setStageEnvVars(String stage){
                      TAG                      : "classic",
                      branch                   : env.fed_branch,
                      nvr                      : env.nvr,
-                     build_pr_id              : (env.fed_pr_id) ?: ''
+                     build_pr_id              : (env.fed_pr_id) ?: '',
+                     TEST_LOCATION            : "https://src.fedoraproject.org/${env.fed_namespace}/${env.fed_repo}"
              ],
              "container-tests"                                   : [
                      container                : env.fed_repo,

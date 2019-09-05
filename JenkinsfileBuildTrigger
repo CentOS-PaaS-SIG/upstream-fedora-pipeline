@@ -61,6 +61,8 @@ timestamps {
                         parsedMsg = kojiMessage(message: env.CI_MESSAGE, ignoreErrors: true)
                         packagepipelineUtils.setScratchVars(parsedMsg)
                         packagepipelineUtils.setDefaultEnvVars()
+                        env.fed_repo = packagepipelineUtils.repoFromRequest(env.request_0)
+                        env.fed_namespace = 'rpms' // used in setMessageFields
                         targetBranch = false
                         if (env.fed_request_1) {
                             branches = packagepipelineUtils.setBuildBranch(env.request_1)
@@ -86,14 +88,12 @@ timestamps {
                         }
 
                         if (targetBranch) {
-                            env.fed_repo = packagepipelineUtils.repoFromRequest(env.request_0)
-                            env.fed_namespace = 'rpms' // used in setMessageFields
                             testsExist = packagepipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')
                             // Ensure message is from primary koji instance
                             primaryKoji = parsedMsg['instance'] == "primary"
                             currentBuild.displayName = "BUILD#: ${env.BUILD_NUMBER} - Branch: ${env.fed_branch} - Package: ${env.fed_repo}"
                         } else {
-                            currentBuild.displayName = "Build#: ${env.BUILD_NUMBER} - Branch: ${env.branch} - Skipped"
+                            currentBuild.displayName = "Build#: ${env.BUILD_NUMBER} - Branch: ${env.fed_branch} - Skipped"
                         }
 
                     }
