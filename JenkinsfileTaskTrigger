@@ -72,6 +72,7 @@ timestamps {
                         env.fed_namespace = 'rpms' // Used in setMessageFields
                         targetBranch = false
                         if (env.isScratch.toBoolean()) {
+                            env.task_id = parsedMsg['info']['id']
                             branches = packagepipelineUtils.setBuildBranch(env.request_1)
                             env.branch = branches[0]
                             env.fed_branch = branches[1]
@@ -109,7 +110,7 @@ timestamps {
 
                                 build job: "fedora-${env.branch}-build-pipeline",
                                         // Scratch messages from task.state.changed call it id, not task_id
-                                        parameters: [string(name: 'PROVIDED_KOJI_TASKID', value: env.fed_task_id ?: env.fed_id),
+                                        parameters: [string(name: 'PROVIDED_KOJI_TASKID', value: env.task_id),
                                                      string(name: 'CI_MESSAGE', value: env.CI_MESSAGE)],
                                         wait: false
                             }

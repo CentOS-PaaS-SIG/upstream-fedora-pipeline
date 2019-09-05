@@ -2,8 +2,8 @@
 
 
 timestamps {
-    def libraries = ['ci-pipeline'             : ['master', 'https://github.com/CentOS-PaaS-SIG/ci-pipeline.git'],
-                     'upstream-fedora-pipeline': ['master', 'https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline.git']]
+    def libraries = ['upstream-fedora-pipeline': ['master', 'https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline.git'],
+                     'contra-lib'              : ['master', 'https://github.com/openshift/contra-lib.git']]
 
     libraries.each { name, repo ->
         library identifier: "${name}@${repo[0]}",
@@ -109,6 +109,7 @@ timestamps {
                         targetBranch = false
                         pipelineUtils.setBuildBranch(env.request_1, "fed")
                         targetBranch = packagepipelineUtils.checkBranch()
+                        env.task_id = parsedMsg.has('task_id') ? parsedMsg['task_id'] : parsedMsg['info']['id']
                         // If the PR pipeline submit the build, let's just set targetBranch to false so we don't run
                         if (env.fed_owner == "bpeck/jenkins-continuous-infra.apps.ci.centos.org" || env.fed_owner == "koschei") {
                             print("This build is for a scratch build from the PR pipeline. Not triggering.")
@@ -140,7 +141,7 @@ timestamps {
 
                                 build job: "fedora-rawhide-stage-build-pipeline",
                                         // Scratch messages from task.state.changed call it id, not task_id
-                                        parameters: [string(name: 'PROVIDED_KOJI_TASKID', value: env.fed_task_id ?: env.fed_id),
+                                        parameters: [string(name: 'PROVIDED_KOJI_TASKID', value: env.task_id),
                                                      string(name: 'MSG_PROVIDER', value: env.MSG_PROVIDER),
                                                      string(name: 'KOJI_SERVER', value: env.KOJI_SERVER),
                                                      string(name: 'ghprbActualCommit',
