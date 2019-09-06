@@ -24,7 +24,7 @@ timestamps {
                                            defaultValue: 'fedora-fedmsg-stage',
                                            description: 'Main provider to send messages on'),
                                     string(name: 'KOJI_SERVER',
-                                           defaultValue: 'https://koji.stg.fedoraproject.org/kojihub',
+                                           defaultValue: 'https://koji.stg.fedoraproject.org/kojihub --topurl https://kojipkgs.stg.fedoraproject.org',
                                            description: 'Overwrites the default koji server to download build'),
                                     string(name: 'ghprbActualCommit',
                                            defaultValue: 'master',
