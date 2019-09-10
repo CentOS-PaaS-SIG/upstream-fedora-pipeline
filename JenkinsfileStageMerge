@@ -11,9 +11,22 @@ env.ghprbActualCommit = env.ghprbActualCommit ?: 'master'
 imageList = ["jenkins-fedoraci-slave", "fedoraci-runner"]
 imageOperations = []
 
-library identifier: "ci-pipeline@master",
+def libraries = ['contra-lib'              : ['master', 'https://github.com/openshift/contra-lib']]
+
+libraries.each { name, repo ->
+    library identifier: "${name}@${repo[0]}",
+            retriever: modernSCM([$class: 'GitSCMSource',
+                                  remote: repo[1]])
+}
+
+// Check out PR's version of library
+library identifier: "upstream-fedora-pipeline@${env.ghprbActualCommit}",
         retriever: modernSCM([$class: 'GitSCMSource',
-                              remote: "https://github.com/CentOS-PaaS-SIG/ci-pipeline"])
+                              remote: "https://github.com/${env.ghprbGhRepository}",
+                              traits: [[$class: 'jenkins.plugins.git.traits.BranchDiscoveryTrait'],
+                                       [$class: 'RefSpecsSCMSourceTrait',
+                                        templates: [[value: '+refs/heads/*:refs/remotes/@{remote}/*'],
+                                                    [value: '+refs/pull/*:refs/remotes/origin/pr/*']]]]])
 
 
 properties([
