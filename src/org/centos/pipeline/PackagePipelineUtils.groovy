@@ -475,3 +475,52 @@ def setScratchVars(Map parsedMsg) {
         env.request_1 = parsedMsg['request'][1]
     }
 }
+
+/**
+ * Based on tagMap, add comment to GH with
+ * instructions to manual commands
+ *
+ * @param map of tags
+ * @return
+ */
+def sendPRCommentforTags(imageOperationsList) {
+    if (imageOperationsList.size() == 0) {
+        return
+    }
+    def msg = "\nThe following image promotions have taken place:\n\n"
+    imageOperationsList.each {
+        msg = msg + "+ ${it}\n"
+    }
+
+    echo "Prepare GHI tool"
+    withCredentials([string(credentialsId: 'paas-bot', variable: 'TOKEN')]) {
+        sh script: "git config --global ghi.token ${TOKEN}", label: "Configuring git"
+        sh  script: 'curl -sL https://raw.githubusercontent.com/stephencelis/ghi/master/ghi > ghi && chmod 755 ghi', label: "Cloning repository"
+        sh  script: './ghi comment ' + env.ghprbPullId + ' -m "' + msg + '"', label: "Commenting"
+    }
+}
+
+/**
+    * info about tags to be used
+    * @param map
+    */
+def printLabelMap(map) {
+    for (tag in map) {
+        echo "tag to be used for ${tag.key} -> ${tag.value}"
+    }
+}
+
+/**
+    * Setup container templates in openshift
+    * @param openshiftProject Openshift Project
+    * @return
+    */
+def setupContainerTemplates(String openshiftProject) {
+    openshift.withCluster() {
+        openshift.withProject(openshiftProject) {
+            dir('config/s2i') {
+                sh script: './create-containers.sh', label: "Executing create-containers.sh script"
+            }
+        }
+    }
+}

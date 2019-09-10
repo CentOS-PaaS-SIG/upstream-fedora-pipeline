@@ -4,7 +4,7 @@ def call(Map parameters = [:]) {
 
 
     imageName = null
-    containers = ['singlehost-test']
+    containers = ['fedoraci-runner']
 
     try {
         deployOpenShiftTemplate(podName: "fedora-image-test-${UUID.randomUUID().toString()}",

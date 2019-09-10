@@ -44,15 +44,9 @@ timestamps {
                                     string(name: 'SLAVE_TAG',
                                            defaultValue: 'stable',
                                            description: 'Tag for slave image'),
-                                    string(name: 'RPMBUILD_TAG',
+                                    string(name: 'FEDORACI_RUNNER_TAG',
                                            defaultValue: 'stable',
-                                           description: 'Tag for rpmbuild image'),
-                                    string(name: 'CLOUD_IMAGE_COMPOSE_TAG',
-                                           defaultValue: 'stable',
-                                           description: 'Tag for cloud-image-compose image'),
-                                    string(name: 'SINGLEHOST_TEST_TAG',
-                                           defaultValue: 'stable',
-                                           description: 'Tag for singlehost test image'),
+                                           description: 'Tag for fedoraci-runner image'),
 
                             ]
                     ),
@@ -150,12 +144,8 @@ timestamps {
                                                          value: "${env.ghprbPullId}"),
                                                      string(name: 'SLAVE_TAG',
                                                          value: env.SLAVE_TAG),
-                                                     string(name: 'RPMBUILD_TAG',
-                                                         value: env.RPMBUILD_TAG),
-                                                     string(name: 'CLOUD_IMAGE_COMPOSE_TAG',
-                                                         value: env.CLOUD_IMAGE_COMPOSE_TAG),
-                                                     string(name: 'SINGLEHOST_TEST_TAG',
-                                                         value: env.SINGLEHOST_TEST_TAG),
+                                                     string(name: 'FEDORACI_RUNNER_TAG',
+                                                         value: env.FEDORACI_RUNNER_TAG),
                                                      string(name: 'CI_MESSAGE', value: env.CI_MESSAGE)],
                                         wait: false
                             }

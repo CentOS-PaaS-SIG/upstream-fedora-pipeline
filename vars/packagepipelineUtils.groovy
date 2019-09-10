@@ -242,4 +242,31 @@ class packagepipelineUtils implements Serializable {
         packagePipelineUtils.setScratchVars(parsedMsg)
     }
 
+    /**
+    * Based on tagMap, add comment to GH with
+    * instructions to manual commands
+    *
+    * @param map of tags
+    * @return
+    */
+    def sendPRCommentforTags(imageOperationsList) {
+        packagePipelineUtils.sendPRCommentforTags(imageOperationsList)
+    }
+
+    /**
+     * info about tags to be used
+     * @param map
+     */
+    def printLabelMap(map) {
+        packagePipelineUtils.printLabelMap(map)
+    }
+
+    /**
+     * Setup container templates in openshift
+     * @param openshiftProject Openshift Project
+     * @return
+     */
+    def setupContainerTemplates(String openshiftProject) {
+        packagePipelineUtils.setupContainerTemplates(openshiftProject)
+    }
 }

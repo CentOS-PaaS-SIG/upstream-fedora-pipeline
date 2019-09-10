@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: Template
+labels:
+  template: fedoraci-runner-builder
+metadata:
+  annotations:
+    description: fedoraci-runner container
+    iconClass: fedoraci-runner
+    tags: instant-app
+  name: fedoraci-runner-builder
+objects:
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    annotations:
+    labels:
+    name: fedoraci-runner
+  spec: {}
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    name: fedoraci-runner
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: fedoraci-runner:latest
+    resources: {}
+    source:
+      contextDir: ${REPO_CONTEXTDIR}
+      git:
+        ref: ${REPO_REF}
+        uri: ${REPO_URL}
+      type: Git
+    strategy:
+      dockerStrategy:
+        env:
+          - name: CONTAINER_NAME
+            value: fedoraci-runner
+      type: Docker
+    triggers:
+    - type: ConfigChange
+parameters:
+- description: Git repository with Dockerfile and slave entrypoint.
+  displayName: Repository URL
+  name: REPO_URL
+  value: https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline.git
+- description: The sub-directory inside the repository.
+  displayName: Context Directory
+  name: REPO_CONTEXTDIR
+  value: config/Dockerfiles/fedoraci-runner
+- description: The git ref or tag to use for customization.
+  displayName: Git Reference
+  name: REPO_REF
+  value: master
+

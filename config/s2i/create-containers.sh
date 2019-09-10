@@ -7,12 +7,7 @@ DEBUG=0
 project="continuous-infra"
 
 ## List all templates to be processed
-templates=""
-
-## List templates to get from ci-pipeline upstream repo
-upstream_templates="rpmbuild/rpmbuild-buildconfig-template.yaml \
-cloud-image-compose/cloud-image-compose-buildconfig-template.yaml \
-singlehost-test/singlehost-test-buildconfig-template.yaml"
+templates="fedoraci-runner/fedoraci-runner-buildconfig-template.yml"
 
 function logerror {
   echo "Error: $1"
@@ -108,21 +103,10 @@ if [ $? -ne 0 ] ; then
   oc project "${project}" > /dev/null 2>&1
 fi
 
-#for template in ${templates[@]}; do
-#    processTemplate "${template}"
-#done
-
-## Create containers from upstream
-set -e
-ci_pipeline_location=$(pwd)/ci-pipeline
-git clone http://github.com/CentOS-PaaS-SIG/ci-pipeline.git
-set +e
 trap cleanup EXIT SIGHUP SIGINT SIGTERM
 
-for template in ${upstream_templates[@]}; do
-    pushd ${ci_pipeline_location}/config/s2i/
+for template in ${templates[@]}; do
     processTemplate "${template}"
-    popd
 done
 
 loginfo "Done!"
