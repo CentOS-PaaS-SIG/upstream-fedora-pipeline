@@ -17,10 +17,7 @@ if [ ${CURRENTDIR} == "/" ] ; then
 fi
 
 # Allow change koji server to be used
-KOJI_SERVER=${KOJI_SERVER:-}
-if [[ -n ${KOJI_SERVER} ]]; then
-    KOJI_SERVER="-s ${KOJI_SERVER} "
-fi
+KOJI_PARAMS=${KOJI_PARAMS:-}
 
 RPMDIR=${CURRENTDIR}/${fed_repo}_repo
 
@@ -58,7 +55,7 @@ kinit -k -t "${CURRENTDIR}/fedora.keytab" $FEDORA_PRINCIPAL
 export FORCE_UNSAFE_CONFIGURE=1
 
 # Build the package with koji
-koji ${KOJI_SERVER} build --wait --arch-override=x86_64 --scratch ${branch} ${fed_repo}*.src.rpm | tee ${LOGDIR}/kojioutput.txt
+koji ${KOJI_PARAMS} build --wait --arch-override=x86_64 --scratch ${branch} ${fed_repo}*.src.rpm | tee ${LOGDIR}/kojioutput.txt
 # Set status if either job fails to build the rpm
 RPMBUILD_RC=$?
 if [ "$RPMBUILD_RC" != 0 ]; then
@@ -78,7 +75,7 @@ mkdir -p ${RPMDIR}
 # Create repo
 pushd ${RPMDIR}
 for i in {1..5}; do
-    koji ${KOJI_SERVER} download-build --arch=x86_64 --arch=src --arch=noarch --debuginfo --task-id ${SCRATCHID} || koji ${KOJI_SERVER} download-task --arch=x86_64 --arch=src --arch=noarch --logs ${SCRATCHID} && break
+    koji ${KOJI_PARAMS} download-build --arch=x86_64 --arch=src --arch=noarch --debuginfo --task-id ${SCRATCHID} || koji ${KOJI_PARAMS} download-task --arch=x86_64 --arch=src --arch=noarch --logs ${SCRATCHID} && break
     echo "koji build download failed, attempt: $i/5"
     if [[ $i -lt 5 ]]; then
         sleep 10
