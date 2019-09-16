@@ -144,14 +144,39 @@ def setTestMessageFields(String messageType, String artifact, Map parsedMsg) {
         // Set variables that go in multiple closures
         myId = parsedMsg.has('task_id') ? parsedMsg['task_id'] : parsedMsg['info']['id']
         myScratch = env.isScratch.toBoolean()
-        myNvr = env.nvr ?: 'N/A'
+        if (!env.nvr) {
+            kojiUrl = env.KOJI_RUL ?: 'https://koji.fedoraproject.org'
+            // Could not find a way to query these info using XML-RPC...
+            sh(
+                script: "curl --retry 5 ${kojiUrl}/koji/taskinfo?taskID=${myId} > taskinfoOutput.txt",
+                label: "Getting taskinfo"
+            )
+            env.nvr = sh(
+                script: "cat taskinfoOutput.txt | grep '<th>Build</th><td>' | cut -d '>' -f 5 | cut -d '<' -f 1",
+                label: "Getting NVR of the build",
+                    returnStdout: true
+                ).trim()
+            // If it is an scratch build need to parse the nvr differently
+            if (env.nvr == '') {
+                if (env.RPM_REQUEST_SOURCE.startsWith('cli-build')) {
+                    env.nvr = sh(script: "cat taskinfoOutput.txt | grep '<title>build' | awk '{print\$3}' | cut -d ')' -f 1 | sed  s/\\.src\\.rpm//",
+                                 returnStdout: true,
+                                 label: "Setting env.nvr variable from .src.rpm").trim()
+                } else if (env.RPM_REQUEST_SOURCE.startsWith('git://')) {
+                    env.nvr = sh(script: "cat taskinfoOutput.txt | grep 'buildArch' | grep '.src.rpm' | awk '{print\$5}' | cut -d '(' -f 2 | cut -d ',' -f 1 | sed  s/\\.src\\.rpm// | head -n 1",
+                                 returnStdout: true,
+                                 label: "Setting env.nvr variable from git:// ref").trim()
+                }
+            }
+        }
+        myNvr = env.nvr
         myComponent = env.fed_repo
         myRepository = myComponent ? "https://src.fedoraproject.org/rpms/" + myComponent : 'N/A'
         myType = 'tier0'
         myIssuer =  parsedMsg['owner']
         myBranch = env.fed_branch
 
-        myArtifactContent = msgBusArtifactContent(type: 'rpm-build', id: myId, component: myComponent, issuer: myIssuer, nvr: myNvr, scratch: myScratch, source: env.RPM_REQUEST_SOURCE ?: "UNKNOWN")
+        myArtifactContent = msgBusArtifactContent(type: 'rpm-build', id: myId, component: myComponent, issuer: myIssuer, nvr: myNvr, scratch: myScratch, source: env.RPM_REQUEST_SOURCE)
         myTestContent = (messageType == "complete") ? msgBusTestContent(category: "functional", namespace: myNamespace, type: "tier0", result: myResult) : msgBusTestContent(category: "functional", namespace: myNamespace, type: "tier0")
     }
     if (artifact == "dist-git-pr") {
@@ -177,7 +202,7 @@ def setTestMessageFields(String messageType, String artifact, Map parsedMsg) {
             break
         case 'complete':
             if (artifact == "koji-build") {
-                myArtifactContent = msgBusArtifactContent(type: 'rpm-build', id: myId, component: myComponent, issuer: myIssuer, nvr: myNvr, scratch: myScratch, source: env.RPM_REQUEST_SOURCE ?: "UNKNOWN", dependencies: env.BUILD_DEPS ? env.BUILD_DEPS.split() : [])
+                myArtifactContent = msgBusArtifactContent(type: 'rpm-build', id: myId, component: myComponent, issuer: myIssuer, nvr: myNvr, scratch: myScratch, source: env.RPM_REQUEST_SOURCE, dependencies: env.BUILD_DEPS ? env.BUILD_DEPS.split() : [])
             }
             if (artifact == "dist-git-pr") {
                 myArtifactContent = msgBusArtifactContent(type: 'pull-request', id: myId, issuer: myIssuer, repository: myRepository, commit_hash: myCommitHash, comment_id: myCommentId, uid: myUid)
@@ -469,10 +494,12 @@ def setScratchVars(Map parsedMsg) {
         env.isScratch = true
         env.request_0 = parsedMsg['info']['request'][0]
         env.request_1 = parsedMsg['info']['request'][1]
+        env.RPM_REQUEST_SOURCE = env.request_0
     } else {
         env.isScratch = false
         env.request_0 = parsedMsg['request'][0]
         env.request_1 = parsedMsg['request'][1]
+        env.RPM_REQUEST_SOURCE = env.request_0
     }
 }
 
