@@ -15,11 +15,11 @@ def call(Map parameters = [:]) {
             }
 
             stage('resize compose') {
-                resizeCompose(imageName: imageName, increase: '10G')
+                resizeCompose('container': 'fedoraci-runner', imageName: imageName, increase: '10G')
             }
 
             stage('test compose') {
-                testCompose(imageName: imageName)
+                testCompose('container': 'fedoraci-runner', imageName: imageName)
             }
 
             stage('archive image') {
