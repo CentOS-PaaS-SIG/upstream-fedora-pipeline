@@ -9,7 +9,6 @@ if [ -z "${fed_repo}" ]; then echo "No fed_repo env var" ; exit 1 ; fi
 if [ -z "${fed_id}" ]; then echo "No fed_id env var" ; exit 1 ; fi
 if [ -z "${fed_uid}" ]; then echo "No fed_uid env var" ; exit 1 ; fi
 if [ -z "${FEDORA_PRINCIPAL}" ]; then echo "No FEDORA_PRINCIPAL env var"; exit 1; fi
-if [ -z "${PAGURE_URL}" ]; then echo "No PAGURE_URL env var"; exit 1; fi
 
 CURRENTDIR=$(pwd)
 if [ ${CURRENTDIR} == "/" ] ; then
@@ -29,8 +28,8 @@ mkdir -p ${LOGDIR}
 
 # Clone the fedoraproject git repo
 rm -rf ${fed_repo}
-git clone ${PAGURE_URL}/${fed_namespace}/${fed_repo}.git
-if [ "$?" != 0 ]; then echo -e "ERROR: GIT CLONE\nSTATUS: $?"; exit 1; fi
+fedpkg clone -a ${fed_repo}
+if [ "$?" != 0 ]; then echo -e "ERROR: FEDPKG CLONE\nSTATUS: $?"; exit 1; fi
 pushd ${fed_repo}
 # Checkout the branch and apply the patch to HEAD of branch
 git checkout ${fed_branch}

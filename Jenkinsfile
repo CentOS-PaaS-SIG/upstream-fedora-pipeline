@@ -14,7 +14,6 @@ timestamps {
     env.PROVIDED_KOJI_TASKID = env.PROVIDED_KOJI_TASKID ?: ''
     // Default to build being scratch, will be overridden if triggered by nonscratch build
     env.isScratch = true
-    env.PAGURE_URL = env.PAGURE_URL ?: 'https://src.fedoraproject.org'
 
     // Needed for podTemplate()
     env.SLAVE_TAG = env.SLAVE_TAG ?: 'stable'
@@ -98,9 +97,6 @@ timestamps {
                                     string(name: 'KOJI_PARAMS',
                                            defaultValue: '',
                                            description: 'Parameters to pass to koji tool'),
-                                    string(name: 'PAGURE_URL',
-                                           defaultValue: '',
-                                           description: 'Pagure instance url'),
                                     string(name: 'CI_MESSAGE',
                                            defaultValue: CANNED_CI_MESSAGE,
                                            description: 'CI_MESSAGE'),
@@ -353,7 +349,7 @@ timestamps {
 
                                 // This can't be in setStageEnvVars because it depends on env.WORKSPACE
                                 stageVars['TEST_SUBJECTS'] = "${env.WORKSPACE}/images/test_subject.qcow2"
-                                stageVars['TEST_LOCATION'] = "${env.PAGURE_URL}/${env.fed_namespace}/${env.fed_repo}"
+                                stageVars['TEST_LOCATION'] = "https://src.fedoraproject.org/${env.fed_namespace}/${env.fed_repo}"
 
                                 // tests namespace does not install any package, so do no need to verify rpm
                                 if (env.fed_namespace != "tests" ) {

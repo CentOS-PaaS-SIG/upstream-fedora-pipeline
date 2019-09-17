@@ -171,7 +171,7 @@ def setTestMessageFields(String messageType, String artifact, Map parsedMsg) {
         }
         myNvr = env.nvr
         myComponent = env.fed_repo
-        myRepository = myComponent ? "${env.PAGURE_URL}/rpms/" + myComponent : 'N/A'
+        myRepository = myComponent ? "https://src.fedoraproject.org/rpms/" + myComponent : 'N/A'
         myType = 'tier0'
         myIssuer =  parsedMsg['owner']
         myBranch = env.fed_branch
@@ -188,7 +188,7 @@ def setTestMessageFields(String messageType, String artifact, Map parsedMsg) {
         myType = 'build'
         myIssuer =  parsedMsg['pullrequest']['user']['name'].toString().split('\n')[0].replaceAll('"', '\'')
         myBranch = parsedMsg['pullrequest']['branch']
-        myRepository = "${env.PAGURE_URL}/" + parsedMsg['pullrequest']['project']['fullname']
+        myRepository = "https://src.fedoraproject.org/" + parsedMsg['pullrequest']['project']['fullname']
 
         myArtifactContent = msgBusArtifactContent(type: 'pull-request', id: myId, issuer: myIssuer, repository: myRepository, commit_hash: myCommitHash, comment_id: myCommentId, uid: myUid)
         myTestContent = (messageType == "complete") ? msgBusTestContent(category: "static-analysis", namespace: myNamespace, type: "build", result: myResult) : msgBusTestContent(category: "static-analysis", namespace: myNamespace, type: "build")
@@ -303,11 +303,9 @@ def setStageEnvVars(String stage){
             ["koji-build"                                     : [
                     fed_branch                : env.fed_branch,
                     fed_repo                  : env.fed_repo,
-                    fed_namespace             : env.fed_namespace,
                     fed_rev                   : env.fed_rev,
                     fed_id                    : (env.fed_pr_id) ?: '',
                     rpm_repo                  : env.WORKSPACE + "/" + env.fed_repo + "_repo",
-                    PAGURE_URL                : env.PAGURE_URL,
                     KOJI_PARAMS               : env.KOJI_PARAMS ?: ''
             ],
              "cloud-image-compose"                            : [
@@ -329,7 +327,7 @@ def setStageEnvVars(String stage){
                      branch                   : env.fed_branch,
                      nvr                      : env.nvr,
                      build_pr_id              : (env.fed_pr_id) ?: '',
-                     TEST_LOCATION            : "${env.PAGURE_URL}/${env.fed_namespace}/${env.fed_repo}"
+                     TEST_LOCATION            : "https://src.fedoraproject.org/${env.fed_namespace}/${env.fed_repo}"
              ],
              "container-tests"                                   : [
                      container                : env.fed_repo,
