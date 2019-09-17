@@ -145,7 +145,7 @@ def setTestMessageFields(String messageType, String artifact, Map parsedMsg) {
         myId = parsedMsg.has('task_id') ? parsedMsg['task_id'] : parsedMsg['info']['id']
         myScratch = env.isScratch.toBoolean()
         if (!env.nvr) {
-            kojiUrl = env.KOJI_RUL ?: 'https://koji.fedoraproject.org'
+            kojiUrl = env.KOJI_URL ?: 'https://koji.fedoraproject.org'
             // Could not find a way to query these info using XML-RPC...
             sh(
                 script: "curl --retry 5 ${kojiUrl}/koji/taskinfo?taskID=${myId} > taskinfoOutput.txt",
