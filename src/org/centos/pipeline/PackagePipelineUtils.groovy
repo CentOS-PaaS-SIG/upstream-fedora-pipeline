@@ -145,7 +145,7 @@ def setTestMessageFields(String messageType, String artifact, Map parsedMsg) {
         myId = parsedMsg.has('task_id') ? parsedMsg['task_id'] : parsedMsg['info']['id']
         myScratch = env.isScratch.toBoolean()
         if (!env.nvr) {
-            kojiUrl = env.KOJI_RUL ?: 'https://koji.fedoraproject.org'
+            kojiUrl = env.KOJI_URL ?: 'https://koji.fedoraproject.org'
             // Could not find a way to query these info using XML-RPC...
             sh(
                 script: "curl --retry 5 ${kojiUrl}/koji/taskinfo?taskID=${myId} > taskinfoOutput.txt",
@@ -188,7 +188,7 @@ def setTestMessageFields(String messageType, String artifact, Map parsedMsg) {
         myType = 'build'
         myIssuer =  parsedMsg['pullrequest']['user']['name'].toString().split('\n')[0].replaceAll('"', '\'')
         myBranch = parsedMsg['pullrequest']['branch']
-        myRepository = "${env.PAGURE_URL}/" + parsedMsg['pullrequest']['project']['fullname']
+        myRepository = env.PAGURE_URL + "/" + parsedMsg['pullrequest']['project']['fullname']
 
         myArtifactContent = msgBusArtifactContent(type: 'pull-request', id: myId, issuer: myIssuer, repository: myRepository, commit_hash: myCommitHash, comment_id: myCommentId, uid: myUid)
         myTestContent = (messageType == "complete") ? msgBusTestContent(category: "static-analysis", namespace: myNamespace, type: "build", result: myResult) : msgBusTestContent(category: "static-analysis", namespace: myNamespace, type: "build")
