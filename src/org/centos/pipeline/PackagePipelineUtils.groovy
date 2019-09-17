@@ -188,7 +188,7 @@ def setTestMessageFields(String messageType, String artifact, Map parsedMsg) {
         myType = 'build'
         myIssuer =  parsedMsg['pullrequest']['user']['name'].toString().split('\n')[0].replaceAll('"', '\'')
         myBranch = parsedMsg['pullrequest']['branch']
-        myRepository = "${env.PAGURE_URL}/" + parsedMsg['pullrequest']['project']['fullname']
+        myRepository = env.PAGURE_URL + "/" + parsedMsg['pullrequest']['project']['fullname']
 
         myArtifactContent = msgBusArtifactContent(type: 'pull-request', id: myId, issuer: myIssuer, repository: myRepository, commit_hash: myCommitHash, comment_id: myCommentId, uid: myUid)
         myTestContent = (messageType == "complete") ? msgBusTestContent(category: "static-analysis", namespace: myNamespace, type: "build", result: myResult) : msgBusTestContent(category: "static-analysis", namespace: myNamespace, type: "build")
