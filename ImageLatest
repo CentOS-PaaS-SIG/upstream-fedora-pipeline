@@ -1,0 +1,146 @@
+#!groovy
+
+/**
+ * Bring Image Up To Latest
+ *
+ * This is a declarative pipeline that rebuilds the specific container image
+ * and promote it to stable tag
+ *
+ */
+
+// Openshift project
+openshiftProject = "continuous-infra"
+DOCKER_REPO_URL = '172.30.254.79:5000'
+
+// If this PR does not include an image change, then use this tag
+STABLE_LABEL = "stable"
+tagMap = [:]
+
+// Initialize
+tagMap['fedoraci-runner'] = STABLE_LABEL
+tagMap['jenkins-continuous-infra-slave'] = STABLE_LABEL
+
+// CI_MESSAGES known to build successfully
+CANNED_CI_MESSAGES = [:]
+CANNED_CI_MESSAGES['rawhide'] = '{"pullrequest":{"last_updated":"1557907130","uid":"b08cc62005f643a39fa66f7c4891dac4","initial_comment":null,"commit_stop":"1c474a3f55b792c378c6f1a0a8075335d87eff03","remote_git":null,"closed_at":null,"id":6,"title":"just dummy PR to use the patch on stage Fedora CI pipeline","comments":[],"branch":"master","status":"Open","tags":[],"user":{"fullname":"Bruno Goncalves","name":"bgoncalv"},"date_created":"1557907130","closed_by":null,"branch_from":"dummy-test","assignee":null,"commit_start":"1c474a3f55b792c378c6f1a0a8075335d87eff03","project":{"custom_keys":[],"description":"The ksh rpms","parent":null,"date_modified":"1507637032","access_users":{"admin":["mhlavink"],"commit":["kdudka"],"ticket":[],"owner":["svashisht"]},"namespace":"rpms","priorities":{},"id":7896,"access_groups":{"admin":[],"commit":[],"ticket":[]},"milestones":{},"user":{"fullname":"Siteshwar Vashisht","name":"svashisht"},"date_created":"1501870087","fullname":"rpms/ksh","url_path":"rpms/ksh","close_status":[],"tags":[],"name":"ksh"},"repo_from":{"custom_keys":[],"description":"The ksh rpms","parent":{"custom_keys":[],"description":"The ksh rpms","parent":null,"date_modified":"1507637032","access_users":{"admin":["mhlavink"],"commit":["kdudka"],"ticket":[],"owner":["svashisht"]},"namespace":"rpms","priorities":{},"id":7896,"access_groups":{"admin":[],"commit":[],"ticket":[]},"milestones":{},"user":{"fullname":"Siteshwar Vashisht","name":"svashisht"},"date_created":"1501870087","fullname":"rpms/ksh","url_path":"rpms/ksh","close_status":[],"tags":[],"name":"ksh"},"date_modified":"1557906960","access_users":{"admin":[],"commit":[],"ticket":[],"owner":["bgoncalv"]},"namespace":"rpms","priorities":{},"id":36015,"access_groups":{"admin":[],"commit":[],"ticket":[]},"milestones":{},"user":{"fullname":"Bruno Goncalves","name":"bgoncalv"},"date_created":"1557906960","fullname":"forks/bgoncalv/rpms/ksh","url_path":"fork/bgoncalv/rpms/ksh","close_status":[],"tags":[],"name":"ksh"},"cached_merge_status":"unknown","updated_on":"1557907130","threshold_reached":null},"agent":"bgoncalv"}'
+
+
+// Get upstream libraries
+def libraries = ['contra-lib'               : ['master', 'https://github.com/openshift/contra-lib'],
+                 'upstream-fedora-pipeline' : ['master', 'https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline.git']]
+
+libraries.each { name, repo ->
+    library identifier: "${name}@${repo[0]}",
+            retriever: modernSCM([$class: 'GitSCMSource',
+                                  remote: repo[1]])
+}
+
+properties(
+    [
+        parameters(
+            [
+                string(name: 'IMAGE_NAME',
+                       defaultValue: 'fedoraci-runner',
+                       description: 'Name of container image to build')
+            ]
+        )
+    ]
+)
+
+pipeline {
+    agent {
+        kubernetes {
+            cloud 'openshift'
+            label "image-latest-${UUID.randomUUID().toString()}"
+            containerTemplate {
+                name 'jnlp'
+                args '${computer.jnlpmac} ${computer.name}'
+                image DOCKER_REPO_URL + '/' + openshiftProject + '/jenkins-continuous-infra-slave:' + STABLE_LABEL
+                ttyEnabled false
+                command ''
+            }
+        }
+    }
+    options {
+        buildDiscarder(logRotator(numToKeepStr:'5'))
+        timestamps()
+    }
+    stages {
+        stage("Setup Container Templates") {
+            steps {
+                script {
+                    sh """
+                       oc whoami
+                    """
+                    packagepipelineUtils.setupContainerTemplates(openshiftProject)
+                }
+            }
+        }
+        stage("image build") {
+            steps {
+                script {
+                    buildOpenShiftImage(openshiftProject: openshiftProject,
+                                        buildConfig: env.IMAGE_NAME,
+                                        tag: "latest")
+                    tagMap[env.IMAGE_NAME] = "latest"
+                }
+            }
+        }
+        stage("Image Tag Report") {
+            steps {
+                script {
+                    // Use tags derived from above image builds
+                    packagepipelineUtils.printLabelMap(tagMap)
+                }
+            }
+        }
+        // See if the latest git source works for the rhel pipeline
+        stage("Run Stage Job") {
+            failFast false
+            parallel {
+                stage("rhel8-stage-pr job") {
+                    steps {
+                        build job: 'fedora-rawhide-stage-pr-pipeline',
+                                parameters: [
+                                        string(name: 'CI_MESSAGE',
+                                               value: CANNED_CI_MESSAGES['rawhide']),
+                                        string(name: 'SLAVE_TAG',
+                                           value: tagMap['jenkins-continuous-infra-slave']),
+                                        string(name: 'FEDORACI_RUNNER_TAG',
+                                               value: tagMap['fedoraci-runner']),
+                                        string(name: 'pipelineId',
+                                               value: UUID.randomUUID().toString())
+                                ],
+                                wait: true
+                    }
+                }
+            }
+        }
+        // If the container passed stage, we can promote the stable tag
+        stage("promote container") {
+            steps {
+                // lock to make sure only one is allowed at anytime
+                lock('container-image-promotion-lock') {
+                    script {
+                        openshift.withCluster() {
+                            openshift.withProject(openshiftProject) {
+                                buildOpenShiftImage(openshiftProject: openshiftProject,
+                                                    buildConfig: env.IMAGE_NAME,
+                                                    tag: "stable")
+                                tagMap[env.IMAGE_NAME] = "stable"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    post {
+        success {
+            echo "${env.IMAGE_NAME}'s stable tag promoted to latest git source"
+        }
+        failure {
+            echo "build failed, so ${env.IMAGE_NAME} container's stable tag not modified"
+        }
+    }
+}
