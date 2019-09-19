@@ -8,7 +8,7 @@ STABLE_LABEL = "stable"
 // git commit default
 env.ghprbActualCommit = env.ghprbActualCommit ?: 'master'
 
-imageList = ["jenkins-fedoraci-slave", "fedoraci-runner"]
+imageList = ["jenkins-continuous-infra-slave", "fedoraci-runner"]
 imageOperations = []
 
 def libraries = ['contra-lib'              : ['master', 'https://github.com/openshift/contra-lib']]
