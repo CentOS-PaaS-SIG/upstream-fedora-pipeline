@@ -27,7 +27,7 @@ STABLE_LABEL = 'stable'
 tagMap = [:]
 
 // Initialize
-tagMap['jenkins-fedoraci-slave'] = STABLE_LABEL
+tagMap['jenkins-continuous-infra-slave'] = STABLE_LABEL
 tagMap['fedoraci-runner'] = STABLE_LABEL
 
 
@@ -117,7 +117,7 @@ pipeline {
                 }
             }
         }
-        stage("jenkins-fedoraci-slave image build") {
+        stage("jenkins-continuous-infra-slave image build") {
             when {
                 // Only build if we have related files in changeset
                 changeset "config/s2i/jenkins/slave/**"
@@ -125,10 +125,10 @@ pipeline {
             steps {
                 script {
                     buildOpenShiftImage(openshiftProject: openshiftProject,
-                                        buildConfig: "jenkins-fedoraci-slave",
+                                        buildConfig: "jenkins-continuous-infra-slave",
                                         tag: "PR-" + env.ghprbPullId,
                                         pullId: env.ghprbPullId)
-                    tagMap['jenkins-fedoraci-slave'] = "PR-" + env.ghprbPullId
+                    tagMap['jenkins-continuous-infra-slave'] = "PR-" + env.ghprbPullId
                 }
             }
         }
@@ -175,7 +175,7 @@ pipeline {
                                 string(name: 'ghprbPullId',
                                        value: "${env.ghprbPullId}"),
                                 string(name: 'SLAVE_TAG',
-                                       value: tagMap['jenkins-fedoraci-slave']),
+                                       value: tagMap['jenkins-continuous-infra-slave']),
                                 string(name: 'FEDORACI_RUNNER_TAG',
                                        value: tagMap['fedoraci-runner']),
                                 string(name: 'pipelineId',
