@@ -8,7 +8,7 @@ STABLE_LABEL = "stable"
 // git commit default
 env.ghprbActualCommit = env.ghprbActualCommit ?: 'master'
 
-imageList = ["jenkins-continuous-infra-slave", "fedoraci-runner"]
+imageList = ["jenkins-fedoraci-slave", "fedoraci-runner"]
 imageOperations = []
 
 def libraries = ['contra-lib'              : ['master', 'https://github.com/openshift/contra-lib']]
@@ -64,7 +64,7 @@ pipeline {
             containerTemplate {
                 name 'jnlp'
                 args '${computer.jnlpmac} ${computer.name}'
-                image DOCKER_REPO_URL + '/' + openshiftProject + '/jenkins-continuous-infra-slave:' + STABLE_LABEL
+                image DOCKER_REPO_URL + '/' + openshiftProject + '/jenkins-fedoraci-slave:' + STABLE_LABEL
                 ttyEnabled false
                 command ''
             }
