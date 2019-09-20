@@ -62,6 +62,7 @@ pipeline {
             cloud 'openshift'
             label 'merge-trigger-' + env.ghprbActualCommit
             containerTemplate {
+                alwaysPullImage true
                 name 'jnlp'
                 args '${computer.jnlpmac} ${computer.name}'
                 image DOCKER_REPO_URL + '/' + openshiftProject + '/jenkins-fedoraci-slave:' + STABLE_LABEL

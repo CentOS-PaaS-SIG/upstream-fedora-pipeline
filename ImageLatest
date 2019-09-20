@@ -53,6 +53,7 @@ pipeline {
             cloud 'openshift'
             label "image-latest-${UUID.randomUUID().toString()}"
             containerTemplate {
+                alwaysPullImage true
                 name 'jnlp'
                 args '${computer.jnlpmac} ${computer.name}'
                 image DOCKER_REPO_URL + '/' + openshiftProject + '/jenkins-fedoraci-slave:' + STABLE_LABEL
