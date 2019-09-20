@@ -125,10 +125,8 @@ pipeline {
                     script {
                         openshift.withCluster() {
                             openshift.withProject(openshiftProject) {
-                                buildOpenShiftImage(openshiftProject: openshiftProject,
-                                                    buildConfig: env.IMAGE_NAME,
-                                                    tag: "stable")
-                                tagMap[env.IMAGE_NAME] = "stable"
+                                openshift.tag("${openshiftProject}/${env.IMAGE_NAME}:latest",
+                                        "${openshiftProject}/${env.IMAGE_NAME}:stable")
                             }
                         }
                     }
