@@ -158,8 +158,6 @@ timestamps {
 
                 } else {
                     echo "CI_MESSAGE was invalid. Skipping..."
-                    messageFields = packagepipelineUtils.setMessageFields('package.ignored', 'build', parsedMsg)
-                    packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
                     currentBuild.description = "*Build Skipped*"
                 }
 

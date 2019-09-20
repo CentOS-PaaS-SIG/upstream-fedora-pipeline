@@ -122,6 +122,7 @@ timestamps {
             containers: [
                     // This adds the custom slave container to the pod. Must be first with name 'jnlp'
                     containerTemplate(name: 'jnlp',
+                            alwaysPullImage: true,
                             image: DOCKER_REPO_URL + '/' + OPENSHIFT_NAMESPACE + '/jenkins-fedoraci-slave:' + SLAVE_TAG,
                             ttyEnabled: false,
                             args: '${computer.jnlpmac} ${computer.name}',
