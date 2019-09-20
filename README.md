@@ -59,7 +59,7 @@ Only changes proposed to a fXX or master branch in dist-git are monitored.
 Once a message is received, the trigger ensures that there are [Standard Test Roles](https://fedoraproject.org/wiki/CI/Standard_Test_Roles) defined tests for this package or present in this pull request (with proper branch checkout).
 If the above holds true, the respective pipeline is triggered.<br>
 
-Pipeline messages sent via fedmsg for this stage are captured by the topics org.centos.prod.ci.pipeline.allpackages.package-[build,pr].[queued,ignored].<br><br>
+Pipeline messages sent via fedmsg for this stage are captured by the topics org.centos.prod.ci.pipeline.allpackages.package-[build,pr].queued.<br><br>
 
 ## Koji Build
 
