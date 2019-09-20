@@ -17,5 +17,5 @@ oc new-project "${PROJECT}" --display-name="${PROJECT}"
 oc policy add-role-to-user edit -z default -n "${PROJECT}"
 oc create -f jenkins-persistent-buildconfig-template.yaml
 oc new-app jenkins-persistent ${REPO_URL_PARAM} ${REPO_REF_PARAM}
-oc create -f jenkins-continuous-infra-slave-buildconfig-template.yaml
-oc new-app jenkins-continuous-infra-slave-builder ${REPO_URL_PARAM} ${REPO_REF_PARAM}
+oc create -f jenkins-fedoraci-slave-buildconfig-template.yaml
+oc new-app jenkins-fedoraci-slave-builder ${REPO_URL_PARAM} ${REPO_REF_PARAM}

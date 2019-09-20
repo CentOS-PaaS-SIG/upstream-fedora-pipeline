@@ -7,7 +7,8 @@ DEBUG=0
 project="continuous-infra"
 
 ## List all templates to be processed
-templates="fedoraci-runner/fedoraci-runner-buildconfig-template.yml"
+templates="fedoraci-runner/fedoraci-runner-buildconfig-template.yml \
+jenkins/jenkins-fedoraci-slave-buildconfig-template.yaml"
 
 function logerror {
   echo "Error: $1"

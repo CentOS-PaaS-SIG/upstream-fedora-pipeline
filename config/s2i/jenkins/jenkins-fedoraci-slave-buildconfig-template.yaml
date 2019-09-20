@@ -1,32 +1,32 @@
 apiVersion: v1
 kind: Template
 labels:
-  template: jenkins-continuous-infra-slave-builder
+  template: jenkins-fedoraci-slave-builder
 metadata:
   annotations:
-    description: continuous-infra Slaves
+    description: fedoraci Slaves
     iconClass: icon-jenkins
     tags: instant-app,jenkins
-  name: jenkins-continuous-infra-slave-builder
+  name: jenkins-fedoraci-slave-builder
 objects:
 - apiVersion: v1
   kind: ImageStream
   metadata:
     annotations:
-      slave-label: fedora-atomic jenkins-continuous-infra-slave continuous-infra-slave
+      slave-label: jenkins-fedoraci-slave
     labels:
       role: jenkins-slave
-    name: jenkins-continuous-infra-slave
+    name: jenkins-fedoraci-slave
   spec: {}
 - apiVersion: v1
   kind: BuildConfig
   metadata:
-    name: jenkins-continuous-infra-slave
+    name: jenkins-fedoraci-slave
   spec:
     output:
       to:
         kind: ImageStreamTag
-        name: jenkins-continuous-infra-slave:latest
+        name: jenkins-fedoraci-slave:latest
     resources: {}
     source:
       contextDir: ${CONTEXTDIR}
