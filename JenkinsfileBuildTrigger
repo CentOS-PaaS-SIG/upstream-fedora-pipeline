@@ -31,7 +31,7 @@ timestamps {
                                   ],
                                   checks: [
                                       [field: 'new', expectedValue: '1|CLOSED'],
-                                      [field: 'owner', expectedValue: '^(?!koschei&!mbs\\/mbs\\.fedoraproject\\.org).*']
+                                      [field: 'owner', expectedValue: '^(?!koschei&!mbs/mbs\\.fedoraproject\\.org).*']
                                   ]
                               ]
                             ]]
