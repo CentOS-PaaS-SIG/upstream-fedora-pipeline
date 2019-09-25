@@ -82,8 +82,8 @@ pipeline {
                 script {
                     buildOpenShiftImage(openshiftProject: openshiftProject,
                                         buildConfig: env.IMAGE_NAME,
-                                        tag: "latest")
-                    tagMap[env.IMAGE_NAME] = "latest"
+                                        tag: "stable-candidate")
+                    tagMap[env.IMAGE_NAME] = "stable-candidate"
                 }
             }
         }
@@ -95,11 +95,11 @@ pipeline {
                 }
             }
         }
-        // See if the latest git source works for the rhel pipeline
+        // See if the latest git source works for the fedora pipeline
         stage("Run Stage Job") {
             failFast false
             parallel {
-                stage("rhel8-stage-pr job") {
+                stage("fedora-rawhide-stage-pr-pipeline job") {
                     steps {
                         build job: 'fedora-rawhide-stage-pr-pipeline',
                                 parameters: [
@@ -125,7 +125,7 @@ pipeline {
                     script {
                         openshift.withCluster() {
                             openshift.withProject(openshiftProject) {
-                                openshift.tag("${openshiftProject}/${env.IMAGE_NAME}:latest",
+                                openshift.tag("${openshiftProject}/${env.IMAGE_NAME}:${tagMap[env.IMAGE_NAME]}",
                                         "${openshiftProject}/${env.IMAGE_NAME}:stable")
                             }
                         }
