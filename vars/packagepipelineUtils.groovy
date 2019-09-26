@@ -177,6 +177,15 @@ class packagepipelineUtils implements Serializable {
         org.jenkinsci.plugins.pipeline.modeldefinition.Utils.markStageSkippedForConditional(stageName)
     }
 
+    /*
+     * Wrapper method to execute a specified script in a specified container
+     * @param parameters
+     * @return
+     */
+    def executeInContainer(Map parameters) {
+        packagePipelineUtils.executeInContainer(parameters)
+    }
+
     /**
      * Method to prepend 'env.' to the keys in source file and write them in a format of env.key=value in the destination file.
      * @param sourceFile The file to read from
