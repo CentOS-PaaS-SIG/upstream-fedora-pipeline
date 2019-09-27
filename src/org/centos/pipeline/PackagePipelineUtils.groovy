@@ -240,6 +240,52 @@ def prepareCredentials(String credentials) {
         '''
     }
 }
+
+/**
+ * Function to execute script in container
+ * Container must have been defined in a podTemplate
+ *
+ * @param parameters
+ * @return
+ */
+def executeInContainer(Map parameters) {
+    def containerName = parameters.get('containerName')
+    def containerScript = parameters.get('containerScript')
+    def stageName = parameters.get('stageName', env.STAGE_NAME)
+    def stageVars = parameters.get('stageVars', [:])
+
+    def stageDir = "${WORKSPACE}/${stageName}"
+    //
+    // Kubernetes plugin does not let containers inherit
+    // env vars from host. We force them in.
+    //
+    def containerEnv = env.getEnvironment().collect { key, value -> return "${key}=${value}" }
+    if (stageVars){
+        stageVars.each {key, value->
+            containerEnv.add("${key}=${value}")
+        }
+    }
+
+    sh script: "mkdir -p ${stageDir}", label: "Creating directory ${stageDir}"
+    try {
+        withEnv(containerEnv) {
+            container(containerName) {
+                sh containerScript
+            }
+        }
+    } catch (err) {
+        throw err
+    } finally {
+        if (fileExists("logs/")) {
+            sh script: "mv logs ${stageDir}/logs", label: "Moving logs to the ${stageDir}/logs"
+        }
+
+        if (fileExists("job.props")) {
+            sh script: "mv job.props ${stageDir}/job.props", label: "Moving job.props to the ${stageDir}/job.props"
+        }
+    }
+}
+
 /**
  * Library to set default environmental variables. Performed once at start of Jenkinsfile
  * @param envMap: Key/value pairs which will be set as environmental variables.

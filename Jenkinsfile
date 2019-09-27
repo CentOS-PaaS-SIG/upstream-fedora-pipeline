@@ -259,20 +259,20 @@ timestamps {
                                     stageVars['PROVIDED_KOJI_TASKID'] = env.PROVIDED_KOJI_TASKID
                                     // Run script that simply downloads artifacts
                                     // and stores them in jenkins workspace
-                                    executeInContainer(containerName: "fedoraci-runner",
-                                                       containerScript: "/tmp/pull_old_task.sh",
-                                                       stageVars: stageVars,
-                                                       stageName: env.currentStage)
+                                    packagepipelineUtils.executeInContainer(containerName: "fedoraci-runner",
+                                                                            containerScript: "/tmp/pull_old_task.sh",
+                                                                            stageVars: stageVars,
+                                                                            stageName: env.currentStage)
                                 } else {
                                     // For tests namespace there is no package to build
                                     if (env.fed_namespace != "tests" ) {
                                         // koji_build_pr relies on fed_uid var
                                         stageVars['fed_uid'] = parsedMsg['pullrequest']['uid']
                                         // Build rpms
-                                        executeInContainer(containerName: "fedoraci-runner",
-                                                           containerScript: "/tmp/koji_build_pr.sh",
-                                                           stageVars: stageVars,
-                                                           stageName: env.currentStage)
+                                        packagepipelineUtils.executeInContainer(containerName: "fedoraci-runner",
+                                                                                containerScript: "/tmp/koji_build_pr.sh",
+                                                                                stageVars: stageVars,
+                                                                                stageName: env.currentStage)
                                     }
                                 }
 
@@ -284,10 +284,10 @@ timestamps {
                                      load(job_props_groovy)
 
                                     // Make sure we generated a good repo
-                                    executeInContainer(containerName: "fedoraci-runner",
-                                                       containerScript: "/tmp/repoquery.sh",
-                                                       stageVars: stageVars,
-                                                       stageName: env.currentStage)
+                                    packagepipelineUtils.executeInContainer(containerName: "fedoraci-runner",
+                                                                            containerScript: "/tmp/repoquery.sh",
+                                                                            stageVars: stageVars,
+                                                                            stageName: env.currentStage)
                                 }
                             }
 
@@ -331,10 +331,10 @@ timestamps {
                                 env.messageStage = 'image.complete'
 
                                 // Compose image
-                                executeInContainer(containerName: "fedoraci-runner",
-                                                   containerScript: "/tmp/virt-customize.sh",
-                                                   stageVars: stageVars,
-                                                   stageName: env.currentStage)
+                                packagepipelineUtils.executeInContainer(containerName: "fedoraci-runner",
+                                                                        containerScript: "/tmp/virt-customize.sh",
+                                                                        stageVars: stageVars,
+                                                                        stageName: env.currentStage)
 
                                 // Set our message topic, properties, and content
                                 messageFields = packagepipelineUtils.setMessageFields("image.complete", artifactOld, parsedMsg)
@@ -359,10 +359,10 @@ timestamps {
                                 // tests namespace does not install any package, so do no need to verify rpm
                                 if (env.fed_namespace != "tests" ) {
                                     // Run nvr verification
-                                    executeInContainer(containerName: "fedoraci-runner",
-                                                       containerScript: "/tmp/verify-rpm.sh",
-                                                       stageVars: stageVars,
-                                                       stageName: env.currentStage)
+                                    packagepipelineUtils.executeInContainer(containerName: "fedoraci-runner",
+                                                                            containerScript: "/tmp/verify-rpm.sh",
+                                                                            stageVars: stageVars,
+                                                                            stageName: env.currentStage)
                                 }
                             }
                         }
@@ -397,10 +397,10 @@ timestamps {
 
                                     // Run functional tests
                                     try {
-                                        executeInContainer(containerName: "fedoraci-runner",
-                                                           containerScript: "/tmp/package-test.sh",
-                                                           stageVars: stageVars,
-                                                           stageName: env.currentStage)
+                                        packagepipelineUtils.executeInContainer(containerName: "fedoraci-runner",
+                                                                                containerScript: "/tmp/package-test.sh",
+                                                                                stageVars: stageVars,
+                                                                                stageName: env.currentStage)
                                     } catch(e) {
                                         if (fileExists("${WORKSPACE}/${env.currentStage}/logs/test.log")) {
                                             buildResult = 'UNSTABLE'
