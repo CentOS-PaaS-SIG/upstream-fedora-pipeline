@@ -18,10 +18,21 @@ def call(Map parameters = [:]) {
                 resizeCompose('container': 'fedoraci-runner', imageName: imageName, increase: '10G')
             }
 
-            stage('test compose') {
-                testCompose('container': 'fedoraci-runner', imageName: imageName)
-            }
+            try {
+                stage('test compose') {
+                    testCompose('container': 'fedoraci-runner', imageName: imageName)
+                }
 
+            } catch (e) {
+                throw e
+            } finally {
+                stage('archive VM logs') {
+                    handlePipelineStep {
+                        step([$class   : 'ArtifactArchiver', allowEmptyArchive: true,
+                                      artifacts: '**/artifacts/*.log'])
+                    }
+                }
+            }
             stage('archive image') {
                 handlePipelineStep {
                     step([$class   : 'ArtifactArchiver', allowEmptyArchive: true,
