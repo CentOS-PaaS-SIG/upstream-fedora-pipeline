@@ -21,7 +21,7 @@ def setDistBranch(String branch) {
         }
     } else {
         def dist_branch = sh (returnStdout: true, script: '''
-            echo $(curl -s https://src.fedoraproject.org/rpms/fedora-release/raw/master/f/fedora-release.spec | awk '/%define dist_version/ {print $3}')
+            echo $(curl --retry 10 --retry-delay 60 -s https://src.fedoraproject.org/rpms/fedora-release/raw/master/f/fedora-release.spec | awk '/%define dist_version/ {print $3}')
         ''').trim()
         try {
             assert dist_branch.isNumber()
