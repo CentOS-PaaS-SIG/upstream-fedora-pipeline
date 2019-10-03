@@ -47,6 +47,7 @@ timestamps {
 
     def TRIGGER_RETRY_COUNT = 3
     def validMessage = true
+    def testsExist = false
     def stepName = null
 
     node('master') {
@@ -73,10 +74,12 @@ timestamps {
                             parsedMsg = kojiMessage(message: env.CI_MESSAGE, ignoreErrors: true)
                             currentBuild.displayName = "BUILD#: ${env.BUILD_NUMBER} - Branch: ${parsedMsg['pullrequest']['branch']} - Package: ${parsedMsg['pullrequest']['project']['name']}"
                             validMessage = packagepipelineUtils.checkBranch(parsedMsg['pullrequest']['branch'])
-                            testsExist = packagepipelineUtils.checkTests(parsedMsg['pullrequest']['project']['name'], parsedMsg['pullrequest']['branch'], 'classic', parsedMsg['pullrequest']['id'].toString(), parsedMsg['pullrequest']['project']['namespace'])
                             // Function only returns false if comments exist,
                             // but the latest was uninteresting
                             commentTrigger = packagepipelineUtils.checkUpdatedPR(env.CI_MESSAGE, '[citest]')
+                            if (validMessage && commentTrigger) {
+                                testsExist = packagepipelineUtils.checkTests(parsedMsg['pullrequest']['project']['name'], parsedMsg['pullrequest']['branch'], 'classic', parsedMsg['pullrequest']['id'].toString(), parsedMsg['pullrequest']['project']['namespace'])
+                            }
                         }
                     }
 
