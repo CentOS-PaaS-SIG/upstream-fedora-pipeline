@@ -11,16 +11,16 @@ def call(Map parameters = [:]) {
                 docker_repo_url: '172.30.254.79:5000',
                 containers: containers) {
             stage('download image') {
-                imageName = downloadCompose(imageType: imageType)
+                imageName = packagepipelineUtils.downloadCompose(imageType: imageType)
             }
 
             stage('resize compose') {
-                resizeCompose('container': 'fedoraci-runner', imageName: imageName, increase: '10G')
+                packagepipelineUtils.resizeCompose('container': 'fedoraci-runner', imageName: imageName, increase: '10G')
             }
 
             try {
                 stage('test compose') {
-                    testCompose('container': 'fedoraci-runner', imageName: imageName)
+                    packagepipelineUtils.testCompose('container': 'fedoraci-runner', imageName: imageName)
                 }
 
             } catch (e) {

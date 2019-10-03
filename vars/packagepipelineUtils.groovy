@@ -278,4 +278,16 @@ class packagepipelineUtils implements Serializable {
     def setupContainerTemplates(String openshiftProject) {
         packagePipelineUtils.setupContainerTemplates(openshiftProject)
     }
+
+    def downloadCompose(Map parameters = [:]) {
+        packagePipelineUtils.downloadCompose(parameters)
+    }
+
+    def resizeCompose(Map parameters = [:]) {
+        packagePipelineUtils.resizeCompose(parameters)
+    }
+
+    def testCompose(Map parameters = [:]) {
+        packagePipelineUtils.testCompose(parameters)
+    }
 }

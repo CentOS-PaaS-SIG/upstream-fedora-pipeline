@@ -1,6 +1,5 @@
 
-def libraries = ['upstream-fedora-pipeline': ['master', 'https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline.git'],
-                 'contra-lib': ['master', 'https://github.com/openshift/contra-lib.git']]
+def libraries = ['upstream-fedora-pipeline': ['master', 'https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline.git']]
 
 libraries.each { name, repo ->
     library identifier: "${name}@${repo[0]}",
