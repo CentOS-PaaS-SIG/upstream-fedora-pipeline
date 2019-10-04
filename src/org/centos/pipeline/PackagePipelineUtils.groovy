@@ -599,3 +599,85 @@ def setupContainerTemplates(String openshiftProject) {
         }
     }
 }
+
+
+def downloadCompose(Map parameters = [:]) {
+    def ciMessage = readJSON text: parameters.get('ciMessage', env.CI_MESSAGE)
+    def imagePrefix = parameters.get('imagePrefix', 'Fedora')
+    def imageType = parameters.get('imageType', 'Cloud')
+
+    def compose = ciMessage['compose_id']
+    def release_version = ciMessage['release_version']
+    def location = ciMessage['location']
+
+    currentBuild.displayName = "${release_version} - ${compose}"
+
+    def imageName = "${imagePrefix}-${release_version}.qcow2"
+
+    handlePipelineStep() {
+        sh script: """
+        rm -f images.json
+        curl -LO ${location}/metadata/images.json
+        """, label: "Getting images.json file"
+
+        def imageJson = readJSON file: 'images.json'
+        def images = imageJson['payload']['images']
+        def imagePath = null
+
+        if (images[imageType]) {
+            if (images[imageType]['x86_64']) {
+                images[imageType]['x86_64'].each { build ->
+                    if (build['format'] == 'qcow2') {
+                        imagePath = build['path']
+                    }
+                }
+            } else {
+                error("There are no x86_64 images available")
+            }
+        } else {
+            error("There are no ${imageType} images available")
+        }
+        if (!imagePath) {
+            error("There are no qcow2 images available")
+        }
+        sh(script: "curl --retry 5 -Lo ${imageName} ${location}/${imagePath}", label: "Getting image: ${imageName}")
+    }
+    return imageName
+}
+
+def resizeCompose(Map parameters = [:]) {
+    def container = parameters.get('container', 'fedoraci-runner')
+    def stageVars = [:]
+    stageVars['imageName'] = parameters.get('imageName')
+    stageVars['increase'] = parameters.get('increase')
+
+
+    executeInContainer(containerName: container, containerScript: '/tmp/resize-qcow2.sh', stageVars: stageVars)
+}
+
+def testCompose(Map parameters = [:]) {
+    def container = parameters.get('container', 'fedoraci-runner')
+    def imageName = parameters.get('imageName')
+    def interactions = parameters.get('interactions', '10')
+
+    def prep_cmd = """
+              yum install -y python-pip && \
+              pip install requests && \
+              exit \$?
+              """
+
+    def cmd = """
+              curl -O https://pagure.io/upstream-fedora-ci/raw/master/f/validate-test-subject.py && \
+              rm -rf /tmp/artifacts && \
+              python -u validate-test-subject.py -i ${interactions} -s \$(pwd)/${imageName} && \
+              exit \$?
+              """
+
+    handlePipelineStep() {
+        // retry to install packages as there could be some temporary infra issue
+        retry(10) {
+            executeInContainer(containerName: container, containerScript: prep_cmd)
+        }
+        executeInContainer(containerName: container, containerScript: cmd)
+    }
+}
