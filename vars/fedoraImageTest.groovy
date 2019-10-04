@@ -20,7 +20,7 @@ def call(Map parameters = [:]) {
 
             try {
                 stage('test compose') {
-                    packagepipelineUtils.testCompose('container': 'fedoraci-runner', imageName: imageName)
+                    packagepipelineUtils.testCompose('container': 'fedoraci-runner', imageName: imageName, interactions: env.INTERACTIONS ?: 10)
                 }
 
             } catch (e) {
