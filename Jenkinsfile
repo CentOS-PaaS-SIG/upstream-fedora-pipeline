@@ -417,8 +417,9 @@ timestamps {
                                         def test_failed = false
                                         test_results['results'].each { result ->
                                             // some test case exited with error
+                                            // handle this as test failure and not as infra one
                                             if (result.result == "error") {
-                                                 throw new Exception("FAIL: test ${result.test} exited with error")
+                                                test_failed = true
                                             }
                                             if (result.result == "fail") {
                                                 test_failed = true
