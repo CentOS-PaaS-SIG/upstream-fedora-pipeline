@@ -124,6 +124,9 @@ timestamps {
                 if (targetBranch && testsExist && primaryKoji) {
                     messageFields = packagepipelineUtils.setMessageFields('package.queued', 'build', parsedMsg)
                     packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                    // Send message org.centos.stage.ci.koji-build.test.queued on fedmsg
+                    messageFields = packagepipelineUtils.setTestMessageFields("queued", "koji-build", parsedMsg)
+                    packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
                     stepName = 'schedule build'
                     stage(stepName) {
 
