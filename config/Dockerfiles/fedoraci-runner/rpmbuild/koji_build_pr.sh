@@ -61,14 +61,39 @@ koji ${KOJI_PARAMS} build --wait --arch-override=x86_64 --scratch ${branch} ${fe
 RPMBUILD_RC=$?
 if [ "$RPMBUILD_RC" != 0 ]; then
      echo "status=FAIL" >> ${LOGDIR}/job.props
-     echo -e "ERROR: KOJI BUILD\nSTATUS: $MOCKBUILD_RC"
+     echo -e "ERROR: KOJI BUILD\nSTATUS: $RPMBUILD_RC"
      exit 1
 fi
-echo "status=SUCCESS" >> ${LOGDIR}/job.props
+
 popd
 
 SCRATCHID=$(cat ${LOGDIR}/kojioutput.txt | awk '/Created task:/ { print $3 }')
 echo "koji_task_id=${SCRATCHID}" >> ${LOGDIR}/job.props
+
+# Make sure koji build finished
+# https://pagure.io/fedora-ci/general/issue/76
+koji taskinfo ${SCRATCHID} | tee ${LOGDIR}/taskinfo.txt
+TASK_STATE=$(cat ${LOGDIR}/taskinfo.txt | grep "State:" | awk '{print$2}')
+while echo ${TASK_STATE} | grep -Ev "closed|failed|cancelled"; do
+    koji watch-task ${SCRATCHID}
+    # Set status if job fails to build the rpm
+    RPMBUILD_RC=$?
+    if [ "$RPMBUILD_RC" != 0 ]; then
+         echo "status=FAIL" >> ${LOGDIR}/job.props
+         echo -e "ERROR: KOJI BUILD\nSTATUS: $RPMBUILD_RC"
+         exit 1
+    fi
+    koji taskinfo ${SCRATCHID} | tee ${LOGDIR}/taskinfo.txt
+    TASK_STATE=$(cat ${LOGDIR}/taskinfo.txt | grep "State:" | awk '{print$2}')
+done
+
+if [ ${TASK_STATE} != "closed" ]; then
+     echo "status=FAIL" >> ${LOGDIR}/job.props
+     echo -e "ERROR: KOJI BUILD\nSTATUS: $TASK_STATE"
+     exit 1
+fi
+
+echo "status=SUCCESS" >> ${LOGDIR}/job.props
 
 # Make repo to download rpms to
 rm -rf ${RPMDIR}
