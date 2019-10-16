@@ -3,6 +3,8 @@
 # This container builds with koji into $RPMDIR starting from a pagure PR
 
 set -xeo pipefail
+# avoid using head -n 1 as with pipefail it might cause the command to exit with error 141 due to broken pipe
+
 
 # Check to make sure we have all required vars
 if [ -z "${fed_repo}" ]; then echo "No fed_repo env var" ; exit 1 ; fi
@@ -38,7 +40,7 @@ git fetch -fu origin refs/pull/${fed_id}/head:pr
 # Setting git config and merge message in case we try to merge a closed PR, like it is done on stage instance
 git -c "user.name=Fedora CI" -c "user.email=ci@lists.fedoraproject.org"  merge pr -m "Fedora CI pipeline"
 # Get current NVR
-truenvr=$(rpm -q --define "dist .$DIST_BRANCH" --queryformat '%{name}-%{version}-%{release}\n' --specfile ${fed_repo}.spec | head -n 1)
+truenvr=$(rpm -q --define "dist .$DIST_BRANCH" --queryformat '%{name}-%{version}-%{release}\n' --specfile ${fed_repo}.spec | awk 'NR==1')
 echo "original_spec_nvr=${truenvr}" >> ${LOGDIR}/job.props
 # Find number of git commits in log to append to RELEASE before %{?dist}
 commits=$(git log --pretty=format:'' | wc -l)
@@ -48,7 +50,7 @@ sed -i "s/%{?dist}/%{?dist}.pr.${fed_uid}/" ${fed_repo}.spec
 
 # Build srpm to send to koji
 fedpkg --release ${fed_branch} srpm
-VERSION=$(rpmspec --queryformat "%{VERSION}\n" -q ${fed_repo}.spec | head -n 1)
+VERSION=$(rpmspec --queryformat "%{VERSION}\n" -q ${fed_repo}.spec | awk 'NR==1')
 # Set up koji creds
 kinit -k -t "${CURRENTDIR}/fedora.keytab" $FEDORA_PRINCIPAL
 
@@ -114,7 +116,7 @@ popd
 
 # Store modified nvr as well
 set +e
-RPM_TO_CHECK=$(find ${RPMDIR}/ -name "${fed_repo}-${VERSION}*" | head -n 1)
+RPM_TO_CHECK=$(find ${RPMDIR}/ -name "${fed_repo}-${VERSION}*" | awk 'NR==1')
 RPM_NAME=$(basename $RPM_TO_CHECK)
 NVR=$(rpm --queryformat "%{NAME}-%{VERSION}-%{RELEASE}\n" -qp $RPM_TO_CHECK)
 echo "nvr=${NVR}" >> ${LOGDIR}/job.props
