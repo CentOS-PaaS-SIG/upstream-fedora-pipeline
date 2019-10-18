@@ -58,34 +58,36 @@ kinit -k -t "${CURRENTDIR}/fedora.keytab" $FEDORA_PRINCIPAL
 export FORCE_UNSAFE_CONFIGURE=1
 
 # Build the package with koji
-koji ${KOJI_PARAMS} build --wait --arch-override=x86_64 --scratch ${branch} ${fed_repo}*.src.rpm | tee ${LOGDIR}/kojioutput.txt
-# Set status if either job fails to build the rpm
-RPMBUILD_RC=$?
-if [ "$RPMBUILD_RC" != 0 ]; then
-     echo "status=FAIL" >> ${LOGDIR}/job.props
-     echo -e "ERROR: KOJI BUILD\nSTATUS: $RPMBUILD_RC"
-     exit 1
-fi
+# ignore koij exit status. If build fails it will be detected later, https://pagure.io/fedora-ci/general/issue/76
+koji ${KOJI_PARAMS} build --wait --arch-override=x86_64 --scratch ${branch} ${fed_repo}*.src.rpm | tee ${LOGDIR}/kojioutput.txt || true
 
 popd
 
 SCRATCHID=$(cat ${LOGDIR}/kojioutput.txt | awk '/Created task:/ { print $3 }')
+if ! [[ $SCRATCHID =~ ^[0-9]+$ ]]; then
+    echo "status=FAIL" >> ${LOGDIR}/job.props
+    echo -e "ERROR: KOJI BUILD"
+    exit 1
+fi
+
 echo "koji_task_id=${SCRATCHID}" >> ${LOGDIR}/job.props
 
 # Make sure koji build finished
-# https://pagure.io/fedora-ci/general/issue/76
-koji taskinfo ${SCRATCHID} | tee ${LOGDIR}/taskinfo.txt
-TASK_STATE=$(cat ${LOGDIR}/taskinfo.txt | grep "State:" | awk '{print$2}')
+TASK_STATE="unknown"
 while echo ${TASK_STATE} | grep -Ev "closed|failed|cancelled"; do
-    koji watch-task ${SCRATCHID}
-    # Set status if job fails to build the rpm
-    RPMBUILD_RC=$?
-    if [ "$RPMBUILD_RC" != 0 ]; then
-         echo "status=FAIL" >> ${LOGDIR}/job.props
-         echo -e "ERROR: KOJI BUILD\nSTATUS: $RPMBUILD_RC"
-         exit 1
-    fi
-    koji taskinfo ${SCRATCHID} | tee ${LOGDIR}/taskinfo.txt
+    # Wait for build to finish as the command can exit before build finishes, ignore exit code
+    koji watch-task ${SCRATCHID} || true
+    for i in {1..5}; do
+        if koji taskinfo ${SCRATCHID} | tee ${LOGDIR}/taskinfo.txt; then
+            break
+        fi
+        if [[ $i -eq 5 ]]; then
+            echo "status=FAIL" >> ${LOGDIR}/job.props
+            echo -e "ERROR: KOJI TASK_INFO"
+            exit 1
+        fi
+        sleep 60
+    done
     TASK_STATE=$(cat ${LOGDIR}/taskinfo.txt | grep "State:" | awk '{print$2}')
 done
 
