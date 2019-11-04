@@ -5,10 +5,6 @@ contain all script needs to prepare the QCOW2 used as test subject \
 fo the Fedora-CI pipeline and also run the tests."
 USER root
 
-#RUN for i in {1..5} ; do dnf -y install python3-devel && dnf clean all && break || sleep 10 ; done
-
-RUN for i in {1..5} ; do dnf -y module enable standard-test-roles && dnf clean all && break || sleep 10 ; done
-
 # Install all package requirements
 RUN for i in {1..5} ; do dnf -y install \
         ansible \
@@ -31,8 +27,8 @@ RUN for i in {1..5} ; do dnf -y install \
         libvirt-daemon-kvm \
         pam_krb5 \
         pykickstart \
-        python2-libselinux \
-        python2-pip \
+        python3-libselinux \
+        python3-pip \
 # install python3-devel as workaround for https://pagure.io/standard-test-roles/issue/313
         python3-devel \
         python3-dnf \
@@ -71,7 +67,7 @@ COPY ["virt-customize/virt-customize.sh", \
       "/tmp/"]
 
 # Ansible API changes very often, make sure we run with a version we know it works
-RUN pip install ansible==2.8.0
+RUN pip-3 install ansible==2.8.0
 
 ENV ANSIBLE_INVENTORY=/usr/share/ansible/inventory/standard-inventory-qcow2
 
