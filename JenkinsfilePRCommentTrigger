@@ -76,20 +76,20 @@ timestamps {
                             validMessage = packagepipelineUtils.checkBranch(parsedMsg['pullrequest']['branch'])
                             // Function only returns false if comments exist,
                             // but the latest was uninteresting
-                            commentTrigger = packagepipelineUtils.checkUpdatedPR(env.CI_MESSAGE, '[citest]')
+                            commentTrigger = contraUtils.checkUpdatedPR(env.CI_MESSAGE, '[citest]')
                             if (validMessage && commentTrigger) {
-                                testsExist = packagepipelineUtils.checkTests(parsedMsg['pullrequest']['project']['name'], parsedMsg['pullrequest']['branch'], 'classic', parsedMsg['pullrequest']['id'].toString(), parsedMsg['pullrequest']['project']['namespace'])
+                                testsExist = contraUtils.checkTests(parsedMsg['pullrequest']['project']['name'], parsedMsg['pullrequest']['branch'], 'classic', parsedMsg['pullrequest']['id'].toString(), parsedMsg['pullrequest']['project']['namespace'])
                             }
                         }
                     }
 
                     if (validMessage && testsExist && commentTrigger) {
                         messageFields = packagepipelineUtils.setMessageFields('package.queued', 'pr', parsedMsg)
-                        packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                        contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                         // Send message org.centos.prod.ci.dist-git-pr.test.queued on fedmsg
                         messageFields = packagepipelineUtils.setTestMessageFields("queued", "dist-git-pr", parsedMsg)
-                        packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                        contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                         stepName = 'schedule build'
                         stage(stepName) {

@@ -100,7 +100,7 @@ pipeline {
                 node('master') {
                     script {
                         echo "PR number is: ${env.ghprbPullId}"
-                        env.changeLogStr = packagepipelineUtils.getChangeLogFromCurrentBuild()
+                        env.changeLogStr = contraUtils.getChangeLogFromCurrentBuild()
                         echo env.changeLogStr
                     }
                     writeFile file: 'changelog.txt', text: env.changeLogStr
@@ -194,7 +194,7 @@ pipeline {
                     prMsg = "(PR #${env.ghprbPullId} ${env.ghprbPullAuthorLogin})"
                 }
                 def message = "${JOB_NAME} ${prMsg} build #${BUILD_NUMBER}: ${currentBuild.currentResult}: ${BUILD_URL}"
-                packagepipelineUtils.sendIRCNotification("${IRC_NICK}-${UUID.randomUUID()}", IRC_CHANNEL, message)
+                contraUtils.sendIRCNotification("${IRC_NICK}-${UUID.randomUUID()}", IRC_CHANNEL, message)
             }
         }
         success {

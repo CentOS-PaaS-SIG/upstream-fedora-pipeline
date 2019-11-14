@@ -51,7 +51,7 @@ def setMessageFields(String messageType, String artifact, Map parsedMsg) {
     // If something is applicable to only some subset of messages,
     // add it below per the existing examples.
 
-    if (parsedMsg.has('pullrequest')) {
+    if (parsedMsg && parsedMsg.has('pullrequest')) {
         myBranch = parsedMsg['pullrequest']['branch']
         myRepo = parsedMsg['pullrequest']['project']['name']
         myRev = 'PR-' + parsedMsg['pullrequest']['id']
@@ -61,11 +61,11 @@ def setMessageFields(String messageType, String artifact, Map parsedMsg) {
     } else {
         myBranch = env.fed_branch
         myRepo = env.fed_repo
-        taskid = parsedMsg.has('task_id') ? parsedMsg['task_id'] : parsedMsg['info']['id']
+        taskid = env.task_id
         myRev = 'kojitask-' + taskid
         myNamespace = env.fed_namespace
         myCommentId = ''
-        myOwner = parsedMsg['owner']
+        myOwner = env.issuer
     }
 
     def messageContent = [
@@ -142,7 +142,7 @@ def setTestMessageFields(String messageType, String artifact, Map parsedMsg) {
 
     if (artifact == "koji-build") {
         // Set variables that go in multiple closures
-        myId = parsedMsg.has('task_id') ? parsedMsg['task_id'] : parsedMsg['info']['id']
+        myId = env.task_id
         myScratch = env.isScratch.toBoolean()
         if (!env.nvr) {
             kojiUrl = env.KOJI_URL ?: 'https://koji.fedoraproject.org'
@@ -169,14 +169,20 @@ def setTestMessageFields(String messageType, String artifact, Map parsedMsg) {
                 }
             }
         }
+
         myNvr = env.nvr
         myComponent = env.fed_repo
         myRepository = myComponent ? "${env.PAGURE_URL}/rpms/" + myComponent : 'N/A'
         myType = 'tier0'
-        myIssuer =  parsedMsg['owner']
+        myIssuer = env.issuer
         myBranch = env.fed_branch
 
-        myArtifactContent = msgBusArtifactContent(type: 'koji-build', id: myId, component: myComponent, issuer: myIssuer, nvr: myNvr, scratch: myScratch, source: env.RPM_REQUEST_SOURCE)
+        artifactParams = ["type": 'koji-build', id: myId, "component": myComponent, "issuer": myIssuer, "nvr": myNvr, "scratch": myScratch]
+        if (env.RPM_REQUEST_SOURCE) {
+            artifactParams["source"] = env.RPM_REQUEST_SOURCE
+        }
+
+        myArtifactContent = msgBusArtifactContent(artifactParams)
         myTestContent = (messageType == "complete") ? msgBusTestContent(category: "functional", namespace: myNamespace, type: "tier0", result: myResult) : msgBusTestContent(category: "functional", namespace: myNamespace, type: "tier0")
     }
     if (artifact == "dist-git-pr") {
@@ -202,7 +208,7 @@ def setTestMessageFields(String messageType, String artifact, Map parsedMsg) {
             break
         case 'complete':
             if (artifact == "koji-build") {
-                myArtifactContent = msgBusArtifactContent(type: 'koji-build', id: myId, component: myComponent, issuer: myIssuer, nvr: myNvr, scratch: myScratch, source: env.RPM_REQUEST_SOURCE, dependencies: env.BUILD_DEPS ? env.BUILD_DEPS.split() : [])
+                myArtifactContent = msgBusArtifactContent(type: 'koji-build', id: myId, component: myComponent, issuer: myIssuer, nvr: myNvr, scratch: myScratch, source: env.RPM_REQUEST_SOURCE ?: "UNKNOWN", dependencies: env.BUILD_DEPS ? env.BUILD_DEPS.split() : [])
             }
             if (artifact == "dist-git-pr") {
                 myArtifactContent = msgBusArtifactContent(type: 'pull-request', id: myId, issuer: myIssuer, repository: myRepository, commit_hash: myCommitHash, comment_id: myCommentId, uid: myUid)
@@ -221,7 +227,6 @@ def setTestMessageFields(String messageType, String artifact, Map parsedMsg) {
             myConstructedMessage = msgBusTestError(contact: myContactContent(), artifact: myArtifactContent(), pipeline: myPipelineContent(), test: myTestContent())
             break
     }
-
     return [ 'topic': myTopic, 'properties': '', 'content': myConstructedMessage() ]
 }
 
@@ -679,5 +684,71 @@ def testCompose(Map parameters = [:]) {
             executeInContainer(containerName: container, containerScript: prep_cmd)
         }
         executeInContainer(containerName: container, containerScript: cmd)
+    }
+}
+
+/**
+ * Set environment variables parsing a CI message from koji build
+ * @return
+ */
+def processBuildCIMessage() {
+    if (!env.CI_MESSAGE) {
+        throw new Exception("env.CI_MESSAGE is not set")
+    }
+    message = env.CI_MESSAGE
+    def ciMessage = readJSON text: message.replace("\n", "\\n")
+    if (ciMessage.containsKey('info') || ciMessage.containsKey('build_id')) {
+        // Scratch build messages store things in info
+        setScratchVars(ciMessage)
+        env.fed_repo = contraUtils.repoFromRequest(env.request_0)
+        branches = contraUtils.setBuildBranch(env.request_1)
+        env.branch = branches[0]
+        env.fed_branch = branches[1]
+        env.fed_namespace = 'rpms'
+        env.task_id = ciMessage.has('task_id') ? ciMessage['task_id'] : ciMessage['info']['id']
+        env.issuer = ciMessage['owner']
+    } else if (ciMessage.containsKey('artifact') && (ciMessage['artifact'].containsKey('type')) &&
+                // depending on the ci message version it used rpm-build-group or koji-build-group
+                // https://pagure.io/fedora-ci/messages/pull-request/87
+                (ciMessage['artifact']['type'] == "rpm-build-group" || ciMessage['artifact']['type'] == "koji-build-group")) {
+        // query bodhi to check if the release is rawhide
+        def rawhide_release = (
+            sh(script: "curl --retry 10 'https://bodhi.fedoraproject.org/releases/?state=pending'", returnStdout: true)
+        )
+        rawhide_release = readJSON text: rawhide_release.replace("\n", "\\n")
+        if (!rawhide_release.containsKey('releases')) {
+            throw new Exception("FAIL: Could not query bodhi")
+        }
+        env.fed_branch = ciMessage['artifact']['release']
+        env.branch = ciMessage['artifact']['release']
+        for (release in rawhide_release['releases']) {
+            if (env.fed_branch == release['branch']) {
+                env.fed_branch = 'master'
+                env.branch = 'rawhide'
+            }
+        }
+        env.fed_namespace = 'rpms'
+        env.isScratch = false
+        // it is a group build, set env variables based on task_id that triggered the test
+        def builds = ciMessage['artifact']['builds']
+        for (build in builds) {
+            // workaround to get task id until bodhi version sets it
+            if (!build.containsKey('task_id')) {
+                def koji_url = env.KOJI_URL ?: 'https://koji.fedoraproject.org'
+                sh("curl --retry 10 '${koji_url}/koji/buildinfo?buildID=${build['id']}' > buildinfo.txt")
+                build['task_id'] = sh(script: "cat buildinfo.txt | perl -lne 'print \$1 if /.*taskID=(\\d+)/'", returnStdout: true)
+                build['task_id'] = build['task_id'].toInteger()
+            }
+            if (build['task_id'].toString() != env.PROVIDED_KOJI_TASKID?.trim()) {
+                continue
+            }
+            env.nvr = build['nvr']
+            env.task_id = build['task_id']
+            env.fed_repo = build['component']
+            env.issuer = build['issuer']
+
+        }
+    } else {
+        throw new Exception("Unsupported CI message: ${message}")
     }
 }

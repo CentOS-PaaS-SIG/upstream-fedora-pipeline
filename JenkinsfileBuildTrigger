@@ -1,5 +1,12 @@
 #!groovy
 
+def parseText(message) {
+    if (!message) {
+        return null
+    }
+    def parsed = readJSON text: message.replace("\n", "\\n")
+    return parsed
+}
 
 timestamps {
     def libraries = ['upstream-fedora-pipeline': ['master', 'https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline.git'],
@@ -27,11 +34,7 @@ timestamps {
                                   $class: 'FedMsgSubscriberProviderData',
                                   name: 'fedora-fedmsg',
                                   overrides: [
-                                      topic: 'org.fedoraproject.prod.buildsys.build.state.change'
-                                  ],
-                                  checks: [
-                                      [field: 'new', expectedValue: '1|CLOSED'],
-                                      [field: 'owner', expectedValue: '^(?!koschei&!mbs/mbs\\.fedoraproject\\.org).*']
+                                      topic: 'org.fedoraproject.prod.bodhi.update.status.testing.koji-build-group.build.complete'
                                   ]
                               ]
                             ]]
@@ -44,11 +47,6 @@ timestamps {
 
     node('master') {
 
-        // pull in ciMetrics from ci-pipeline
-        // ciMetrics.prefix = packagepipelineUtils.influxDBPrefix()
-        // packagepipelineUtils.cimetrics = ciMetrics
-        // def jobMeasurement = packagepipelineUtils.timedMeasurement()
-
         packagepipelineUtils.ciPipeline {
             try {
                 stepName = 'upstream-fedora-pipeline-build-trigger'
@@ -58,88 +56,79 @@ timestamps {
 
                         print "CI_MESSAGE"
                         print CI_MESSAGE
-                        parsedMsg = kojiMessage(message: env.CI_MESSAGE, ignoreErrors: true)
-                        packagepipelineUtils.setScratchVars(parsedMsg)
+                        parsedMsg = parseText(env.CI_MESSAGE)
                         packagepipelineUtils.setDefaultEnvVars()
-                        env.fed_repo = packagepipelineUtils.repoFromRequest(env.request_0)
                         env.fed_namespace = 'rpms' // used in setMessageFields
                         targetBranch = false
-                        if (!env.isScratch.toBoolean()) {
-                            env.task_id = parsedMsg['task_id']
-                            branches = packagepipelineUtils.setBuildBranch(env.request_1)
-                            env.branch = branches[0]
-                            env.fed_branch = branches[1]
-                            targetBranch = packagepipelineUtils.checkBranch(env.fed_branch)
-                            def tagMatcher = env.request_1 =~ /f([0-9]+)-candidate/
-                            if (!tagMatcher && env.request_1 != 'rawhide') {
-                                print("Don't trigger test for build with Build Target tag: ${env.request_1}")
-                                targetBranch = false
+                        env.fed_branch = parsedMsg['artifact']['release']
+                        env.branch = parsedMsg['artifact']['release']
+                        env.isScratch = false
+                        // query bodhi to check if the release is rawhide
+                        def rawhide_release = parseText(
+                            sh(script: "curl --retry 10 'https://bodhi.fedoraproject.org/releases/?state=pending'", returnStdout: true)
+                        )
+                        if (!rawhide_release.containsKey('releases')) {
+                            error("FAIL: Could not query bodhi")
+                        }
+                        for (release in rawhide_release['releases']) {
+                            if (env.fed_branch == release['branch']) {
+                                env.fed_branch = 'master'
+                                env.branch = 'rawhide'
                             }
-                        }
-
-                        if (parsedMsg['owner'] == "mbs/mbs.fedoraproject.org" || parsedMsg['owner'] == "koschei") {
-                            print("Not triggering for modules or koschei builds")
-                            targetBranch = false
-                        }
-
-                        // If the PR pipeline submit the build, let's just set targetBranch to false so we don't run
-                        if (parsedMsg['owner'] == "bpeck/jenkins-continuous-infra.apps.ci.centos.org") {
-                            print("This build is for a scratch build from the PR pipeline. Not triggering.")
-                            targetBranch = false
-                        }
-
-                        if (targetBranch) {
-                            testsExist = packagepipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')
-                            // Ensure message is from primary koji instance
-                            primaryKoji = parsedMsg['instance'] == "primary"
-                            currentBuild.displayName = "BUILD#: ${env.BUILD_NUMBER} - Branch: ${env.fed_branch} - Package: ${env.fed_repo}"
-                        } else {
-                            currentBuild.displayName = "Build#: ${env.BUILD_NUMBER} - Branch: ${env.fed_branch} - Skipped"
                         }
 
                     }
 
                 }
 
-                if (targetBranch && testsExist && primaryKoji) {
-                    messageFields = packagepipelineUtils.setMessageFields('package.queued', 'build', parsedMsg)
-                    packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
-                    // Send message org.centos.prod.ci.koji-build.test.queued on fedmsg
-                    messageFields = packagepipelineUtils.setTestMessageFields("queued", "koji-build", parsedMsg)
-                    packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
-                    stepName = 'schedule build'
-                    stage(stepName) {
+                stepName = 'schedule build'
+                stage(stepName) {
+                    packagepipelineUtils.handlePipelineStep(stepName: stepName, debug: true) {
+                        env.currentStage = stepName
+                        def builds = parsedMsg['artifact']['builds']
+                        for (newbuild in builds) {
+                            env.fed_repo = newbuild['component']
+                            env.nvr = newbuild['nvr']
+                            env.build_id = newbuild['id']
+                            env.issuer = newbuild['issuer']
 
-                        retry(TRIGGER_RETRY_COUNT) {
-                            packagepipelineUtils.handlePipelineStep(stepName: stepName, debug: true) {
+                            // workaround to get task id until bodhi version sets it
+                            if (!newbuild.containsKey('task_id')) {
+                                sh("curl --retry 10 'https://koji.fedoraproject.org/koji/buildinfo?buildID=${env.build_id}' > buildinfo.txt")
+                                env.task_id = sh(script: "cat buildinfo.txt | perl -lne 'print \$1 if /.*taskID=(\\d+)/'", returnStdout: true)
+                                env.task_id = env.task_id.toInteger()
+                            }
 
-                                build job: "fedora-${env.branch}-build-pipeline",
-                                        // Scratch messages from task.state.changed call it id, not task_id
-                                        parameters: [string(name: 'PROVIDED_KOJI_TASKID', value: env.task_id),
-                                                     string(name: 'CI_MESSAGE', value: env.CI_MESSAGE),
-                                                     string(name: 'pipelineId', value: UUID.randomUUID().toString())],
-                                        wait: false
+                            testsExist = contraUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')
+                            if (testsExist) {
+                                currentBuild.displayName = "BUILD#: ${env.BUILD_NUMBER} - Release: ${env.branch} - Package: ${env.fed_repo}"
+
+                                messageFields = packagepipelineUtils.setMessageFields('package.queued', 'build', parsedMsg)
+                                contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                                // Send message org.centos.prod.ci.koji-build.test.queued on fedmsg
+                                messageFields = packagepipelineUtils.setTestMessageFields("queued", "koji-build", parsedMsg)
+                                contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+
+                                retry(TRIGGER_RETRY_COUNT) {
+                                        build job: "fedora-${env.branch}-build-pipeline",
+                                                parameters: [string(name: 'PROVIDED_KOJI_TASKID', value: env.task_id),
+                                                             string(name: 'CI_MESSAGE', value: env.CI_MESSAGE),
+                                                             string(name: 'pipelineId', value: UUID.randomUUID().toString())],
+                                                wait: false
+                                    }
+                            } else {
+                                currentBuild.displayName = "Build#: ${env.BUILD_NUMBER} - Release: ${env.branch} - Package: ${env.fed_repo} - Skipped"
                             }
                         }
                     }
-
-                } else {
-                    echo "CI_MESSAGE was invalid. Skipping..."
-                    currentBuild.description = "*Build Skipped*"
                 }
-
                 currentBuild.result = 'SUCCESS'
 
             } catch (e) {
                 currentBuild.result = 'FAILURE'
                 throw e
-            } // finally {
-                // set the metrics we want
-                // ciMetrics.setMetricTag(jobMeasurement, 'package_name', env.fed_repo)
-                // ciMetrics.setMetricTag(jobMeasurement, 'build_result', currentBuild.result)
-                // ciMetrics.setMetricField(jobMeasurement, 'build_time', currentBuild.getDuration())
-            // }
+            }
         }
     }
 }

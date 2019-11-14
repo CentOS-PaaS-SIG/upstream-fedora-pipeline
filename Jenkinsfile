@@ -184,12 +184,14 @@ timestamps {
                             packagepipelineUtils.handlePipelineStep('stepName': env.currentStage, 'debug': true) {
 
                                 deleteDir()
-                                // Parse the CI_MESSAGE and inject it as a var
-                                parsedMsg = kojiMessage(message: env.CI_MESSAGE, ignoreErrors: true)
+
+                                parsedMsg = null
 
                                 if (!env.PROVIDED_KOJI_TASKID?.trim()) {
                                     env.artifact = 'dist-git-pr'
                                     env.artifactOld = 'pr'
+                                    // Parse the CI_MESSAGE and inject it as a var
+                                    parsedMsg = kojiMessage(message: env.CI_MESSAGE, ignoreErrors: true)
 
                                     // Set required env variables from msg
                                     env.fed_namespace = parsedMsg['pullrequest']['project']['namespace']
@@ -208,13 +210,7 @@ timestamps {
                                 } else {
                                     env.artifact = 'koji-build'
                                     env.artifactOld = 'build'
-                                    // Scratch build messages store things in info
-                                    packagepipelineUtils.setScratchVars(parsedMsg)
-                                    env.fed_repo = packagepipelineUtils.repoFromRequest(env.request_0)
-                                    branches = packagepipelineUtils.setBuildBranch(env.request_1)
-                                    env.branch = branches[0]
-                                    env.fed_branch = branches[1]
-                                    env.fed_namespace = 'rpms'
+                                    packagepipelineUtils.processBuildCIMessage()
                                 }
 
 
@@ -224,11 +220,11 @@ timestamps {
                                 packagepipelineUtils.prepareCredentials('fedora-keytab')
 
                                 // Gather some info about the node we are running on for diagnostics
-                                packagepipelineUtils.verifyPod(OPENSHIFT_NAMESPACE, env.NODE_NAME)
+                                contraUtils.verifyPod(OPENSHIFT_NAMESPACE, env.NODE_NAME)
 
                                 // Send message org.centos.prod.ci.<artifact>.test.running on fedmsg
                                 messageFields = packagepipelineUtils.setTestMessageFields("running", artifact, parsedMsg)
-                                packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                                contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
                             }
                         }
 
@@ -244,7 +240,7 @@ timestamps {
                                 messageFields = packagepipelineUtils.setMessageFields("package.running", artifactOld, parsedMsg)
 
                                 // Send message org.centos.prod.ci.pipeline.allpackages.package.running on fedmsg
-                                packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                                contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                                 // Prepare to send stage.complete message on failure
                                 env.messageStage = 'package.complete'
@@ -304,13 +300,13 @@ timestamps {
                             messageFields = packagepipelineUtils.setMessageFields("package.complete", artifactOld, parsedMsg)
 
                             // Send message org.centos.prod.ci.pipeline.allpackages.package.complete on fedmsg
-                            packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                            contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                             // Set our message topic, properties, and content
                             messageFields = packagepipelineUtils.setMessageFields("image.queued", artifactOld, parsedMsg)
 
                             // Send message org.centos.prod.ci.pipeline.allpackages.image.queued on fedmsg
-                            packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                            contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
                         }
 
                         env.currentStage = "cloud-image-compose"
@@ -322,7 +318,7 @@ timestamps {
                                 messageFields = packagepipelineUtils.setMessageFields("image.running", artifactOld, parsedMsg)
 
                                 // Send message org.centos.prod.ci.pipeline.allpackages.image.running on fedmsg
-                                packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                                contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                                 // Set stage specific vars
                                 stageVars = packagepipelineUtils.setStageEnvVars(env.currentStage)
@@ -340,7 +336,7 @@ timestamps {
                                 messageFields = packagepipelineUtils.setMessageFields("image.complete", artifactOld, parsedMsg)
 
                                 // Send message org.centos.prod.ci.pipeline.allpackages.image.complete on fedmsg
-                                packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                                contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                             }
                         }
@@ -370,7 +366,7 @@ timestamps {
                         env.currentStage = "package-tests"
                         stage(env.currentStage) {
                             // Only run this stage if tests exist
-                            if (!packagepipelineUtils.checkTests(env.fed_repo, env.fed_branch, 'classic', (artifact == 'dist-git-pr' ? env.fed_pr_id : null), env.fed_namespace)) {
+                            if (!contraUtils.checkTests(env.fed_repo, env.fed_branch, 'classic', (artifact == 'dist-git-pr' ? env.fed_pr_id : null), env.fed_namespace)) {
                                 packagepipelineUtils.skip(env.currentStage)
                             } else {
                                 packagepipelineUtils.handlePipelineStep(stepName: env.currentStage, debug: true) {
@@ -378,7 +374,7 @@ timestamps {
                                     messageFields = packagepipelineUtils.setMessageFields("package.test.functional.queued", artifactOld, parsedMsg)
 
                                     // Send message org.centos.prod.ci.pipeline.allpackages.package.test.functional.queued on fedmsg
-                                    packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                                    contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                                     // Set stage specific vars
                                     stageVars = packagepipelineUtils.setStageEnvVars(env.currentStage)
@@ -387,7 +383,7 @@ timestamps {
                                     messageFields = packagepipelineUtils.setMessageFields("package.test.functional.running", artifactOld, parsedMsg)
 
                                     // Send message org.centos.prod.ci.pipeline.allpackages.package.test.functional.running on fedmsg
-                                    packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                                    contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                                     // This can't be in setStageEnvVars because it depends on env.WORKSPACE
                                     stageVars['TEST_SUBJECTS'] = "${env.WORKSPACE}/images/test_subject.qcow2"
@@ -434,11 +430,11 @@ timestamps {
                                     messageFields = packagepipelineUtils.setMessageFields("package.test.functional.complete", artifactOld, parsedMsg)
 
                                     // Send message org.centos.prod.ci.pipeline.allpackages.package.test.functional.complete on fedmsg
-                                    packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                                    contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                                     // Send message org.centos.prod.ci.<artifact>.test.complete on fedmsg
                                     messageFields = packagepipelineUtils.setTestMessageFields("complete", artifact, parsedMsg)
-                                    packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                                    contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
 
                                 }
@@ -454,11 +450,11 @@ timestamps {
 
                         // Send message org.centos.prod.ci.pipeline.allpackages.<stage>.complete on fedmsg if stage failed
                         messageFields = packagepipelineUtils.setMessageFields(messageStage, artifactOld, parsedMsg)
-                        packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                        contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                         // Send message org.centos.prod.ci.<artifact>.test.error on fedmsg
                         messageFields = packagepipelineUtils.setTestMessageFields("error", artifact, parsedMsg)
-                        packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                        contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                         // Report the exception
                         echo "Error: Exception from " + env.currentStage + ":"
@@ -466,7 +462,7 @@ timestamps {
 
                     } finally {
                         currentBuild.result = buildResult
-                        packagepipelineUtils.getContainerLogsFromPod(OPENSHIFT_NAMESPACE, env.NODE_NAME)
+                        contraUtils.getContainerLogsFromPod(OPENSHIFT_NAMESPACE, env.NODE_NAME)
 
                         // Archive our artifacts
                         if (currentBuild.result == 'SUCCESS') {
@@ -479,7 +475,7 @@ timestamps {
                         messageFields = packagepipelineUtils.setMessageFields("complete", artifactOld, parsedMsg)
 
                         // Send message org.centos.prod.ci.pipeline.allpackages.complete on fedmsg
-                        packagepipelineUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                        contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                         // set the metrics we want
                         // def packageMeasurement = "${ciMetrics.prefix}_${env.fed_repo}"
