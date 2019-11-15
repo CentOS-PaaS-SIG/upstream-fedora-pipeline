@@ -142,7 +142,7 @@ def setTestMessageFields(String messageType, String artifact, Map parsedMsg) {
 
     if (artifact == "koji-build") {
         // Set variables that go in multiple closures
-        myId = env.task_id
+        myId = env.task_id.toInteger()
         myScratch = env.isScratch.toBoolean()
         if (!env.nvr) {
             kojiUrl = env.KOJI_URL ?: 'https://koji.fedoraproject.org'
