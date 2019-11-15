@@ -177,7 +177,7 @@ def setTestMessageFields(String messageType, String artifact, Map parsedMsg) {
         myIssuer = env.issuer
         myBranch = env.fed_branch
 
-        artifactParams = ["type": 'koji-build', id: myId, "component": myComponent, "issuer": myIssuer, "nvr": myNvr, "scratch": myScratch]
+        artifactParams = ["type": 'koji-build', "id": myId, "component": myComponent, "issuer": myIssuer, "nvr": myNvr, "scratch": myScratch]
         if (env.RPM_REQUEST_SOURCE) {
             artifactParams["source"] = env.RPM_REQUEST_SOURCE
         }
@@ -208,7 +208,11 @@ def setTestMessageFields(String messageType, String artifact, Map parsedMsg) {
             break
         case 'complete':
             if (artifact == "koji-build") {
-                myArtifactContent = msgBusArtifactContent(type: 'koji-build', id: myId, component: myComponent, issuer: myIssuer, nvr: myNvr, scratch: myScratch, source: env.RPM_REQUEST_SOURCE ?: "UNKNOWN", dependencies: env.BUILD_DEPS ? env.BUILD_DEPS.split() : [])
+                artifactParams = [type: 'koji-build', id: myId, component: myComponent, issuer: myIssuer, nvr: myNvr, scratch: myScratch, dependencies: env.BUILD_DEPS ? env.BUILD_DEPS.split() : []]
+                if (env.RPM_REQUEST_SOURCE) {
+                    artifactParams["source"] = env.RPM_REQUEST_SOURCE
+                }
+                myArtifactContent = msgBusArtifactContent(artifactParams)
             }
             if (artifact == "dist-git-pr") {
                 myArtifactContent = msgBusArtifactContent(type: 'pull-request', id: myId, issuer: myIssuer, repository: myRepository, commit_hash: myCommitHash, comment_id: myCommentId, uid: myUid)
@@ -218,7 +222,11 @@ def setTestMessageFields(String messageType, String artifact, Map parsedMsg) {
             break
         case 'error':
             if (artifact == "koji-build") {
-                myArtifactContent = msgBusArtifactContent(type: 'koji-build', id: myId, component: myComponent, issuer: myIssuer, nvr: myNvr, scratch: myScratch, source: env.RPM_REQUEST_SOURCE ?: "UNKNOWN", dependencies: env.BUILD_DEPS ? env.BUILD_DEPS.split() : [])
+                artifactParams = [type: 'koji-build', id: myId, component: myComponent, issuer: myIssuer, nvr: myNvr, scratch: myScratch, dependencies: env.BUILD_DEPS ? env.BUILD_DEPS.split() : []]
+                if (env.RPM_REQUEST_SOURCE) {
+                    artifactParams["source"] = env.RPM_REQUEST_SOURCE
+                }
+                myArtifactContent = msgBusArtifactContent(artifactParams)
             }
             if (artifact == "dist-git-pr") {
                 myArtifactContent = msgBusArtifactContent(type: 'pull-request', id: myId, issuer: myIssuer, repository: myRepository, commit_hash: myCommitHash, comment_id: myCommentId, uid: myUid)
