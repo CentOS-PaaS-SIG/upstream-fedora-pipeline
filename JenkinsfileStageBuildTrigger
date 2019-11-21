@@ -26,9 +26,9 @@ timestamps {
                     buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '500', daysToKeepStr: '', numToKeepStr: '500')),
                     parameters(
                             [
-                                    string(description: 'fedora-fedmsg', defaultValue: '{}', name: 'CI_MESSAGE'),
+                                    string(description: 'CI message', defaultValue: '{}', name: 'CI_MESSAGE'),
                                     string(name: 'MSG_PROVIDER',
-                                           defaultValue: 'fedora-fedmsg-stage',
+                                           defaultValue: 'FedoraMessagingStage',
                                            description: 'Main provider to send messages on'),
                                     string(name: 'KOJI_URL',
                                            defaultValue: 'https://koji.stg.fedoraproject.org',

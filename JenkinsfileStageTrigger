@@ -17,7 +17,7 @@ env.ghprbGhRepository = env.ghprbGhRepository ?: 'CentOS-PaaS-SIG/upstream-fedor
 env.ghprbActualCommit = env.ghprbActualCommit ?: 'master'
 
 // Fedora Fedmsg Message Provider for stage
-MSG_PROVIDER = "fedora-fedmsg-stage"
+MSG_PROVIDER = "FedoraMessagingStage"
 
 // IRC properties
 IRC_NICK = "contra-bot"

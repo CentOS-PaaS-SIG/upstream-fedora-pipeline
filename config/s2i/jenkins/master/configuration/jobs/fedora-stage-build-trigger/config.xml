@@ -35,7 +35,7 @@
             <parameterDefinitions>
                 <hudson.model.StringParameterDefinition>
                     <name>CI_MESSAGE</name>
-                    <description>fedora-fedmsg</description>
+                    <description>CI message</description>
                     <defaultValue>{}</defaultValue>
                     <trim>false</trim>
                 </hudson.model.StringParameterDefinition>

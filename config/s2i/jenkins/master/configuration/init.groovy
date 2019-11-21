@@ -33,5 +33,13 @@ logger.info("Setup fedora-fedmsg-devel Messaging Provider")
 FedMsgMessagingProvider fedmsgDevel = new FedMsgMessagingProvider("fedora-fedmsg-devel", "tcp://fedmsg-relay.continuous-infra.svc:4001", "tcp://fedmsg-relay.continuous-infra.svc:2003", "org.fedoraproject");
 GlobalCIConfiguration.get().addMessageProvider(fedmsgDevel)
 
+logger.info("Setup FedoraMessaging Provider")
+RabbitMQMessagingProvider fedoraMessaging = new RabbitMQMessagingProvider("FedoraMessaging", "rabbitmq.fedoraproject.org", "5671", "/pubsub", "org.centos.ci", "amq.topic", "centos-ci");
+GlobalCIConfiguration.get().addMessageProvider(fedoraMessaging)
+
+logger.info("Setup FedoraMessagingStage Provider")
+RabbitMQMessagingProvider fedoraMessagingStage = new RabbitMQMessagingProvider("FedoraMessagingStage", "rabbitmq.stg.fedoraproject.org", "5671", "/pubsub", "org.centos.ci", "amq.topic", "centos-ci");
+GlobalCIConfiguration.get().addMessageProvider(fedoraMessagingStage)
+
 logger.info("Setting Time Zone to be EST")
 System.setProperty('org.apache.commons.jelly.tags.fmt.timeZone', 'America/New_York')
