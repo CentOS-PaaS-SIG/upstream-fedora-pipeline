@@ -321,15 +321,15 @@ def setDefaultEnvVars(Map envMap=null){
 
     if (!env.MSG_PROVIDER || env.MSG_PROVIDER == '') {
         if (env.ghprbActualCommit != null && (env.ghprbActualCommit != "master" || env.ghprbPullId != "")) {
-            env.MSG_PROVIDER = "fedora-fedmsg-stage"
+            env.MSG_PROVIDER = "FedoraMessagingStage"
         } else {
-            env.MSG_PROVIDER = "fedora-fedmsg"
+            env.MSG_PROVIDER = "FedoraMessaging"
         }
     }
-    if (env.MSG_PROVIDER == "fedora-fedmsg-stage" ){
+    if (env.MSG_PROVIDER == "FedoraMessagingStage" || env.MSG_PROVIDER == "fedora-fedmsg-stage"){
         env.MAIN_TOPIC = env.MAIN_TOPIC ?: 'org.centos.stage'
         env.dataGrepperUrl = 'https://apps.stg.fedoraproject.org/datagrepper'
-    } else if (env.MSG_PROVIDER == "fedora-fedmsg" ){
+    } else if (env.MSG_PROVIDER == "FedoraMessaging" || env.MSG_PROVIDER == "fedora-fedmsg"){
         env.MAIN_TOPIC = env.MAIN_TOPIC ?: 'org.centos.prod'
         env.dataGrepperUrl = 'https://apps.fedoraproject.org/datagrepper'
     } else {
