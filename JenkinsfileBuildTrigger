@@ -44,6 +44,7 @@ timestamps {
 
     def TRIGGER_RETRY_COUNT = 3
     def stepName = null
+    def validRelease = false
 
     node('master') {
 
@@ -59,10 +60,14 @@ timestamps {
                         parsedMsg = parseText(env.CI_MESSAGE)
                         packagepipelineUtils.setDefaultEnvVars()
                         env.fed_namespace = 'rpms' // used in setMessageFields
-                        targetBranch = false
                         env.fed_branch = parsedMsg['artifact']['release']
                         env.branch = parsedMsg['artifact']['release']
                         env.isScratch = false
+
+                        if (env.branch =~ /f([0-9]+)/) {
+                            validRelease = true
+                        }
+
                         // query bodhi to check if the release is rawhide
                         def rawhide_release = parseText(
                             sh(script: "curl --retry 10 'https://bodhi.fedoraproject.org/releases/?state=pending'", returnStdout: true)
@@ -86,40 +91,46 @@ timestamps {
                 stage(stepName) {
                     packagepipelineUtils.handlePipelineStep(stepName: stepName, debug: true) {
                         env.currentStage = stepName
-                        def builds = parsedMsg['artifact']['builds']
-                        for (newbuild in builds) {
-                            env.fed_repo = newbuild['component']
-                            env.nvr = newbuild['nvr']
-                            env.build_id = newbuild['id']
-                            env.issuer = newbuild['issuer']
+                        if (validRelease) {
+                            def builds = parsedMsg['artifact']['builds']
+                            for (newbuild in builds) {
+                                env.fed_repo = newbuild['component']
+                                env.nvr = newbuild['nvr']
+                                env.build_id = newbuild['id']
+                                env.issuer = newbuild['issuer']
 
-                            // workaround to get task id until bodhi version sets it
-                            if (!newbuild.containsKey('task_id')) {
-                                sh("curl --retry 10 'https://koji.fedoraproject.org/koji/buildinfo?buildID=${env.build_id}' > buildinfo.txt")
-                                env.task_id = sh(script: "cat buildinfo.txt | perl -lne 'print \$1 if /.*taskID=(\\d+)/'", returnStdout: true)
-                                env.task_id = env.task_id.toInteger()
+                                // workaround to get task id until bodhi version sets it
+                                if (!newbuild.containsKey('task_id')) {
+                                    sh("curl --retry 10 'https://koji.fedoraproject.org/koji/buildinfo?buildID=${env.build_id}' > buildinfo.txt")
+                                    env.task_id = sh(script: "cat buildinfo.txt | perl -lne 'print \$1 if /.*taskID=(\\d+)/'", returnStdout: true)
+                                    env.task_id = env.task_id.toInteger()
+                                }
+
+                                testsExist = contraUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')
+                                if (testsExist) {
+                                    currentBuild.displayName = "BUILD#: ${env.BUILD_NUMBER} - Release: ${env.branch} - Package: ${env.fed_repo}"
+
+                                    messageFields = packagepipelineUtils.setMessageFields('package.queued', 'build', parsedMsg)
+                                    contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                                    // Send message org.centos.prod.ci.koji-build.test.queued on fedmsg
+                                    messageFields = packagepipelineUtils.setTestMessageFields("queued", "koji-build", parsedMsg)
+                                    contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+
+                                    retry(TRIGGER_RETRY_COUNT) {
+                                            build job: "fedora-${env.branch}-build-pipeline",
+                                                    parameters: [string(name: 'PROVIDED_KOJI_TASKID', value: env.task_id),
+                                                                string(name: 'CI_MESSAGE', value: env.CI_MESSAGE),
+                                                                string(name: 'pipelineId', value: UUID.randomUUID().toString())],
+                                                    wait: false
+                                        }
+                                } else {
+                                    currentBuild.displayName = "Build#: ${env.BUILD_NUMBER} - Release: ${env.branch} - Package: ${env.fed_repo} - Skipped"
+                                }
+
                             }
-
-                            testsExist = contraUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')
-                            if (testsExist) {
-                                currentBuild.displayName = "BUILD#: ${env.BUILD_NUMBER} - Release: ${env.branch} - Package: ${env.fed_repo}"
-
-                                messageFields = packagepipelineUtils.setMessageFields('package.queued', 'build', parsedMsg)
-                                contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
-                                // Send message org.centos.prod.ci.koji-build.test.queued on fedmsg
-                                messageFields = packagepipelineUtils.setTestMessageFields("queued", "koji-build", parsedMsg)
-                                contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
-
-                                retry(TRIGGER_RETRY_COUNT) {
-                                        build job: "fedora-${env.branch}-build-pipeline",
-                                                parameters: [string(name: 'PROVIDED_KOJI_TASKID', value: env.task_id),
-                                                             string(name: 'CI_MESSAGE', value: env.CI_MESSAGE),
-                                                             string(name: 'pipelineId', value: UUID.randomUUID().toString())],
-                                                wait: false
-                                    }
-                            } else {
-                                currentBuild.displayName = "Build#: ${env.BUILD_NUMBER} - Release: ${env.branch} - Package: ${env.fed_repo} - Skipped"
-                            }
+                        } else {
+                            echo "INFO: Skipping unsupported release ${env.branch}"
+                            currentBuild.displayName = "Build#: ${env.BUILD_NUMBER} - Release: ${env.branch} - Package: ${env.fed_repo} - Skipped"
                         }
                     }
                 }
