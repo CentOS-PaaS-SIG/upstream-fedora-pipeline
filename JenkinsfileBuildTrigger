@@ -104,6 +104,8 @@ timestamps {
                                     sh("curl --retry 10 'https://koji.fedoraproject.org/koji/buildinfo?buildID=${env.build_id}' > buildinfo.txt")
                                     env.task_id = sh(script: "cat buildinfo.txt | perl -lne 'print \$1 if /.*taskID=(\\d+)/'", returnStdout: true)
                                     env.task_id = env.task_id.toInteger()
+                                } else {
+                                    env.task_id = newbuild['task_id']
                                 }
 
                                 testsExist = contraUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')
