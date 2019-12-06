@@ -109,6 +109,9 @@ timestamps {
                                 env.branch = 'rawhide'
                             }
                         }
+                        if (env.branch != 'rawhide') {
+                            error("FAIL: unsupported release ${env.branch}")
+                        }
                     }
 
                 }
@@ -123,15 +126,13 @@ timestamps {
                             env.nvr = newbuild['nvr']
                             env.build_id = newbuild['id']
                             env.issuer = newbuild['issuer']
+                            env.task_id = newbuild['task_id']
 
-                            // workaround to get task id until bodhi version sets it
-                            if (!newbuild.containsKey('task_id')) {
-                                def koji_url = env.KOJI_URL ?: 'https://koji.fedoraproject.org'
-                                sh("curl --retry 10 '${koji_url}/koji/buildinfo?buildID=${newbuild['id']}' > buildinfo.txt")
-                                env.task_id = sh(script: "cat buildinfo.txt | perl -lne 'print \$1 if /.*taskID=(\\d+)/'", returnStdout: true)
-                                env.task_id = env.task_id.toInteger()
-                            } else {
-                                env.task_id = newbuild['task_id']
+                            env.ADDITIONAL_TASK_IDS = ''
+                            for (tmpbuild in builds) {
+                                if (tmpbuild['task_id'] != newbuild['task_id']) {
+                                     env.ADDITIONAL_TASK_IDS += "${tmpbuild['id']} "
+                                }
                             }
 
                             testsExist = contraUtils.checkTests(env.fed_repo, env.fed_branch, 'classic')
@@ -148,6 +149,7 @@ timestamps {
 
                                     build job: "fedora-rawhide-stage-build-pipeline",
                                             parameters: [string(name: 'PROVIDED_KOJI_TASKID', value: env.task_id),
+                                                        string(name: 'ADDITIONAL_TASK_IDS', value: env.ADDITIONAL_TASK_IDS),
                                                         string(name: 'MSG_PROVIDER', value: env.MSG_PROVIDER),
                                                         string(name: 'KOJI_URL', value: env.KOJI_URL),
                                                         string(name: 'KOJI_PARAMS', value: env.KOJI_PARAMS),

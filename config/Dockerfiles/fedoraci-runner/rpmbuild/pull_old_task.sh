@@ -50,6 +50,27 @@ PACKAGE=$(rpm --queryformat "%{NAME}\n" -qp *.src.rpm)
 NVR=$(rpm --queryformat "%{NAME}-%{VERSION}-%{RELEASE}\n" -qp *.src.rpm)
 popd
 
+# check if need to create extra repo for group build
+if [ -n "${ADDITIONAL_TASK_IDS:-}" ]; then
+    mkdir ${CURRENTDIR}/additional_tasks_repo
+    pushd ${CURRENTDIR}/additional_tasks_repo
+    for additional_taskid in ${ADDITIONAL_TASK_IDS}; do
+        # Download koji build so we can archive it
+        for i in {1..5}; do
+            koji download-build --noprogress --arch=x86_64 --arch=src --arch=noarch --debuginfo --task-id ${additional_taskid} || koji download-task --arch=x86_64 --arch=src --arch=noarch --logs ${additional_taskid} && break
+            echo "koji additional task download failed, attempt: $i/5"
+            if [[ $i -lt 5 ]]; then
+                sleep 10
+            else
+                echo "koji additional task download failed!"
+                exit 1
+            fi
+        done
+    done
+    createrepo .
+    popd
+fi
+
 RPMDIR=${CURRENTDIR}/${PACKAGE}_repo
 rm -rf ${RPMDIR}
 mkdir -p ${RPMDIR}
