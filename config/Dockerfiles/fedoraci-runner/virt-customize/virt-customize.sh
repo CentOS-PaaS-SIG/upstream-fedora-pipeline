@@ -67,15 +67,18 @@ if [ "${namespace}" != "tests" ]; then
 fi
 
 RPM_LIST=""
-# Add custom rpms to image
-cat <<EOF > ${CURRENTDIR}/test-${package}.repo
-[test-${package}]
-name=test-${package}
-baseurl=file:///etc/yum.repos.d/${package}
+function create_repo_file {
+cat <<EOF > ${CURRENTDIR}/test-${1}.repo
+[test-${1}]
+name=test-${1}
+baseurl=file:///etc/yum.repos.d/${1}
 priority=0
 enabled=1
 gpgcheck=0
 EOF
+}
+
+create_repo_file ${package}
 
 gpgcheck=1
 if [ "${branch}" != "rawhide" ]; then
@@ -103,6 +106,12 @@ virt_copy_files="${CURRENTDIR}/testrepo/${package} ${CURRENTDIR}/test-${package}
 # If virt-customize.sh is running as part of PR on tests namespace there is no package built, therefore /testrepo/${package} does not exist
 if [ "${namespace}" == "tests" ]; then
     virt_copy_files="${CURRENTDIR}/koji-latest.repo /etc/yum.repos.d/"
+fi
+
+if [ -e ${CURRENTDIR}/additional_tasks_repo ]; then
+    create_repo_file additional_tasks_repo
+
+    virt_copy_files="${CURRENTDIR}/additional_tasks_repo ${CURRENTDIR}/test-additional_tasks_repo.repo ${virt_copy_files}"
 fi
 
 virt-copy-in -a ${DOWNLOADED_IMAGE_LOCATION} ${virt_copy_files} /etc/yum.repos.d/

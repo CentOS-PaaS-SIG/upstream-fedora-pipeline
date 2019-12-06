@@ -16,6 +16,8 @@ timestamps {
     env.isScratch = true
     env.PAGURE_URL = env.PAGURE_URL ?: 'https://src.fedoraproject.org'
 
+    env.ADDITIONAL_TASK_IDS = env.ADDITIONAL_TASK_IDS ?: ''
+
     // Needed for podTemplate()
     env.SLAVE_TAG = env.SLAVE_TAG ?: 'stable'
     env.FEDORACI_RUNNER_TAG = env.FEDORACI_RUNNER_TAG ?: 'stable'
@@ -59,6 +61,9 @@ timestamps {
                                     string(name: 'PROVIDED_KOJI_TASKID',
                                            defaultValue: '',
                                            description: 'Give an integer only task id to use those artifacts and bypass the rpm build stage (example 123456)'),
+                                    string(name: 'ADDITIONAL_TASK_IDS',
+                                           defaultValue: '',
+                                           description: 'Extra koji task IDs to be enabled as repo (space separated)'),
                                     string(name: 'ghprbActualCommit',
                                            defaultValue: 'master',
                                            description: 'The GitHub pull request commit'),
