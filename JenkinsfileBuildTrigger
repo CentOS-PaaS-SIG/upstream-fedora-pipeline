@@ -104,7 +104,7 @@ timestamps {
                                 env.ADDITIONAL_TASK_IDS = ''
                                 for (tmpbuild in builds) {
                                     if (tmpbuild['task_id'] != newbuild['task_id']) {
-                                         env.ADDITIONAL_TASK_IDS += "${tmpbuild['id']} "
+                                         env.ADDITIONAL_TASK_IDS += "${tmpbuild['task_id']} "
                                     }
                                 }
 
