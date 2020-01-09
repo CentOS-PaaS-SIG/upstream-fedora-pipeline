@@ -134,6 +134,8 @@ def setTestMessageFields(String messageType, String artifact, Map parsedMsg) {
     }
     myResult = myResult.toLowerCase()
 
+    env.PAGURE_URL = env.PAGURE_URL ?: 'https://src.fedoraproject.org'
+
     // Create common message body content
     myContactContent = msgBusContactContent(name: "fedora-ci", team: "fedora-ci", irc: "#fedora-ci", email: "ci@lists.fedoraproject.org", docs: 'https://pagure.io/standard-test-roles')
     myStageContent = msgBusStageContent(name: env.currentStage)
