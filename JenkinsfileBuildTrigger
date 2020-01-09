@@ -64,7 +64,7 @@ timestamps {
                         env.branch = parsedMsg['artifact']['release']
                         env.isScratch = false
 
-                        if (env.branch =~ /f([0-9]+)/) {
+                        if (env.branch =~ /f([0-9]+)$/) {
                             validRelease = true
                         }
 
