@@ -167,6 +167,50 @@ timestamps {
             // and tests can take up to 4 hours to run.
             timeout(time: 8, unit: 'HOURS') {
 
+                deleteDir()
+
+                parsedMsg = null
+                hasTests = false
+
+                if (!env.PROVIDED_KOJI_TASKID?.trim()) {
+                    env.artifact = 'dist-git-pr'
+                    env.artifactOld = 'pr'
+                    // Parse the CI_MESSAGE and inject it as a var
+                    parsedMsg = kojiMessage(message: env.CI_MESSAGE, ignoreErrors: true)
+
+                    // Set required env variables from msg
+                    env.fed_namespace = parsedMsg['pullrequest']['project']['namespace']
+                    env.fed_repo = parsedMsg['pullrequest']['project']['name']
+                    env.fed_branch = parsedMsg['pullrequest']['branch']
+                    env.fed_pr_id = parsedMsg['pullrequest']['id']
+                    env.branch = (env.fed_branch == 'master') ? 'rawhide' : env.fed_branch
+
+                    // Decorate our build
+                    String buildName = "PR-${env.fed_namespace}:${env.fed_pr_id}:${env.fed_repo}:${env.fed_branch}"
+                    // Once we have stage job running lets make build description
+                    // a hyperlink to PR like
+                    // <a href="https://src.fedoraproject.org/rpms/${env.fed_repo}/pull-request/${env.fed_pr_id}"> PR #${env.fed_pr_id} ${env.fed_repo}</a>
+                    currentBuild.displayName = buildName
+                    currentBuild.description = buildName
+                    hasTests = contraUtils.checkTests(env.fed_repo, env.fed_branch, 'classic', env.fed_pr_id, env.fed_namespace)
+                    if (!hasTests) {
+                        echo "Info: there is no test for PR: ${env.fed_pr_id} on ${env.fed_repo}, exiting..."
+                        return
+                    }
+                } else {
+                    env.artifact = 'koji-build'
+                    env.artifactOld = 'build'
+                    packagepipelineUtils.processBuildCIMessage()
+                    hasTests = contraUtils.checkTests(env.fed_repo, env.fed_branch, 'classic', null, env.fed_namespace)
+                    if (!hasTests) {
+                        String buildName = "SKIP: ${env.task_id} (${env.fed_repo} - ${env.branch})"
+                        currentBuild.displayName = buildName
+                        currentBuild.description = buildName
+                        echo "Info: there is no test for ${env.fed_repo} on ${env.fed_branch}, exiting..."
+                        return
+                    }
+                }
+
                 env.currentStage = ""
 
                 packagepipelineUtils.ciPipeline {
@@ -187,37 +231,6 @@ timestamps {
                         stage(env.currentStage) {
 
                             packagepipelineUtils.handlePipelineStep('stepName': env.currentStage, 'debug': true) {
-
-                                deleteDir()
-
-                                parsedMsg = null
-
-                                if (!env.PROVIDED_KOJI_TASKID?.trim()) {
-                                    env.artifact = 'dist-git-pr'
-                                    env.artifactOld = 'pr'
-                                    // Parse the CI_MESSAGE and inject it as a var
-                                    parsedMsg = kojiMessage(message: env.CI_MESSAGE, ignoreErrors: true)
-
-                                    // Set required env variables from msg
-                                    env.fed_namespace = parsedMsg['pullrequest']['project']['namespace']
-                                    env.fed_repo = parsedMsg['pullrequest']['project']['name']
-                                    env.fed_branch = parsedMsg['pullrequest']['branch']
-                                    env.fed_pr_id = parsedMsg['pullrequest']['id']
-                                    env.branch = (env.fed_branch == 'master') ? 'rawhide' : env.fed_branch
-
-                                    // Decorate our build
-                                    String buildName = "PR-${env.fed_namespace}:${env.fed_pr_id}:${env.fed_repo}:${env.fed_branch}"
-                                    // Once we have stage job running lets make build description
-                                    // a hyperlink to PR like
-                                    // <a href="https://src.fedoraproject.org/rpms/${env.fed_repo}/pull-request/${env.fed_pr_id}"> PR #${env.fed_pr_id} ${env.fed_repo}</a>
-                                    currentBuild.displayName = buildName
-                                    currentBuild.description = buildName
-                                } else {
-                                    env.artifact = 'koji-build'
-                                    env.artifactOld = 'build'
-                                    packagepipelineUtils.processBuildCIMessage()
-                                }
-
 
                                 packagepipelineUtils.setDefaultEnvVars()
 
@@ -371,7 +384,7 @@ timestamps {
                         env.currentStage = "package-tests"
                         stage(env.currentStage) {
                             // Only run this stage if tests exist
-                            if (!contraUtils.checkTests(env.fed_repo, env.fed_branch, 'classic', (artifact == 'dist-git-pr' ? env.fed_pr_id : null), env.fed_namespace)) {
+                            if (!hasTests) {
                                 packagepipelineUtils.skip(env.currentStage)
                             } else {
                                 packagepipelineUtils.handlePipelineStep(stepName: env.currentStage, debug: true) {
