@@ -116,6 +116,32 @@ fi
 
 virt-copy-in -a ${DOWNLOADED_IMAGE_LOCATION} ${virt_copy_files} /etc/yum.repos.d/
 
+# Get a list of conflicts from packages already installed in the image
+for i in {1..5}; do
+    virt-customize -a ${DOWNLOADED_IMAGE_LOCATION} --run-command 'dnf repoquery -q --conflict `rpm -qa --qf "%{NAME} "` > /tmp/conflicts.txt' && break
+    if [[ $i -lt 5 ]]; then
+        echo "failed to get conflict of installed packages: $i/5"
+        sleep 10
+    else
+        echo "FAIL: failed to get conflict of installed packages"
+        exit 1
+    fi
+done
+INSTALLED_CONFLICT_CAPABILITIES=$(virt-cat -a ${DOWNLOADED_IMAGE_LOCATION} /tmp/conflicts.txt)
+if [ ! -z "${INSTALLED_CONFLICT_CAPABILITIES}" ] ; then
+    SAVEIFS=$IFS
+    IFS=$'\n'
+    installed_conflicts=""
+    # from the possible conflicts get a list of packages would cause conflict
+    for installed_conflict_cap in ${INSTALLED_CONFLICT_CAPABILITIES}; do
+        installed_conflict=$(dnf repoquery -q --qf "%{NAME}" --disablerepo=\* --enablerepo=${package} --repofrompath=${package},${rpm_repo} --whatprovides "${installed_conflict_cap}")
+        if [ ! -z "${installed_conflict}" ]; then
+            installed_conflicts="${installed_conflicts} ${installed_conflict}"
+        fi
+    done
+    IFS=$SAVEIFS
+fi
+
 # Do install any package if it is tests namespace
 if [ "${namespace}" != "tests" ]; then
     for pkg in $(repoquery -q --disablerepo=\* --enablerepo=${package} --repofrompath=${package},${rpm_repo} --all --qf="%{ARCH}:%{NAME}" | sed -e "/^src:/d;/-debug\(info\|source\)\$/d;s/.\+://" | sort -u) ; do
@@ -134,13 +160,28 @@ if [ "${namespace}" != "tests" ]; then
                     continue
                 fi
             done
-            if [ ${found_conflict} ]; then
+            if [ ${found_conflict} -eq 1 ]; then
                 echo "INFO: will not install $pkg as it conflicts with $conflict."
                 continue
             fi
         fi
+        for conflict in ${installed_conflicts}; do
+            if [ "${conflict}" == "$pkg" ]; then
+                # this pkg conflicts with a package already installed
+                found_conflict=1
+                continue
+            fi
+        done
+        if [ ${found_conflict} -eq 1 ]; then
+            echo "INFO: will not install $pkg as it conflicts with installed package."
+            continue
+        fi
         RPM_LIST="${RPM_LIST} ${pkg}"
     done
+    if [ -z "${RPM_LIST}" ]; then
+        echo "FAIL: Failure couldn't find any rpm to install"
+        exit 1
+    fi
     if ! virt-customize -v --selinux-relabel --memsize 4096 -a ${DOWNLOADED_IMAGE_LOCATION} --run-command "dnf install -y --best --allowerasing --nogpgcheck ${RPM_LIST} && dnf clean all" ; then
         echo "failure installing rpms"
         exit 1
