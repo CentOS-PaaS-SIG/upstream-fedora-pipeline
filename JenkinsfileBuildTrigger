@@ -84,7 +84,7 @@ timestamps {
                             if (!(release['branch'] =~ /f([0-9]+)$/)) {
                                 continue
                             }
-                            pending_releases.add(release)
+                            pending_releases.add(release['branch'])
                         }
                         if (env.fed_branch == pending_releases.max()) {
                             env.fed_branch = 'master'
