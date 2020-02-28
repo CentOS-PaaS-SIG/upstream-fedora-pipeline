@@ -103,11 +103,20 @@ timestamps {
                         if (!rawhide_release.containsKey('releases')) {
                             error("FAIL: Could not query bodhi")
                         }
+                        // Rawhide is the most recent release
+                        // Could be there is also some recent branched, but not relased
+                        // with pending status, but those should already have their own pipeline and compose...
+                        def pending_releases = []
                         for (release in rawhide_release['releases']) {
-                            if (env.fed_branch == release['branch']) {
-                                env.fed_branch = 'master'
-                                env.branch = 'rawhide'
+                            //skip module, container...
+                            if (!(release['branch'] =~ /f([0-9]+)$/)) {
+                                continue
                             }
+                            pending_releases.add(release)
+                        }
+                        if (env.fed_branch == pending_releases.max()) {
+                            env.fed_branch = 'master'
+                            env.branch = 'rawhide'
                         }
                         if (env.branch != 'rawhide') {
                             error("FAIL: unsupported release ${env.branch}")
