@@ -16,6 +16,7 @@ RUN for i in {1..5} ; do dnf -y install \
         fedpkg \
         file \
         findutils \
+        fonts-rpm-macros \
         git \
         koji \
         krb5-workstation \
