@@ -100,6 +100,7 @@ function sync_artifacts {
     # Run a playbook to get logs from the VM
     timeout 10m ansible-playbook --inventory=$PATH_PIPELINE_INVENTORY $PYTHON_INTERPRETER \
          /tmp/sync-artifacts.yml || true
+    merge_results ${TEST_ARTIFACTS}/results.yml.prev ${TEST_ARTIFACTS}/results.yml || true
 }
 
 # This will introduce a problem with concurrency as it has no locks
@@ -175,6 +176,39 @@ if [[ `ls -1 tests*.yml 2>/dev/null | wc -l` == 0 ]]; then
     exit 1
 fi
 
+# Merge two results.yml files.
+#
+# This function merges previous results.yml into current results.yml.
+# If the two results.yml files are the same, it does nothing.
+#
+# Arguments:
+# - path to the previous results.yml file (e.g.: ${TEST_ARTIFACTS}/results.yml.prev)
+# - path to the current results.yml file
+function merge_results {
+
+    local old_results_path="${1}"
+    local new_results_path="${2}"
+
+    if [ ! -f "${old_results_path}" ] || [ ! -f "${new_results_path}" ]; then
+        # nothing to merge if the files don't exist
+        return
+    fi
+
+    set +e
+    diff -q "${old_results_path}" "${new_results_path}" >/dev/null 2>&1
+    ret=$?
+    set -e
+    if [ ${ret} -eq 0 ]; then
+        return
+    elif [ ${ret} -eq 2 ]; then
+        echo "*** diff(1) read error" >&2
+        exit 1
+    fi
+
+    sed '/^[ \t]*results:[ \t]*$/d' "${old_results_path}" >> "${new_results_path}"
+}
+
+
 # Invoke each playbook according to the specification
 for playbook in tests*.yml; do
 	if [ -f ${playbook} ]; then
@@ -187,6 +221,12 @@ for playbook in tests*.yml; do
         provision_with_retry
         ANSIBLE_STDOUT_CALLBACK=yaml timeout 4h ansible-playbook -v --inventory=pipeline_inventory.yaml $PYTHON_INTERPRETER \
             --tags ${TAG} ${playbook} $@ | tee ${TEST_ARTIFACTS}/${playbook}-run.txt
+
+        # if there are multiple playbooks, each new invocation would overwrite
+        # the previous results.yml. therefore we merge the new results
+        # with previous results here.
+        merge_results ${TEST_ARTIFACTS}/results.yml.prev ${TEST_ARTIFACTS}/results.yml
+        cp ${TEST_ARTIFACTS}/results.yml ${TEST_ARTIFACTS}/results.yml.prev
 	fi
 done
 popd
