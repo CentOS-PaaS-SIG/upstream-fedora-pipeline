@@ -1,6 +1,8 @@
 #!/bin/bash
 set -xeo pipefail
 
+PATH=/bin:/usr/bin
+
 CURRENTDIR=$(pwd)
 if [ ${CURRENTDIR} == "/" ] ; then
     cd /home
