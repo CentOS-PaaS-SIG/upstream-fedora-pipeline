@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/bin/sh
+
+PATH=/bin:/usr/bin
 
 # set to 1 to enable debugging
 DEBUG=0
@@ -10,37 +12,46 @@ project="continuous-infra"
 templates="fedoraci-runner/fedoraci-runner-buildconfig-template.yml \
 jenkins/jenkins-fedoraci-slave-buildconfig-template.yaml"
 
-function logerror {
-  echo "Error: $1"
+logerror() {
+  echo "Error: $1" >&2
   exit 1
 }
 
-function logwarning {
-  echo "Warning: $1"
+logwarning() {
+  echo "Warning: $1" >&2
 }
 
-function logdebug {
-  if [ ${DEBUG} -eq 1 ] ; then
-    echo "DEBUG: $1"
+logdebug() {
+  if [ "${DEBUG}" = "1" ] ; then
+    echo "DEBUG: $1" >&2
   fi
 }
 
-function loginfo {
+loginfo() {
   echo "$1"
 }
 
-function cleanup {
-  rm -rf ${ci_pipeline_location}
+cleanup() {
+  [ -z "${ci_pipeline_location:=}" ] || rm -rf "${ci_pipeline_location}"
 }
 
-function verifyEnv {
+verifyEnv() {
   ## jq
-  command -v jq >/dev/null 2>&1 || { echo "Require jq but it's not installed.  Aborting." >&2; exit 1; }
+  jq --help >/dev/null 2>&1
+  if [ $? -eq 127 ]; then
+    echo "Require jq but it's not installed.  Aborting." >&2
+    exit 1
+  fi
+
   ## oc
-  command -v oc >/dev/null 2>&1 || { echo "Require oc but it's not installed.  Aborting." >&2; exit 1; }
+  oc --help >/dev/null 2>&1
+  if [ $? -eq 127 ]; then
+    echo "Require oc but it's not installed.  Aborting." >&2
+    exit 1
+  fi
 }
 
-function processTemplate {
+processTemplate() {
     templateFile="${1}"
     loginfo "* Processing ${templateFile}..."
     templateName=$(oc process -f "${templateFile}" | jq '.items[1].metadata.labels.template' | sed 's/"//g')
@@ -50,9 +61,7 @@ function processTemplate {
     buildConfigName=$(oc process -f "${templateFile}" | jq '.items[1].metadata.name' | sed 's/"//g')
     logdebug "  - Build Config name is ${buildConfigName}"
 
-    oc get template "${templateName}" > /dev/null 2>&1
-
-    if [ $? -ne 0 ] ; then
+    if ! oc get template "${templateName}" > /dev/null 2>&1 ; then
         loginfo "    >> Creating Build Config Template ${templateName}"
         oc create -f "${templateFile}" > /dev/null 2>&1 || { echo "Failed to create build config! Aborting." >&2; exit 1; }
     else
@@ -61,21 +70,19 @@ function processTemplate {
     fi
 
     imageExists=0
-    oc get imagestream "${imageStreamName}" > /dev/null 2>&1
-    if [ $? -eq 0 ] ; then
+    if oc get imagestream "${imageStreamName}" > /dev/null 2>&1 ; then
         logdebug "    Image Stream ${imageStreamName} already exists"
         imageExists=1
     fi
     buildConfigExists=0
-    oc get buildconfig "${buildConfigName}" > /dev/null 2>&1
-    if [ $? -eq 0 ] ; then
+    if oc get buildconfig "${buildConfigName}" > /dev/null 2>&1 ; then
         logdebug "    Build Config ${buildConfigName} already exists"
         buildConfigExists=1
     fi
 
-    if [[ ${imageExists} -eq 0 ]] && [[ ${buildConfigExists} -eq 0 ]] ; then
+    if [ ${imageExists} -eq 0 ] && [ ${buildConfigExists} -eq 0 ] ; then
         loginfo "    >> Image Stream and Build Config do not exist. Creating..."
-        oc new-app "${templateName}" ${REPO_URL_PARAM} ${REPO_REF_PARAM} > /dev/null 2>&1 || { echo "Failed to create new app! Aborting." >&2; exit 1; }
+        oc new-app "${templateName}" "${REPO_URL_PARAM}" "${REPO_REF_PARAM}" > /dev/null 2>&1 || { echo "Failed to create new app! Aborting." >&2; exit 1; }
     fi
     loginfo ""
 }
@@ -97,16 +104,15 @@ else
   REPO_REF_PARAM="-p REPO_REF=${REPO_REF}"
 fi
 
-oc project "${project}" > /dev/null 2>&1
-if [ $? -ne 0 ] ; then
+if ! oc project "${project}" > /dev/null 2>&1 ; then
   logdebug "Project does not exist...Creating..."
   oc new-project "${project}" > /dev/null 2>&1 || { echo "Failed to create new project! Aborting." >&2; exit 1; }
   oc project "${project}" > /dev/null 2>&1
 fi
 
-trap cleanup EXIT SIGHUP SIGINT SIGTERM
+trap cleanup EXIT HUP INT TERM
 
-for template in ${templates[@]}; do
+for template in ${templates}; do
     processTemplate "${template}"
 done
 
