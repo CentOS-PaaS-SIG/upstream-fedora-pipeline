@@ -684,7 +684,7 @@ def testCompose(Map parameters = [:]) {
     def cmd = """
               curl -O https://pagure.io/upstream-fedora-ci/raw/master/f/validate-test-subject.py && \
               rm -rf /tmp/artifacts && \
-              python -u validate-test-subject.py -i ${interactions} -s \$(pwd)/${imageName} && \
+              python3 -u validate-test-subject.py -i ${interactions} -s \$(pwd)/${imageName} && \
               exit \$?
               """
 
