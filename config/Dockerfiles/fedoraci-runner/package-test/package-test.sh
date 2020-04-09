@@ -228,7 +228,8 @@ for playbook in tests*.yml; do
         # the previous results.yml. therefore we merge the new results
         # with previous results here.
         merge_results ${TEST_ARTIFACTS}/results.yml.prev ${TEST_ARTIFACTS}/results.yml
-        cp ${TEST_ARTIFACTS}/results.yml ${TEST_ARTIFACTS}/results.yml.prev
+        # in case of infra issues or some role that doesn't export results.yml it should not fail
+        cp ${TEST_ARTIFACTS}/results.yml ${TEST_ARTIFACTS}/results.yml.prev || true
 	fi
 done
 popd
