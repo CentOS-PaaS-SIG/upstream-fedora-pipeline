@@ -49,12 +49,20 @@
                    <providerData class="com.redhat.jenkins.plugins.ci.provider.data.RabbitMQSubscriberProviderData">
                       <name>FedoraMessagingStage</name>
                       <overrides>
-                         <topic>org.fedoraproject.stg.buildsys.build.state.change</topic>
+                         <topic>org.fedoraproject.stg.pagure.pull-request.comment.added</topic>
                       </overrides>
                       <checks>
                          <com.redhat.jenkins.plugins.ci.messaging.checks.MsgCheck>
-                            <field>new</field>
-                            <expectedValue>1</expectedValue>
+                            <field>$.pullrequest.project.namespace</field>
+                            <expectedValue>rpms|tests</expectedValue>
+                         </com.redhat.jenkins.plugins.ci.messaging.checks.MsgCheck>
+                         <com.redhat.jenkins.plugins.ci.messaging.checks.MsgCheck>
+                            <field>$.pullrequest.branch</field>
+                            <expectedValue>master</expectedValue>
+                         </com.redhat.jenkins.plugins.ci.messaging.checks.MsgCheck>
+                         <com.redhat.jenkins.plugins.ci.messaging.checks.MsgCheck>
+                            <field>$.pullrequest.status</field>
+                            <expectedValue>Open</expectedValue>
                          </com.redhat.jenkins.plugins.ci.messaging.checks.MsgCheck>
                       </checks>
                    </providerData>
@@ -81,7 +89,7 @@
             <submoduleCfg class="list"/>
             <extensions/>
         </scm>
-        <scriptPath>JenkinsfileStageBuildTrigger</scriptPath>
+        <scriptPath>JenkinsfileStagePRCommentTrigger</scriptPath>
         <lightweight>true</lightweight>
     </definition>
     <triggers/>

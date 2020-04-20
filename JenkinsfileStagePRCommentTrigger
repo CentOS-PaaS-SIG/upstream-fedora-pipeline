@@ -1,0 +1,143 @@
+#!groovy
+
+timestamps {
+    // canned CI_MESSAGE
+    def CANNED_CI_MESSAGE = '{"pullrequest": {"last_updated": "1568705786","uid": "476221bcbed04578bb0517ad5c6a677d","initial_comment": "Testing PR","commit_stop": "0ac0568b77bdea1bfe3b9c5b53f25a3f263c9f5e","remote_git": null,"closed_at": null,"id": 8,"title": "Test PR for monitoring","comments": [{"comment": "[citest]","reactions": {},"parent": null,"notification": false,"tree": null,"filename": null,"edited_on": null,"editor": null,"date_created": "1568705786","commit": null,"line": null,"id": 15225,"user": {"fullname": "Bruno Goncalves","name": "bgoncalv"}}],"branch": "master","status": "Open","tags": [],"user": {"fullname": "Pierre-YvesChibon","name": "pingou"},"date_created": "1568044598","closed_by": null,"branch_from": "master","assignee": null,"commit_start": "0ac0568b77bdea1bfe3b9c5b53f25a3f263c9f5e","project": {"custom_keys": [],"description": "The fedora-gather-easyfix rpms","parent": null,"date_modified": "1501867545","access_users": {"admin": [],"commit": [],"ticket": [],"owner": ["pingou"]},"namespace": "rpms","priorities": {},"id": 3649,"access_groups": {"admin": [],"commit": [],"ticket": []},"milestones": {},"user": {"fullname": "Pierre-YvesChibon","name": "pingou"},"date_created": "1501867545","fullname": "rpms/fedora-gather-easyfix","url_path": "rpms/fedora-gather-easyfix","close_status": [],"tags": [],"name": "fedora-gather-easyfix"},"repo_from": {"custom_keys": [],"description": "The fedora-gather-easyfix rpms","parent": {"custom_keys": [],"description": "The fedora-gather-easyfix rpms","parent": null,"date_modified": "1501867545","access_users": {"admin": [],"commit": [],"ticket": [],"owner": ["pingou"]},"namespace": "rpms","priorities": {},"id": 3649,"access_groups": {"admin": [],"commit": [],"ticket": []},"milestones": {},"user": {"fullname": "Pierre-YvesChibon","name": "pingou"},"date_created": "1501867545","fullname": "rpms/fedora-gather-easyfix","url_path": "rpms/fedora-gather-easyfix","close_status": [],"tags": [],"name": "fedora-gather-easyfix"},"date_modified": "1567672381","access_users": {"admin": [],"commit": [],"ticket": [],"owner": ["pingou"]},"namespace": "rpms","priorities": {},"id": 32381,"access_groups": {"admin": [],"commit": [],"ticket": []},"milestones": {},"user": {"fullname": "Pierre-YvesChibon","name": "pingou"},"date_created": "1567672381","fullname": "forks/pingou/rpms/fedora-gather-easyfix","url_path": "fork/pingou/rpms/fedora-gather-easyfix","close_status": [],"tags": [],"name": "fedora-gather-easyfix"},"cached_merge_status": "NO_CHANGE","updated_on": "1568705786","threshold_reached": null},"agent": "bgoncalv"}'
+
+    def libraries = ['upstream-fedora-pipeline': ['master', 'https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline.git'],
+                     'contra-lib'              : ['master', 'https://github.com/openshift/contra-lib.git']]
+
+    libraries.each { name, repo ->
+        library identifier: "${name}@${repo[0]}",
+                retriever: modernSCM([$class: 'GitSCMSource',
+                                      remote: repo[1]])
+
+    }
+
+    //noinspection GroovyAssignabilityCheck
+    properties(
+            [
+                    buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '100', daysToKeepStr: '', numToKeepStr: '100')),
+                    disableConcurrentBuilds(),
+                    pipelineTriggers(
+                        [[$class: 'CIBuildTrigger',
+                          noSquash: true,
+                          providerData: [
+                              $class: 'RabbitMQSubscriberProviderData',
+                              name: 'FedoraMessagingStage',
+                              overrides: [
+                                  topic: 'org.fedoraproject.stg.pagure.pull-request.comment.added',
+                                  queue: ''
+                              ],
+                              checks: [
+                                  [field: '$.pullrequest.project.namespace', expectedValue: 'rpms|tests'],
+                                  [field: '$.pullrequest.status', expectedValue: 'Open'],
+                                  [field: '$.pullrequest.branch', expectedValue: 'master']
+                              ]
+                          ]
+                        ]]
+                    ),
+
+                    parameters(
+                            [
+                                    string(name: 'CI_MESSAGE', defaultValue: CANNED_CI_MESSAGE, description: 'CI_MESSAGE'),
+                                    string(name: 'MSG_PROVIDER',
+                                           defaultValue: 'FedoraMessagingStage',
+                                           description: 'Main provider to send messages on'),
+                                    string(name: 'KOJI_URL',
+                                           defaultValue: 'https://koji.stg.fedoraproject.org',
+                                           description: 'URL of koji instance'),
+                                    string(name: 'KOJI_PARAMS',
+                                           defaultValue: '--server https://koji.stg.fedoraproject.org/kojihub --topurl https://kojipkgs.stg.fedoraproject.org',
+                                           description: 'Parameters to pass to koji tool'),
+                                    string(name: 'PAGURE_URL',
+                                           defaultValue: 'https://src.stg.fedoraproject.org',
+                                           description: 'Pagure instance URL'),
+                            ]
+                    )
+            ]
+    )
+
+    def TRIGGER_RETRY_COUNT = 3
+    def validMessage = true
+    def stepName = null
+
+    node('master') {
+
+        // pull in ciMetrics from ci-pipeline
+        // ciMetrics.prefix = packagepipelineUtils.influxDBPrefix()
+        // packagepipelineUtils.cimetrics = ciMetrics
+        // def jobMeasurement = packagepipelineUtils.timedMeasurement()
+
+
+        timeout(time: 30, unit: 'MINUTES') {
+
+            packagepipelineUtils.ciPipeline {
+                try {
+                    stepName = 'fedora-pr-pipeline-trigger'
+                    stage(stepName) {
+
+                        packagepipelineUtils.handlePipelineStep(stepName: stepName, debug: true) {
+
+                            print "CI_MESSAGE"
+                            print CI_MESSAGE
+
+                            packagepipelineUtils.setDefaultEnvVars()
+                            parsedMsg = kojiMessage(message: env.CI_MESSAGE, ignoreErrors: true)
+                            currentBuild.displayName = "BUILD#: ${env.BUILD_NUMBER} - Branch: ${parsedMsg['pullrequest']['branch']} - Package: ${parsedMsg['pullrequest']['project']['name']}"
+                            validMessage = packagepipelineUtils.checkBranch(parsedMsg['pullrequest']['branch'])
+                            testsExist = contraUtils.checkTests(parsedMsg['pullrequest']['project']['name'], parsedMsg['pullrequest']['branch'], 'classic', parsedMsg['pullrequest']['id'].toString(), parsedMsg['pullrequest']['project']['namespace'])
+                            // Function only returns false if comments exist,
+                            // but the latest was uninteresting
+                            commentTrigger = contraUtils.checkUpdatedPR(env.CI_MESSAGE, '[citest]')
+                        }
+                    }
+
+                    if (validMessage && testsExist && commentTrigger) {
+                        messageFields = packagepipelineUtils.setMessageFields('package.queued', 'pr', parsedMsg)
+                        contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+
+                        // Send message org.centos.prod.ci.dist-git-pr.test.queued on fedmsg
+                        messageFields = packagepipelineUtils.setTestMessageFields("queued", "dist-git-pr", parsedMsg)
+                        contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+
+                        stepName = 'schedule build'
+                        stage(stepName) {
+
+                            try {
+                                retry(TRIGGER_RETRY_COUNT) {
+                                    packagepipelineUtils.handlePipelineStep(stepName: stepName, debug: true) {
+                                        branch = (parsedMsg['pullrequest']['branch'] == 'master') ? 'rawhide' : parsedMsg['pullrequest']['branch']
+                                        build job: "fedora-rawhide-stage-pr-pipeline",
+                                                parameters: [string(name: 'CI_MESSAGE', value: env.CI_MESSAGE),
+                                                             string(name: 'MSG_PROVIDER', value: env.MSG_PROVIDER),
+                                                             string(name: 'KOJI_URL', value: env.KOJI_URL),
+                                                             string(name: 'KOJI_PARAMS', value: env.KOJI_PARAMS),
+                                                             string(name: 'PAGURE_URL', value: env.PAGURE_URL),
+                                                             string(name: 'pipelineId', value: UUID.randomUUID().toString())],
+                                                wait: false                                    }
+
+                                }
+                            } catch (Throwable err) {
+                                currentBuild.description = "*TRIGGER FAILURE*"
+                                error "Error: Build could not be added to queue after " + TRIGGER_RETRY_COUNT + " tries"
+                                throw err
+                            }
+                        }
+
+                    } else {
+                        echo "CI_MESSAGE was invalid. Skipping..."
+                        messageFields = packagepipelineUtils.setMessageFields('package.ignored', 'pr', parsedMsg)
+                        contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
+                        currentBuild.description = "*Build Skipped*"
+                    }
+
+                    currentBuild.result = 'SUCCESS'
+
+                } catch (Throwable err) {
+                    currentBuild.result = 'FAILURE'
+                }
+            }
+        }
+    }
+}

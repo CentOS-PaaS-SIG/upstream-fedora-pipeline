@@ -2,11 +2,9 @@
 
 timestamps {
     // canned CI_MESSAGE
-    // Might just keep this for legacy reasons for now
-    def CANNED_CI_MESSAGE = '{"commit":{"username":"zdohnal","stats":{"files":{"README.patches":{"deletions":0,"additions":30,"lines":30},"sources":{"deletions":1,"additions":1,"lines":2},"vim.spec":{"deletions":7,"additions":19,"lines":26},".gitignore":{"deletions":0,"additions":1,"lines":1},"vim-8.0-rhbz1365258.patch":{"deletions":0,"additions":12,"lines":12}},"total":{"deletions":8,"files":5,"additions":63,"lines":71}},"name":"Zdenek Dohnal","rev":"3ff427e02625f810a2cedb754342be44d6161b39","namespace":"rpms","agent":"zdohnal","summary":"Merge branch f25 into f26","repo":"vim","branch":"f26","seen":false,"path":"/srv/git/repositories/rpms/vim.git","message":"Merge branch \'f25\' into f26\n","email":"zdohnal@redhat.com"},"topic":"org.fedoraproject.prod.git.receive"}'
+    def CANNED_CI_MESSAGE = '{"pullrequest": {"last_updated": "1568105911","uid": "8f5dfc4ec36046e29e5b70fd9373e324","initial_comment": "Testing PR","commit_stop": "fe3def57fd1a0c8efdef4b1be9cc9f9923cc1e0d","remote_git": null,"closed_at": null,"id": 9,"title": "Test PR for monitoring","comments": [],"branch": "master","status": "Open","tags": [],"user": {"fullname": "Pierre-YvesChibon","name": "pingou"},"date_created": "1568105911","closed_by": null,"branch_from": "master","assignee": null,"commit_start": "fe3def57fd1a0c8efdef4b1be9cc9f9923cc1e0d","project": {"custom_keys": [],"description": "The fedora-gather-easyfix rpms","parent": null,"date_modified": "1501867545","access_users": {"admin": [],"commit": [],"ticket": [],"owner": ["pingou"]},"namespace": "rpms","priorities": {},"id": 3649,"access_groups": {"admin": [],"commit": [],"ticket": []},"milestones": {},"user": {"fullname": "Pierre-YvesChibon","name": "pingou"},"date_created": "1501867545","fullname": "rpms/fedora-gather-easyfix","url_path": "rpms/fedora-gather-easyfix","close_status": [],"tags": [],"name": "fedora-gather-easyfix"},"repo_from": {"custom_keys": [],"description": "The fedora-gather-easyfix rpms","parent": {"custom_keys": [],"description": "The fedora-gather-easyfix rpms","parent": null,"date_modified": "1501867545","access_users": {"admin": [],"commit": [],"ticket": [],"owner": ["pingou"]},"namespace": "rpms","priorities": {},"id": 3649,"access_groups": {"admin": [],"commit": [],"ticket": []},"milestones": {},"user": {"fullname": "Pierre-YvesChibon","name": "pingou"},"date_created": "1501867545","fullname": "rpms/fedora-gather-easyfix","url_path": "rpms/fedora-gather-easyfix","close_status": [],"tags": [],"name": "fedora-gather-easyfix"},"date_modified": "1567672381","access_users": {"admin": [],"commit": [],"ticket": [],"owner": ["pingou"]},"namespace": "rpms","priorities": {},"id": 32381,"access_groups": {"admin": [],"commit": [],"ticket": []},"milestones": {},"user": {"fullname": "Pierre-YvesChibon","name": "pingou"},"date_created": "1567672381","fullname": "forks/pingou/rpms/fedora-gather-easyfix","url_path": "fork/pingou/rpms/fedora-gather-easyfix","close_status": [],"tags": [],"name": "fedora-gather-easyfix"},"cached_merge_status": "unknown","updated_on": "1568105911","threshold_reached": null},"agent": "pingou"}'
 
-    def libraries = ['cico-pipeline'           : ['master', 'https://github.com/CentOS/cico-pipeline-library.git'],
-                     'upstream-fedora-pipeline': ['master', 'https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline.git'],
+    def libraries = ['upstream-fedora-pipeline': ['master', 'https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline.git'],
                      'contra-lib'              : ['master', 'https://github.com/openshift/contra-lib.git']]
 
     libraries.each { name, repo ->
@@ -26,13 +24,14 @@ timestamps {
                           noSquash: true,
                           providerData: [
                               $class: 'RabbitMQSubscriberProviderData',
-                              name: 'FedoraMessaging',
+                              name: 'FedoraMessagingStage',
                               overrides: [
-                                  topic: 'org.fedoraproject.prod.pagure.pull-request.new',
+                                  topic: 'org.fedoraproject.stg.pagure.pull-request.new',
                                   queue: ''
                               ],
                               checks: [
-                                  [field: '$.pullrequest.project.namespace', expectedValue: 'rpms|tests']
+                                  [field: '$.pullrequest.project.namespace', expectedValue: 'rpms|tests'],
+                                  [field: '$.pullrequest.branch', expectedValue: 'master']
                               ]
                           ]
                         ]]
@@ -40,7 +39,19 @@ timestamps {
 
                     parameters(
                             [
-                                    string(defaultValue: CANNED_CI_MESSAGE, description: 'CI_MESSAGE', name: 'CI_MESSAGE')
+                                    string(name: 'CI_MESSAGE', defaultValue: CANNED_CI_MESSAGE, description: 'CI_MESSAGE'),
+                                    string(name: 'MSG_PROVIDER',
+                                           defaultValue: 'FedoraMessagingStage',
+                                           description: 'Main provider to send messages on'),
+                                    string(name: 'KOJI_URL',
+                                           defaultValue: 'https://koji.stg.fedoraproject.org',
+                                           description: 'URL of koji instance'),
+                                    string(name: 'KOJI_PARAMS',
+                                           defaultValue: '--server https://koji.stg.fedoraproject.org/kojihub --topurl https://kojipkgs.stg.fedoraproject.org',
+                                           description: 'Parameters to pass to koji tool'),
+                                    string(name: 'PAGURE_URL',
+                                           defaultValue: 'https://src.stg.fedoraproject.org',
+                                           description: 'Pagure instance URL'),
                             ]
                     )
             ]
@@ -92,9 +103,12 @@ timestamps {
                             try {
                                 retry(TRIGGER_RETRY_COUNT) {
                                     packagepipelineUtils.handlePipelineStep(stepName: stepName, debug: true) {
-                                        branch = (parsedMsg['pullrequest']['branch'] == 'master') ? 'rawhide' : parsedMsg['pullrequest']['branch']
-                                        build job: "fedora-${branch}-pr-pipeline",
+                                        build job: "fedora-rawhide-stage-pr-pipeline",
                                                 parameters: [string(name: 'CI_MESSAGE', value: env.CI_MESSAGE),
+                                                             string(name: 'MSG_PROVIDER', value: env.MSG_PROVIDER),
+                                                             string(name: 'KOJI_URL', value: env.KOJI_URL),
+                                                             string(name: 'KOJI_PARAMS', value: env.KOJI_PARAMS),
+                                                             string(name: 'PAGURE_URL', value: env.PAGURE_URL),
                                                              string(name: 'pipelineId', value: UUID.randomUUID().toString())],
                                                 wait: false
                                     }
@@ -116,14 +130,7 @@ timestamps {
 
                 } catch (Throwable err) {
                     currentBuild.result = 'FAILURE'
-                    throw err
-
-                } // finally {
-                    // set the metrics we want
-                    // ciMetrics.setMetricTag(jobMeasurement, 'package_name', env.fed_repo)
-                    // ciMetrics.setMetricTag(jobMeasurement, 'build_result', currentBuild.result)
-                    //ciMetrics.setMetricField(jobMeasurement, 'build_time', currentBuild.getDuration())
-                // }
+                }
             }
         }
     }
