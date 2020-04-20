@@ -46,8 +46,8 @@
                 <com.redhat.jenkins.plugins.ci.CIBuildTrigger plugin="jms-messaging@1.1.5">
                    <spec />
                    <noSquash>true</noSquash>
-                   <providerData class="com.redhat.jenkins.plugins.ci.provider.data.FedMsgSubscriberProviderData">
-                      <name>fedora-fedmsg-stage</name>
+                   <providerData class="com.redhat.jenkins.plugins.ci.provider.data.RabbitMQSubscriberProviderData">
+                      <name>FedoraMessagingStage</name>
                       <overrides>
                          <topic>org.fedoraproject.stg.buildsys.build.state.change</topic>
                       </overrides>

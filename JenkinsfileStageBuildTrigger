@@ -64,10 +64,11 @@ timestamps {
                             [[$class: 'CIBuildTrigger',
                               noSquash: true,
                               providerData: [
-                                  $class: 'FedMsgSubscriberProviderData',
-                                  name: 'fedora-fedmsg-stage',
+                                  $class: 'RabbitMQSubscriberProviderData',
+                                  name: 'FedoraMessagingStage',
                                   overrides: [
-                                      topic: 'org.fedoraproject.stg.bodhi.update.status.testing.koji-build-group.build.complete'
+                                      topic: 'org.fedoraproject.stg.bodhi.update.status.testing.koji-build-group.build.complete',
+                                      queue: ''
                                   ]
                               ]
                             ]]
