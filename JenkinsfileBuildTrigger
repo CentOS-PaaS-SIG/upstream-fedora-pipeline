@@ -35,7 +35,6 @@ timestamps {
                                   name: 'fedora-fedmsg',
                                   overrides: [
                                       topic: 'org.fedoraproject.prod.bodhi.update.status.testing.koji-build-group.build.complete',
-                                      queue: ''
                                   ]
                               ]
                             ]]
