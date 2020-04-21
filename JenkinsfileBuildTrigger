@@ -34,7 +34,7 @@ timestamps {
                                   $class: 'FedMsgSubscriberProviderData',
                                   name: 'fedora-fedmsg',
                                   overrides: [
-                                      topic: 'org.fedoraproject.prod.bodhi.update.status.testing.koji-build-group.build.complete',
+                                      topic: 'org.fedoraproject.prod.bodhi.update.status.testing.koji-build-group.build.complete'
                                   ]
                               ]
                             ]]
