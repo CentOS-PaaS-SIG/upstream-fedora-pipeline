@@ -221,7 +221,7 @@ for playbook in tests*.yml; do
         fi
         # should provision fresh VM for each tests* playbook
         provision_with_retry
-        ANSIBLE_STDOUT_CALLBACK=yaml timeout 4h ansible-playbook -v --inventory=pipeline_inventory.yaml $PYTHON_INTERPRETER \
+        ANSIBLE_STDOUT_CALLBACK=yaml timeout 4h ansible-playbook -v --inventory=pipeline_inventory.yaml --extra-vars git_branch=${branch} $PYTHON_INTERPRETER \
             --tags ${TAG} ${playbook} $@ | tee ${TEST_ARTIFACTS}/${playbook}-run.txt
 
         # if there are multiple playbooks, each new invocation would overwrite
