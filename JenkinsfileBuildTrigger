@@ -70,7 +70,7 @@ timestamps {
 
                         // query bodhi to check if the release is rawhide
                         def rawhide_release = parseText(
-                            sh(script: "curl --retry 10 'https://bodhi.fedoraproject.org/releases/?state=pending'", returnStdout: true)
+                            sh(script: "curl --retry 20 'https://bodhi.fedoraproject.org/releases/?state=pending'", returnStdout: true)
                         )
                         if (!rawhide_release.containsKey('releases')) {
                             error("FAIL: Could not query bodhi")
