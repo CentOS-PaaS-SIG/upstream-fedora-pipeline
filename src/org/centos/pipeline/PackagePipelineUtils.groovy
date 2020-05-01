@@ -723,7 +723,7 @@ def processBuildCIMessage() {
                 (ciMessage['artifact']['type'] == "rpm-build-group" || ciMessage['artifact']['type'] == "koji-build-group")) {
         // query bodhi to check if the release is rawhide
         def rawhide_release = (
-            sh(script: "curl --retry 10 'https://bodhi.fedoraproject.org/releases/?state=pending'", returnStdout: true)
+            sh(script: "curl --retry 20 'https://bodhi.fedoraproject.org/releases/?state=pending'", returnStdout: true)
         )
         rawhide_release = readJSON text: rawhide_release.replace("\n", "\\n")
         if (!rawhide_release.containsKey('releases')) {
