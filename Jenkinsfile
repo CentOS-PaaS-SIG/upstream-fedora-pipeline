@@ -163,9 +163,13 @@ timestamps {
 
             def buildResult = null
 
-            // Setting timeout to 8 hours, some packages can take few hours to build in koji
+            // pull requests for some packages take long time to build scratch builds
+            // https://pagure.io/fedora-ci/general/issue/111
+            // increase the pipeline timeout when running PRs
             // and tests can take up to 4 hours to run.
-            timeout(time: 8, unit: 'HOURS') {
+            def buildTimeout = (env.PROVIDED_KOJI_TASKID?.trim()) ? 8 : 12
+
+            timeout(time: buildTimeout, unit: 'HOURS') {
 
                 deleteDir()
 
