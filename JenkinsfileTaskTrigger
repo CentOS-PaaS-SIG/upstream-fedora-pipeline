@@ -69,7 +69,6 @@ timestamps {
                         packagepipelineUtils.setScratchVars(parsedMsg)
                         packagepipelineUtils.setDefaultEnvVars()
                         env.fed_repo = contraUtils.repoFromRequest(env.request_0)
-                        env.fed_namespace = 'rpms' // Used in setMessageFields
                         targetBranch = false
                         if (env.isScratch.toBoolean()) {
                             env.task_id = parsedMsg['info']['id']
@@ -97,10 +96,8 @@ timestamps {
                 }
 
                 if (targetBranch && testsExist && primaryKoji) {
-                    messageFields = packagepipelineUtils.setMessageFields('package.queued', 'build', parsedMsg)
-                    contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
                     // Send message org.centos.prod.ci.koji-build.test.queued on fedmsg
-                    messageFields = packagepipelineUtils.setTestMessageFields("queued", "koji-build", parsedMsg)
+                    messageFields = packagepipelineUtils.setMessageFields("queued", "koji-build", parsedMsg)
                     contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
                     stepName = 'schedule build'
                     stage(stepName) {

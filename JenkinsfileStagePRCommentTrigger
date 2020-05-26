@@ -93,11 +93,8 @@ timestamps {
                     }
 
                     if (validMessage && testsExist && commentTrigger) {
-                        messageFields = packagepipelineUtils.setMessageFields('package.queued', 'pr', parsedMsg)
-                        contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
-
                         // Send message org.centos.prod.ci.dist-git-pr.test.queued on fedmsg
-                        messageFields = packagepipelineUtils.setTestMessageFields("queued", "dist-git-pr", parsedMsg)
+                        messageFields = packagepipelineUtils.setMessageFields("queued", "dist-git-pr", parsedMsg)
                         contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                         stepName = 'schedule build'
@@ -126,8 +123,6 @@ timestamps {
 
                     } else {
                         echo "CI_MESSAGE was invalid. Skipping..."
-                        messageFields = packagepipelineUtils.setMessageFields('package.ignored', 'pr', parsedMsg)
-                        contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
                         currentBuild.description = "*Build Skipped*"
                     }
 
