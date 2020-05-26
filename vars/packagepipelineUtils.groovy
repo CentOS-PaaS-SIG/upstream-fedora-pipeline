@@ -24,17 +24,6 @@ class packagepipelineUtils implements Serializable {
     }
 
     /**
-     * Method to set message fields to be published
-     * @param messageType ${MAIN_TOPIC}.ci.pipeline.<defined-in-README>
-     * @param artifact ${MAIN_TOPIC}.ci.pipeline.allpackages-${artifact}.<defined-in-README>
-     * @param parsedMsg: The parsed fedmsg
-     * @return
-     */
-    def setMessageFields(String messageType, String artifact, Map parsedMsg) {
-        packagePipelineUtils.setMessageFields(messageType, artifact, parsedMsg)
-    }
-
-    /**
      * Method that uses contra-lib shared library
      * to create the ci.artifact.test.messageType messages
      * @param messageType: queued, running, complete, error
@@ -42,8 +31,8 @@ class packagepipelineUtils implements Serializable {
      * @param parsedMsg: The parsed fedmsg
      * @return
      */
-    def setTestMessageFields(String messageType, String artifact, Map parsedMsg) {
-        packagePipelineUtils.setTestMessageFields(messageType, artifact, parsedMsg)
+    def setMessageFields(String messageType, String artifact, Map parsedMsg) {
+        packagePipelineUtils.setMessageFields(messageType, artifact, parsedMsg)
     }
 
     /**

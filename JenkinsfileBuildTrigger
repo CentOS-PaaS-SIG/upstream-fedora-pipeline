@@ -59,7 +59,6 @@ timestamps {
                         print CI_MESSAGE
                         parsedMsg = parseText(env.CI_MESSAGE)
                         packagepipelineUtils.setDefaultEnvVars()
-                        env.fed_namespace = 'rpms' // used in setMessageFields
                         env.fed_branch = parsedMsg['artifact']['release']
                         env.branch = parsedMsg['artifact']['release']
                         env.isScratch = false
@@ -121,10 +120,8 @@ timestamps {
                                 if (testsExist) {
                                     currentBuild.displayName = "BUILD#: ${env.BUILD_NUMBER} - Release: ${env.branch} - Package: ${env.fed_repo}"
 
-                                    messageFields = packagepipelineUtils.setMessageFields('package.queued', 'build', parsedMsg)
-                                    contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
                                     // Send message org.centos.prod.ci.koji-build.test.queued on fedmsg
-                                    messageFields = packagepipelineUtils.setTestMessageFields("queued", "koji-build", parsedMsg)
+                                    messageFields = packagepipelineUtils.setMessageFields("queued", "koji-build", parsedMsg)
                                     contraUtils.sendMessage(messageFields['topic'], messageFields['properties'], messageFields['content'])
 
                                     retry(TRIGGER_RETRY_COUNT) {

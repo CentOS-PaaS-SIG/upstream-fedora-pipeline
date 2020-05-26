@@ -36,75 +36,6 @@ def setDistBranch(String branch) {
 }
 
 /**
- * Library to set message fields to be published
- * @param messageType: ${MAIN_TOPIC}.ci.pipeline.allpackages.<defined-in-README>
- * @param artifact ${MAIN_TOPIC}.ci.pipeline.allpackages-${artifact}.<defined-in-README>
- * @param parsedMsg: The parsed fedmsg
- * @return
- */
-def setMessageFields(String messageType, String artifact, Map parsedMsg) {
-    topic = "${MAIN_TOPIC}.ci.pipeline.allpackages-${artifact}.${messageType}"
-    print("Topic is " + topic)
-
-    // Create a HashMap of default message content keys and values
-    // These properties should be applicable to ALL message types.
-    // If something is applicable to only some subset of messages,
-    // add it below per the existing examples.
-
-    if (parsedMsg && parsedMsg.has('pullrequest')) {
-        myBranch = parsedMsg['pullrequest']['branch']
-        myRepo = parsedMsg['pullrequest']['project']['name']
-        myRev = 'PR-' + parsedMsg['pullrequest']['id']
-        myNamespace = parsedMsg['pullrequest']['project']['namespace']
-        myCommentId = parsedMsg['pullrequest']['comments'].isEmpty() ? 0 : parsedMsg['pullrequest']['comments'].last()['id']
-        myOwner = parsedMsg['pullrequest']['user']['name'].toString().split('\n')[0].replaceAll('"', '\'')
-    } else {
-        myBranch = env.fed_branch
-        myRepo = env.fed_repo
-        taskid = env.task_id
-        myRev = 'kojitask-' + taskid
-        myNamespace = env.fed_namespace
-        myCommentId = ''
-        myOwner = env.issuer
-    }
-
-    def messageContent = [
-            branch           : myBranch,
-            build_id         : env.BUILD_ID,
-            build_url        : env.JENKINS_URL + 'blue/organizations/jenkins/' + env.JOB_NAME + '/detail/' + env.JOB_NAME + '/' + env.BUILD_NUMBER + '/pipeline/',
-            namespace        : myNamespace,
-            nvr              : env.nvr,
-            original_spec_nvr: env.original_spec_nvr,
-            ci_topic         : topic,
-            ref              : env.basearch,
-            scratch          : env.isScratch ? env.isScratch.toBoolean() : "",
-            repo             : myRepo,
-            rev              : myRev,
-            status           : currentBuild.currentResult,
-            test_guidance    : "''",
-            comment_id       : myCommentId,
-            username         : myOwner,
-    ]
-
-    if (artifact == 'pr') {
-        messageContent.commit_hash = parsedMsg['pullrequest'].has('commit_stop') ? parsedMsg['pullrequest']['commit_stop'] : 'N/A'
-    }
-
-    // Add image type to appropriate message types
-    if (messageType in ['image.queued', 'image.running', 'image.complete', 'image.test.smoke.queued', 'image.test.smoke.running', 'image.test.smoke.complete'
-    ]) {
-        messageContent.type = messageType == 'image.running' ? "''" : 'qcow2'
-    }
-
-    // Create a string to hold the data from the messageContent hash map
-    String messageContentString = JsonOutput.toJson(messageContent)
-
-    def messagePropertiesString = ''
-
-    return [ 'topic': topic, 'properties': messagePropertiesString, 'content': messageContentString ]
-}
-
-/**
  * Method that uses contra-lib shared library
  * to create the ci.artifact.test.messageType messages
  * @param messageType: queued, running, complete, error
@@ -112,8 +43,7 @@ def setMessageFields(String messageType, String artifact, Map parsedMsg) {
  * @param parsedMsg: The parsed fedmsg
  * @return
  */
-// Plan is to rename to setMessageFields and remove function above once everything seems fine and stable
-def setTestMessageFields(String messageType, String artifact, Map parsedMsg) {
+def setMessageFields(String messageType, String artifact, Map parsedMsg) {
     // See https://pagure.io/fedora-ci/messages or
     // https://github.com/openshift/contra-lib/tree/master/resources
     myTopic = "${MAIN_TOPIC}.ci.${artifact}.test.${messageType}"
