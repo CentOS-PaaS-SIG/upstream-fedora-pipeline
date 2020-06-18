@@ -42,11 +42,10 @@
             <com.redhat.jenkins.plugins.ci.CIBuildTrigger plugin="jms-messaging@1.1.5">
                <spec />
                <noSquash>true</noSquash>
-               <providerData class="com.redhat.jenkins.plugins.ci.provider.data.RabbitMQSubscriberProviderData">
-                  <name>FedoraMessaging</name>
+               <providerData class="com.redhat.jenkins.plugins.ci.provider.data.FedMsgSubscriberProviderData">
+                  <name>fedora-fedmsg</name>
                   <overrides>
                      <topic>org.fedoraproject.prod.pagure.pull-request.comment.added</topic>
-                     <queue>osci-pipelines-queue-5</queue>
                   </overrides>
                   <checks>
                      <com.redhat.jenkins.plugins.ci.messaging.checks.MsgCheck>
