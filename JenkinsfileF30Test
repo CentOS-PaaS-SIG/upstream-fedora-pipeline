@@ -16,11 +16,10 @@ properties(
                         [[$class: 'CIBuildTrigger',
                           noSquash: true,
                           providerData: [
-                              $class: 'RabbitMQSubscriberProviderData',
-                              name: 'FedoraMessaging',
+                              $class: 'FedMsgSubscriberProviderData',
+                              name: 'fedora-fedmsg',
                               overrides: [
-                                  topic: 'org.fedoraproject.prod.pungi.compose.status.change',
-                                  queue: 'osci-pipelines-queue-1'
+                                  topic: 'org.fedoraproject.prod.pungi.compose.status.change'
                               ],
                               checks: [
                                   [field: 'release_short', expectedValue: 'Fedora-Cloud$|Fedora$'],

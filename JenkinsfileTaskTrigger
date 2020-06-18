@@ -31,11 +31,10 @@ timestamps {
                             [[$class: 'CIBuildTrigger',
                               noSquash: true,
                               providerData: [
-                                  $class: 'RabbitMQSubscriberProviderData',
-                                  name: 'FedoraMessaging',
+                                  $class: 'FedMsgSubscriberProviderData',
+                                  name: 'fedora-fedmsg',
                                   overrides: [
-                                      topic: 'org.fedoraproject.prod.buildsys.task.state.change',
-                                      queue: 'osci-pipelines-queue-10'
+                                      topic: 'org.fedoraproject.prod.buildsys.task.state.change'
                                   ],
                                   checks: [
                                       [field: 'new', expectedValue: '1|CLOSED'],
