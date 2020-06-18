@@ -24,10 +24,11 @@ timestamps {
                         [[$class: 'CIBuildTrigger',
                           noSquash: true,
                           providerData: [
-                              $class: 'FedMsgSubscriberProviderData',
-                              name: 'fedora-fedmsg',
+                              $class: 'RabbitMQSubscriberProviderData',
+                              name: 'FedoraMessaging',
                               overrides: [
-                                  topic: 'org.fedoraproject.prod.pagure.pull-request.comment.added'
+                                  topic: 'org.fedoraproject.prod.pagure.pull-request.comment.added',
+                                  queue: 'osci-pipelines-queue-5'
                               ],
                               checks: [
                                   [field: '$.pullrequest.project.namespace', expectedValue: 'rpms|tests'],
