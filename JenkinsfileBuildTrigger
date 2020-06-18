@@ -31,10 +31,11 @@ timestamps {
                             [[$class: 'CIBuildTrigger',
                               noSquash: true,
                               providerData: [
-                                  $class: 'FedMsgSubscriberProviderData',
-                                  name: 'fedora-fedmsg',
+                                  $class: 'RabbitMQSubscriberProviderData',
+                                  name: 'FedoraMessaging',
                                   overrides: [
-                                      topic: 'org.fedoraproject.prod.bodhi.update.status.testing.koji-build-group.build.complete'
+                                      topic: 'org.fedoraproject.prod.bodhi.update.status.testing.koji-build-group.build.complete',
+                                      queue: 'osci-pipelines-queue-0'
                                   ]
                               ]
                             ]]
