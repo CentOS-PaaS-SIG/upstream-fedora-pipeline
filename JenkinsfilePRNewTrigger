@@ -29,7 +29,7 @@ timestamps {
                               name: 'FedoraMessaging',
                               overrides: [
                                   topic: 'org.fedoraproject.prod.pagure.pull-request.new',
-                                  queue: 'osci-pipelines-queue-0'
+                                  queue: 'osci-pipelines-queue-2'
                               ],
                               checks: [
                                   [field: '$.pullrequest.project.namespace', expectedValue: 'rpms|tests']

@@ -50,7 +50,7 @@
                       <name>FedoraMessaging</name>
                       <overrides>
                          <topic>org.fedoraproject.prod.buildsys.task.state.change</topic>
-                         <queue>osci-pipelines-queue-0</queue>
+                         <queue>osci-pipelines-queue-3</queue>
                       </overrides>
                       <checks>
                          <com.redhat.jenkins.plugins.ci.messaging.checks.MsgCheck>
