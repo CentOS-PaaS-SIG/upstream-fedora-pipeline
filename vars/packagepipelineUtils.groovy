@@ -1,5 +1,4 @@
 import org.centos.pipeline.PackagePipelineUtils
-import org.centos.Utils
 import org.jenkinsci.plugins.pipeline.modeldefinition.Utils
 
 /**
@@ -9,7 +8,6 @@ import org.jenkinsci.plugins.pipeline.modeldefinition.Utils
 class packagepipelineUtils implements Serializable {
 
     def packagePipelineUtils = new PackagePipelineUtils()
-    def centosUtils = new org.centos.Utils()
 
     // pass in from the jenkinsfile
     // def cimetrics
@@ -128,7 +126,7 @@ class packagepipelineUtils implements Serializable {
      * @param destinationFile The file to write to
      */
      def convertProps(String sourceFile, String destinationFile) {
-         centosUtils.convertProps(sourceFile, destinationFile)
+         packagePipelineUtils.convertProps(sourceFile, destinationFile)
      }
 
     /**

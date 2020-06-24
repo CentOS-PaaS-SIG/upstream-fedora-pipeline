@@ -703,3 +703,14 @@ def processBuildCIMessage() {
         throw new Exception("Unsupported CI message: ${message}")
     }
 }
+
+/**
+ * Library to prepend 'env.' to the keys in source file and write them in a format of env.key=value in the destination file.
+ * @param sourceFile - The file to read from
+ * @param destinationFile - The file to write to; defaults to sourceFile, resulting in overwriting the source file.
+ * @return
+ */
+def convertProps(String sourceFile, String destinationFile="${sourceFile}.groovy") {
+    def command = $/awk -F'=' '{print "env."$1"=\""$2"\""}' ${sourceFile} > ${destinationFile}/$
+    sh script: command, label: "Prepending 'env.' to the keys in source file and writing them in a format of env.key=value in the destination file"
+}
