@@ -1,3 +1,4 @@
+#!groovy
 
 def libraries = ['upstream-fedora-pipeline': ['master', 'https://github.com/CentOS-PaaS-SIG/upstream-fedora-pipeline.git'],
                  'contra-lib': ['master', 'https://github.com/openshift/contra-lib.git']]
@@ -16,16 +17,16 @@ properties(
                         [[$class: 'CIBuildTrigger',
                           noSquash: true,
                           providerData: [
-                              $class: 'FedMsgSubscriberProviderData',
-                              name: 'fedora-fedmsg',
+                              $class: 'RabbitMQSubscriberProviderData',
+                              name: 'FedoraMessaging',
                               overrides: [
-                                  topic: 'org.fedoraproject.prod.pungi.compose.status.change'
+                                  topic: 'org.fedoraproject.prod.pungi.compose.status.change',
+                                  queue: 'osci-pipelines-queue-0'
                               ],
                               checks: [
                                   [field: 'release_short', expectedValue: 'Fedora-Cloud$|Fedora$'],
                                   [field: 'release_type', expectedValue: 'ga'],
                                   [field: 'status', expectedValue: 'FINISHED'],
-                                  [field: 'release_version', expectedValue: 'Rawhide']
                               ]
                           ]
                         ]]
@@ -41,4 +42,14 @@ properties(
 )
 
 
-fedoraImageTest()
+node('master') {
+    currentBuild.displayName = "${env.release_version} - ${env.compose_id}"
+    if (env.release_version == "Rawhide") {
+        env.job_name = "fedora-rawhide-image-test"
+    } else {
+        env.job_name = "fedora-f${env.release_version}-image-test"
+    }
+    build job: "${env.job_name}",
+                parameters: [string(name: 'CI_MESSAGE', value: env.CI_MESSAGE)],
+                wait: false
+}
