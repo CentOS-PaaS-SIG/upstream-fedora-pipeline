@@ -50,7 +50,7 @@
                       <name>FedoraMessagingStage</name>
                       <overrides>
                          <topic>org.fedoraproject.stg.pagure.pull-request.comment.added</topic>
-                         <queue>osci-pipelines-queue-0</queue>
+                         <queue>osci-pipelines-queue-8</queue>
                       </overrides>
                       <checks>
                          <com.redhat.jenkins.plugins.ci.messaging.checks.MsgCheck>

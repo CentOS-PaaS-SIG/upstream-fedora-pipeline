@@ -27,7 +27,7 @@ timestamps {
                               name: 'FedoraMessagingStage',
                               overrides: [
                                   topic: 'org.fedoraproject.stg.pagure.pull-request.comment.added',
-                                  queue: 'osci-pipelines-queue-0'
+                                  queue: 'osci-pipelines-queue-8'
                               ],
                               checks: [
                                   [field: '$.pullrequest.project.namespace', expectedValue: 'rpms|tests'],
