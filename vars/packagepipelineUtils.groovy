@@ -9,9 +9,13 @@ class packagepipelineUtils implements Serializable {
 
     def packagePipelineUtils = new PackagePipelineUtils()
 
-    // pass in from the jenkinsfile
-    // def cimetrics
-
+    /**
+     * Method to get the current release number used by rawhide
+     * @return integer
+     */
+    def getRawhideRelease() {
+        packagePipelineUtils.getRawhideRelease()
+    }
     /**
      * Method to to find DIST_BRANCH to use for rpm NVRs
      * @param String branch - the branch value from the CI_MESSAGE

@@ -68,25 +68,8 @@ timestamps {
                             validRelease = true
                         }
 
-                        // query bodhi to check if the release is rawhide
-                        def rawhide_release = parseText(
-                            sh(script: "curl --retry 20 'https://bodhi.fedoraproject.org/releases/?state=pending'", returnStdout: true)
-                        )
-                        if (!rawhide_release.containsKey('releases')) {
-                            error("FAIL: Could not query bodhi")
-                        }
-                        // Rawhide is the most recent release
-                        // Could be there is also some recent branched, but not relased
-                        // with pending status, but those should already have their own pipeline and compose...
-                        def pending_releases = []
-                        for (release in rawhide_release['releases']) {
-                            //skip module, container...
-                            if (!(release['branch'] =~ /f([0-9]+)$/)) {
-                                continue
-                            }
-                            pending_releases.add(release['branch'])
-                        }
-                        if (env.fed_branch == pending_releases.max()) {
+                        def rawhide_release = packagepipelineUtils.getRawhideRelease()
+                        if (env.fed_branch == "f${rawhide_release}") {
                             env.fed_branch = 'master'
                             env.branch = 'rawhide'
                         }
