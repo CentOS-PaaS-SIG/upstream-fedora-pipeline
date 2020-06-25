@@ -659,6 +659,10 @@ def processBuildCIMessage() {
                 // depending on the ci message version it used rpm-build-group or koji-build-group
                 // https://pagure.io/fedora-ci/messages/pull-request/87
                 (ciMessage['artifact']['type'] == "rpm-build-group" || ciMessage['artifact']['type'] == "koji-build-group")) {
+
+        env.fed_branch = ciMessage['artifact']['release']
+        env.branch = ciMessage['artifact']['release']
+
         def rawhide_release = getRawhideRelease()
         if (env.fed_branch == "f${rawhide_release}") {
             env.fed_branch = 'master'
