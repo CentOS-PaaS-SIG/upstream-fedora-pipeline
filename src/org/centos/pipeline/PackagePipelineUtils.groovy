@@ -5,6 +5,24 @@ import org.centos.*
 import groovy.json.JsonOutput
 
 /**
+ * Method to get the current release number used by rawhide
+ * @return integer
+ */
+def getRawhideRelease() {
+    def release_version = sh (returnStdout: true, script: '''
+        echo $(curl --retry 10 --retry-delay 60 -s https://src.fedoraproject.org/rpms/fedora-release/raw/master/f/fedora-release.spec | awk '/%define dist_version/ {print $3}')
+    ''').trim()
+    try {
+        assert release_version.isNumber()
+    }
+    catch (AssertionError e) {
+        echo "Abort as couldn't query fedora for current Rawhide release version"
+        throw new Exception("Coudln't get the Fedora release of Rawhide")
+    }
+    return release_version
+}
+
+/**
  * Library to check the dist branch to as rawhide should map to a release number
  * This value will begin with 'fc'
  * @param String branch - the branch value from the CI_MESSAGE
@@ -20,17 +38,7 @@ def setDistBranch(String branch) {
             throw new Exception("Invalid Branch Name ${branch}")
         }
     } else {
-        def dist_branch = sh (returnStdout: true, script: '''
-            echo $(curl --retry 10 --retry-delay 60 -s https://src.fedoraproject.org/rpms/fedora-release/raw/master/f/fedora-release.spec | awk '/%define dist_version/ {print $3}')
-        ''').trim()
-        try {
-            assert dist_branch.isNumber()
-        }
-        catch (AssertionError e) {
-            echo "There was a fatal error finding the proper mapping for ${branch}"
-            echo "We will not continue without a proper DIST_BRANCH value. Throwing exception..."
-            throw new Exception('Rsync branch identifier failed!')
-        }
+        def dist_branch = getRawhideRelease()
         return 'fc' + dist_branch
     }
 }
@@ -651,29 +659,8 @@ def processBuildCIMessage() {
                 // depending on the ci message version it used rpm-build-group or koji-build-group
                 // https://pagure.io/fedora-ci/messages/pull-request/87
                 (ciMessage['artifact']['type'] == "rpm-build-group" || ciMessage['artifact']['type'] == "koji-build-group")) {
-        // query bodhi to check if the release is rawhide
-        def rawhide_release = (
-            sh(script: "curl --retry 20 'https://bodhi.fedoraproject.org/releases/?state=pending'", returnStdout: true)
-        )
-        rawhide_release = readJSON text: rawhide_release.replace("\n", "\\n")
-        if (!rawhide_release.containsKey('releases')) {
-            throw new Exception("FAIL: Could not query bodhi")
-        }
-        env.fed_branch = ciMessage['artifact']['release']
-        env.branch = ciMessage['artifact']['release']
-
-        // Rawhide is the most recent release
-        // Could be there is also some recent branched, but not relased
-        // with pending status, but those should already have their own pipeline and compose...
-        def pending_releases = []
-        for (release in rawhide_release['releases']) {
-            //skip module, container...
-            if (!(release['branch'] =~ /f([0-9]+)$/)) {
-                continue
-            }
-            pending_releases.add(release['branch'])
-        }
-        if (env.fed_branch == pending_releases.max()) {
+        def rawhide_release = getRawhideRelease()
+        if (env.fed_branch == "f${rawhide_release}") {
             env.fed_branch = 'master'
             env.branch = 'rawhide'
         }
