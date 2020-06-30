@@ -40,14 +40,14 @@ git fetch -fu origin refs/pull/${fed_id}/head:pr
 # Setting git config and merge message in case we try to merge a closed PR, like it is done on stage instance
 git -c "user.name=Fedora CI" -c "user.email=ci@lists.fedoraproject.org"  merge pr -m "Fedora CI pipeline"
 # Get current NVR
-truenvr=$(rpm -q --define "dist .$DIST_BRANCH" --queryformat '%{name}-%{version}-%{release}\n' --specfile ${fed_repo}.spec | awk 'NR==1')
+truenvr=$(rpm -q --define "dist .$DIST_BRANCH" --define "_sourcedir ./" --queryformat '%{name}-%{version}-%{release}\n' --specfile ${fed_repo}.spec | awk 'NR==1')
 echo "original_spec_nvr=${truenvr}" >> ${LOGDIR}/job.props
 # Find number of git commits in log to append to RELEASE before %{?dist}
 commits=$(git log --pretty=format:'' | wc -l)
 
 # Build srpm to send to koji
 fedpkg --release ${fed_branch} srpm
-VERSION=$(rpmspec --queryformat "%{VERSION}\n" -q ${fed_repo}.spec | awk 'NR==1')
+VERSION=$(rpmspec --queryformat "%{VERSION}\n" --define "_sourcedir ./" -q ${fed_repo}.spec | awk 'NR==1')
 # Set up koji creds
 kinit -k -t "${CURRENTDIR}/fedora.keytab" $FEDORA_PRINCIPAL
 
