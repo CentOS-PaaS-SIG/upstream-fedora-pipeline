@@ -521,7 +521,7 @@ def sendPRCommentforTags(imageOperationsList) {
     }
 
     echo "Prepare GHI tool"
-    withCredentials([string(credentialsId: 'paas-bot', variable: 'TOKEN')]) {
+    withCredentials([string(credentialsId: 'cp-paas-bot', variable: 'TOKEN')]) {
         sh script: "git config --global ghi.token ${TOKEN}", label: "Configuring git"
         sh  script: 'curl -sL https://raw.githubusercontent.com/stephencelis/ghi/master/ghi > ghi && chmod 755 ghi', label: "Cloning repository"
         sh  script: './ghi comment ' + env.ghprbPullId + ' -m "' + msg + '"', label: "Commenting"
