@@ -147,21 +147,23 @@ if [ "${namespace}" != "tests" ]; then
     for pkg in $(repoquery -q --disablerepo=\* --enablerepo=${package} --repofrompath=${package},${rpm_repo} --all --qf="%{ARCH}:%{NAME}" | sed -e "/^src:/d;/-debug\(info\|source\)\$/d;s/.\+://" | sort -u) ; do
         # check if this package conflicts with any other package from RPM_LIST
         conflict_capability=$(repoquery -q --disablerepo=\* --enablerepo=${package} --repofrompath=${package},${rpm_repo} --conflict $pkg)
-        conflict=''
+        conflict_pkgs=''
         if [ ! -z "${conflict_capability}" ] ; then
-            conflict=$(repoquery -q --qf "%{NAME}" --disablerepo=\* --enablerepo=${package} --repofrompath=${package},${rpm_repo} --whatprovides "$conflict_capability")
+            conflict_pkgs=$(repoquery -q --qf "%{NAME}" --disablerepo=\* --enablerepo=${package} --repofrompath=${package},${rpm_repo} --whatprovides "$conflict_capability")
         fi
         found_conflict=0
-        if [ ! -z "${conflict}" ] && [ ! -z "${RPM_LIST}" ]; then
+        if [ ! -z "${conflict_pkgs}" ] && [ ! -z "${RPM_LIST}" ]; then
             for rpm_pkg in ${RPM_LIST} ; do
-                if [ "${conflict}" == "$rpm_pkg" ]; then
-                    # this pkg conflicts with a package already in RPM_LIST
-                    found_conflict=1
-                    continue
-                fi
+                for conflict in ${conflict_pkgs} ; do
+                    if [ "${conflict}" == "$rpm_pkg" ]; then
+                        # this pkg conflicts with a package already in RPM_LIST
+                        found_conflict=1
+                        continue
+                    fi
+                done
             done
             if [ ${found_conflict} -eq 1 ]; then
-                echo "INFO: will not install $pkg as it conflicts with $conflict."
+                echo "INFO: will not install $pkg as it conflicts with $conflict_pkgs."
                 continue
             fi
         fi
