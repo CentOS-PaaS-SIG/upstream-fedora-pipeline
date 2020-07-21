@@ -20,7 +20,6 @@ timestamps {
     properties(
             [
                     buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '100', daysToKeepStr: '', numToKeepStr: '100')),
-                    disableConcurrentBuilds(),
                     pipelineTriggers(
                         [[$class: 'CIBuildTrigger',
                           noSquash: true,
