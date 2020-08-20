@@ -15,7 +15,7 @@ def call(Map parameters = [:]) {
             }
 
             stage('resize compose') {
-                packagepipelineUtils.resizeCompose('container': 'fedoraci-runner', imageName: imageName, increase: '10G')
+                packagepipelineUtils.resizeCompose('container': 'fedoraci-runner', imageName: imageName, increase: '20G')
             }
 
             try {
