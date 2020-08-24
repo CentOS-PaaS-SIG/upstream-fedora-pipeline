@@ -26,7 +26,6 @@ RUN for i in {1..5} ; do dnf -y install \
         libvirt-daemon \
         libvirt-daemon-driver-* \
         libvirt-daemon-kvm \
-        pam_krb5 \
         pykickstart \
         python3-libselinux \
         python3-pip \
@@ -35,7 +34,7 @@ RUN for i in {1..5} ; do dnf -y install \
         python3-dnf \
         python3-sortedcontainers \
         python3-six \
-        PyYAML \
+        python3-pyyaml \
         rsync \
         qemu-img \
         qemu-kvm \
