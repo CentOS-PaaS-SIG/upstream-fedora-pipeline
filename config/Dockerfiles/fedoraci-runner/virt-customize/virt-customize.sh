@@ -146,10 +146,18 @@ fi
 if [ "${namespace}" != "tests" ]; then
     for pkg in $(repoquery -q --disablerepo=\* --enablerepo=${package} --repofrompath=${package},${rpm_repo} --all --qf="%{ARCH}:%{NAME}" | sed -e "/^src:/d;/-debug\(info\|source\)\$/d;s/.\+://" | sort -u) ; do
         # check if this package conflicts with any other package from RPM_LIST
-        conflict_capability=$(repoquery -q --disablerepo=\* --enablerepo=${package} --repofrompath=${package},${rpm_repo} --conflict $pkg)
+        conflict_capabilities=$(repoquery -q --disablerepo=\* --enablerepo=${package} --repofrompath=${package},${rpm_repo} --conflict $pkg)
         conflict_pkgs=''
-        if [ ! -z "${conflict_capability}" ] ; then
-            conflict_pkgs=$(repoquery -q --qf "%{NAME}" --disablerepo=\* --enablerepo=${package} --repofrompath=${package},${rpm_repo} --whatprovides "$conflict_capability")
+        if [ -n "${conflict_capabilities}" ] ; then
+            for conflict_capability in ${conflict_capabilities}; do
+                conflict_capability_pkgs=$(repoquery -q --qf "%{NAME}" --disablerepo=\* --enablerepo=${package} --repofrompath=${package},${rpm_repo} --whatprovides "$conflict_capability")
+                if [ -z ${conflict_capability_pkgs} ]; then
+                    continue
+                fi
+                for conflict_capability_pkg in ${conflict_capability_pkgs}; do
+                    conflict_pkgs="${conflict_pkgs} ${conflict_capability_pkg}"
+                done
+            done
         fi
         found_conflict=0
         if [ ! -z "${conflict_pkgs}" ] && [ ! -z "${RPM_LIST}" ]; then
